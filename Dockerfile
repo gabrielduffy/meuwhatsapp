@@ -1,12 +1,15 @@
 FROM node:20-alpine
 
+# Instalar git (necessário para algumas dependências)
+RUN apk add --no-cache git
+
 WORKDIR /app
 
 # Copiar arquivos de dependências
 COPY package*.json ./
 
 # Instalar dependências
-RUN npm install --production
+RUN npm install --omit=dev
 
 # Copiar código fonte
 COPY . .
