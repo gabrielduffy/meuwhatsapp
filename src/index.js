@@ -1012,10 +1012,10 @@ function getDocsHTML(baseUrl) {
 
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(\`
+  console.log(`
 ╔══════════════════════════════════════════════════════════╗
 ║        WhatsApp API Multi-Instância                       ║
-║        Rodando na porta \${PORT}                              ║
+║        Rodando na porta ${PORT}                              ║
 ╚══════════════════════════════════════════════════════════╝
 
 Endpoints disponíveis:
@@ -1044,6 +1044,6 @@ Endpoints disponíveis:
   GET  /check-number/:inst/:num  - Verificar número
   GET  /profile-picture/:i/:num  - Foto de perfil
 
-API Key: \${API_KEY}
-  \`);
+API Key: ${API_KEY}
+  `);
 });
