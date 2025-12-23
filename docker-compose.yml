@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  whatsapp-api:
+    build: .
+    container_name: whatsapp-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - API_KEY=sua-chave-secreta-mude-isso
+      - SESSIONS_DIR=/app/sessions
+    volumes:
+      - ./sessions:/app/sessions
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
