@@ -14,6 +14,9 @@ const webhookRoutes = require('./routes/webhook');
 const warmingRoutes = require('./routes/warming');
 const metricsRoutes = require('./routes/metrics');
 const schedulerRoutes = require('./routes/scheduler');
+const contactsRoutes = require('./routes/contacts');
+const broadcastRoutes = require('./routes/broadcast');
+const autoresponderRoutes = require('./routes/autoresponder');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -23,6 +26,8 @@ const { rateLimiter } = require('./middlewares/rateLimit');
 const { loadExistingSessions } = require('./services/whatsapp');
 const { initMetrics } = require('./services/metrics');
 const { initScheduler } = require('./services/scheduler');
+const { initBroadcast } = require('./services/broadcast');
+const { initAutoResponder } = require('./services/autoresponder');
 
 const app = express();
 
@@ -85,6 +90,9 @@ app.use('/webhook', webhookRoutes);
 app.use('/warming', warmingRoutes);
 app.use('/metrics', metricsRoutes);
 app.use('/scheduler', schedulerRoutes);
+app.use('/contacts', contactsRoutes);
+app.use('/broadcast', broadcastRoutes);
+app.use('/autoresponder', autoresponderRoutes);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -131,6 +139,12 @@ app.listen(PORT, '0.0.0.0', async () => {
 
   // Inicializar sistema de agendamento
   initScheduler();
+
+  // Inicializar sistema de broadcast
+  initBroadcast();
+
+  // Inicializar sistema de auto-resposta
+  initAutoResponder();
 
   // Carregar sessões existentes
   await loadExistingSessions();

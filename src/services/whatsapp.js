@@ -7,6 +7,7 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const { v4: uuidv4 } = require('uuid');
 const { incrementMetric, updateConnectionStatus, createInstanceMetrics, removeInstanceMetrics } = require('./metrics');
+const { handleIncomingMessage } = require('./autoresponder');
 
 // Armazenamento das instâncias
 const instances = {};
@@ -206,6 +207,14 @@ async function createInstance(instanceName, options = {}) {
 
         // Incrementar contador de mensagens recebidas
         incrementMetric(instanceName, 'received');
+
+        // Processar auto-resposta com IA
+        const text = extractText(message);
+        if (text) {
+          handleIncomingMessage(instanceName, message.key.remoteJid, text).catch(err => {
+            console.error(`[${instanceName}] Erro no auto-responder:`, err.message);
+          });
+        }
       }
 
       sendWebhook(instanceName, messageData);
