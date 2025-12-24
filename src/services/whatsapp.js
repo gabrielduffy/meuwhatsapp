@@ -8,6 +8,7 @@ const { SocksProxyAgent } = require('socks-proxy-agent');
 const { v4: uuidv4 } = require('uuid');
 const { incrementMetric, updateConnectionStatus, createInstanceMetrics, removeInstanceMetrics } = require('./metrics');
 const { handleIncomingMessage } = require('./autoresponder');
+const { sendWebhookWithRetry, isEventTypeEnabled } = require('./webhook-advanced');
 
 // Armazenamento das instâncias
 const instances = {};
@@ -1099,26 +1100,40 @@ async function sendWebhook(instanceName, data) {
   const webhook = webhooks[instanceName];
   if (!webhook || !webhook.url) return;
 
-  // Verificar se o evento está na lista de eventos permitidos
+  // Verificar se o evento está na lista de eventos permitidos (compatibilidade)
   if (webhook.events[0] !== 'all' && !webhook.events.includes(data.event)) {
     return;
   }
 
-  try {
-    const response = await fetch(webhook.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...data,
-        timestamp: new Date().toISOString()
-      })
-    });
+  // Verificar se o tipo de evento está habilitado no webhook avançado
+  const isAdvancedEnabled = isEventTypeEnabled(instanceName, data.event);
 
-    if (!response.ok) {
-      console.error(`[${instanceName}] Webhook falhou: ${response.status}`);
+  const payload = {
+    ...data,
+    timestamp: new Date().toISOString()
+  };
+
+  // Se webhook avançado está configurado, usar retry automático
+  if (isAdvancedEnabled) {
+    // Enviar com retry e logging automático
+    sendWebhookWithRetry(instanceName, webhook.url, payload).catch(err => {
+      console.error(`[${instanceName}] Erro no webhook avançado:`, err.message);
+    });
+  } else {
+    // Método básico (sem retry)
+    try {
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        console.error(`[${instanceName}] Webhook falhou: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`[${instanceName}] Erro no webhook:`, error.message);
     }
-  } catch (error) {
-    console.error(`[${instanceName}] Erro no webhook:`, error.message);
   }
 }
 

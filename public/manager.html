@@ -635,16 +635,84 @@
       </div>
       
       <div class="card">
-        <h2>⚙️ Webhook</h2>
+        <h2>⚙️ Webhook Avançado</h2>
         <div class="form-group">
           <label>Instância</label>
-          <select id="webhookInstance"></select>
+          <select id="webhookInstance" onchange="loadWebhookConfig()"></select>
         </div>
         <div class="form-group">
           <label>URL do Webhook</label>
           <input type="text" id="webhookUrl" placeholder="https://seu-servidor.com/webhook">
         </div>
-        <button class="btn btn-primary" onclick="setWebhook()">Salvar Webhook</button>
+
+        <div class="section-title">Configurações de Retry</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Máximo de Tentativas</label>
+            <input type="number" id="webhookMaxRetries" value="3" min="1" max="10">
+          </div>
+          <div class="form-group">
+            <label>Delay Inicial (ms)</label>
+            <input type="number" id="webhookRetryDelay" value="5000" step="1000">
+          </div>
+          <div class="form-group">
+            <label>Timeout (ms)</label>
+            <input type="number" id="webhookTimeout" value="30000" step="1000">
+          </div>
+        </div>
+
+        <div class="section-title">Tipos de Eventos</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:15px">
+          <label><input type="checkbox" id="webhookEventMessage" value="message" checked> Mensagens</label>
+          <label><input type="checkbox" id="webhookEventUpdate" value="message.update" checked> Atualizações</label>
+          <label><input type="checkbox" id="webhookEventReceipt" value="message.receipt" checked> Recibos</label>
+          <label><input type="checkbox" id="webhookEventConnection" value="connection.update" checked> Conexão</label>
+          <label><input type="checkbox" id="webhookEventQr" value="qr" checked> QR Code</label>
+          <label><input type="checkbox" id="webhookEventGroup" value="group-participants.update" checked> Grupos</label>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="configureAdvancedWebhook()">💾 Configurar</button>
+          <button class="btn btn-secondary" onclick="testWebhook()">🧪 Testar</button>
+          <button class="btn btn-secondary" onclick="loadWebhookLogs()">📜 Ver Logs</button>
+          <button class="btn btn-secondary" onclick="loadWebhookStats()">📊 Estatísticas</button>
+        </div>
+
+        <div id="webhookInfo" style="margin-top:15px"></div>
+      </div>
+
+      <div class="card" id="webhookLogsCard" style="display:none">
+        <h2>📜 Logs de Webhook</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Filtrar por Status</label>
+            <select id="webhookLogStatus" onchange="loadWebhookLogs()">
+              <option value="">Todos</option>
+              <option value="success">Sucesso</option>
+              <option value="error">Erro</option>
+              <option value="failed">Falhado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Limite</label>
+            <input type="number" id="webhookLogLimit" value="50" min="10" max="200" onchange="loadWebhookLogs()">
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="clearWebhookLogs()">🗑️ Limpar Logs</button>
+        <div id="webhookLogsList" style="margin-top:15px"></div>
+      </div>
+
+      <div class="card" id="webhookStatsCard" style="display:none">
+        <h2>📊 Estatísticas de Webhook</h2>
+        <div class="form-group">
+          <label>Período</label>
+          <select id="webhookStatsPeriod" onchange="loadWebhookStats()">
+            <option value="hour">Última Hora</option>
+            <option value="day" selected>Último Dia</option>
+            <option value="week">Última Semana</option>
+          </select>
+        </div>
+        <div id="webhookStatsDisplay"></div>
       </div>
       
       <div class="card">
@@ -1094,16 +1162,231 @@
       }
     }
     
-    async function setWebhook() {
+    // ========== WEBHOOK AVANÇADO ==========
+    async function configureAdvancedWebhook() {
       const inst = document.getElementById('webhookInstance').value;
       const url = document.getElementById('webhookUrl').value;
-      if (!inst || !url) return showAlert('Preencha todos os campos', 'error');
-      
+
+      if (!inst || !url) {
+        showAlert('Preencha instância e URL', 'error');
+        return;
+      }
+
+      // Coletar tipos de eventos selecionados
+      const eventTypes = [];
+      const eventCheckboxes = [
+        'webhookEventMessage',
+        'webhookEventUpdate',
+        'webhookEventReceipt',
+        'webhookEventConnection',
+        'webhookEventQr',
+        'webhookEventGroup'
+      ];
+
+      eventCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox.checked) {
+          eventTypes.push(checkbox.value);
+        }
+      });
+
+      const config = {
+        url,
+        enabled: true,
+        maxRetries: parseInt(document.getElementById('webhookMaxRetries').value),
+        retryDelay: parseInt(document.getElementById('webhookRetryDelay').value),
+        timeout: parseInt(document.getElementById('webhookTimeout').value),
+        eventTypes
+      };
+
       try {
-        await api('/webhook/set', 'POST', { instanceName: inst, webhookUrl: url });
-        showAlert('Webhook configurado!', 'success');
-      } catch(e) {
-        showAlert('Erro: ' + e.message, 'error');
+        await api('/webhook/configure', 'POST', { instanceName: inst, config });
+        showAlert('Webhook avançado configurado com sucesso!', 'success');
+        loadWebhookConfig();
+      } catch (e) {
+        showAlert('Erro ao configurar: ' + e.message, 'error');
+      }
+    }
+
+    async function loadWebhookConfig() {
+      const inst = document.getElementById('webhookInstance').value;
+      if (!inst) return;
+
+      try {
+        const data = await api(`/webhook/${inst}`, 'GET');
+
+        if (data.advancedConfig) {
+          const config = data.advancedConfig;
+
+          document.getElementById('webhookUrl').value = config.url || '';
+          document.getElementById('webhookMaxRetries').value = config.retryConfig?.maxRetries || 3;
+          document.getElementById('webhookRetryDelay').value = config.retryConfig?.retryDelay || 5000;
+          document.getElementById('webhookTimeout').value = config.timeout || 30000;
+
+          // Marcar checkboxes de eventos
+          const eventTypes = config.eventTypes || [];
+          document.getElementById('webhookEventMessage').checked = eventTypes.includes('message');
+          document.getElementById('webhookEventUpdate').checked = eventTypes.includes('message.update');
+          document.getElementById('webhookEventReceipt').checked = eventTypes.includes('message.receipt');
+          document.getElementById('webhookEventConnection').checked = eventTypes.includes('connection.update');
+          document.getElementById('webhookEventQr').checked = eventTypes.includes('qr');
+          document.getElementById('webhookEventGroup').checked = eventTypes.includes('group-participants.update');
+
+          document.getElementById('webhookInfo').innerHTML =
+            `<div class="alert alert-success">✅ Configuração carregada - Última atualização: ${new Date(config.updatedAt).toLocaleString('pt-BR')}</div>`;
+        }
+      } catch (e) {
+        // Webhook não configurado ainda
+        document.getElementById('webhookInfo').innerHTML = '';
+      }
+    }
+
+    async function testWebhook() {
+      const inst = document.getElementById('webhookInstance').value;
+      const url = document.getElementById('webhookUrl').value;
+
+      if (!inst || !url) {
+        showAlert('Preencha instância e URL', 'error');
+        return;
+      }
+
+      showAlert('Testando webhook...', 'info');
+
+      try {
+        const result = await api(`/webhook/test/${inst}`, 'POST', { url });
+
+        if (result.success) {
+          showAlert(`✅ Webhook testado com sucesso! Duração: ${result.result.duration}ms`, 'success');
+        } else {
+          showAlert(`❌ Falha no teste: ${result.result.error}`, 'error');
+        }
+      } catch (e) {
+        showAlert('Erro ao testar: ' + e.message, 'error');
+      }
+    }
+
+    async function loadWebhookLogs() {
+      const inst = document.getElementById('webhookInstance').value;
+      if (!inst) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      const status = document.getElementById('webhookLogStatus').value;
+      const limit = document.getElementById('webhookLogLimit').value;
+
+      try {
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        if (limit) params.append('limit', limit);
+
+        const data = await api(`/webhook/logs/${inst}?${params}`, 'GET');
+
+        const logsCard = document.getElementById('webhookLogsCard');
+        const logsList = document.getElementById('webhookLogsList');
+
+        logsCard.style.display = 'block';
+
+        if (!data.logs || data.logs.length === 0) {
+          logsList.innerHTML = '<p style="color:#666">Nenhum log encontrado</p>';
+          return;
+        }
+
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem">';
+        html += '<thead><tr style="background:#f8f9fa"><th style="padding:8px;text-align:left">Data/Hora</th><th style="padding:8px;text-align:left">Evento</th><th style="padding:8px;text-align:left">Status</th><th style="padding:8px;text-align:left">Código</th><th style="padding:8px;text-align:left">Duração</th><th style="padding:8px;text-align:left">Tentativa</th></tr></thead>';
+        html += '<tbody>';
+
+        data.logs.forEach(log => {
+          const date = new Date(log.timestamp).toLocaleString('pt-BR');
+          const statusColors = {
+            success: '#28a745',
+            error: '#ffc107',
+            failed: '#dc3545'
+          };
+
+          html += `<tr style="border-bottom:1px solid #eee">
+            <td style="padding:8px">${date}</td>
+            <td style="padding:8px">${log.eventType}</td>
+            <td style="padding:8px"><span style="background:${statusColors[log.status]};color:white;padding:2px 8px;border-radius:8px;font-size:0.75rem">${log.status}</span></td>
+            <td style="padding:8px">${log.statusCode || '-'}</td>
+            <td style="padding:8px">${log.duration ? log.duration + 'ms' : '-'}</td>
+            <td style="padding:8px">${log.attempt || '-'}</td>
+          </tr>`;
+        });
+
+        html += '</tbody></table>';
+        logsList.innerHTML = html;
+      } catch (e) {
+        showAlert('Erro ao carregar logs: ' + e.message, 'error');
+      }
+    }
+
+    async function clearWebhookLogs() {
+      const inst = document.getElementById('webhookInstance').value;
+      if (!inst) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      if (!confirm('Deseja limpar todos os logs de webhook?')) return;
+
+      try {
+        await api(`/webhook/logs/${inst}`, 'DELETE');
+        showAlert('Logs limpos com sucesso!', 'success');
+        document.getElementById('webhookLogsList').innerHTML = '<p style="color:#666">Nenhum log encontrado</p>';
+      } catch (e) {
+        showAlert('Erro ao limpar logs: ' + e.message, 'error');
+      }
+    }
+
+    async function loadWebhookStats() {
+      const inst = document.getElementById('webhookInstance').value;
+      if (!inst) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      const period = document.getElementById('webhookStatsPeriod').value;
+
+      try {
+        const data = await api(`/webhook/stats/${inst}?period=${period}`, 'GET');
+
+        const statsCard = document.getElementById('webhookStatsCard');
+        const statsDisplay = document.getElementById('webhookStatsDisplay');
+
+        statsCard.style.display = 'block';
+
+        const stats = data.stats;
+
+        let html = '<div class="warming-stats">';
+        html += `<div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">Total</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value" style="color:#28a745">${stats.success}</div><div class="stat-label">Sucesso</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value" style="color:#dc3545">${stats.error + stats.failed}</div><div class="stat-label">Erros</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${stats.successRate}%</div><div class="stat-label">Taxa de Sucesso</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${stats.avgDuration}ms</div><div class="stat-label">Duração Média</div></div>`;
+        html += '</div>';
+
+        if (Object.keys(stats.byEventType).length > 0) {
+          html += '<div class="section-title">Por Tipo de Evento</div>';
+          html += '<table style="width:100%;border-collapse:collapse;margin-top:10px">';
+          html += '<thead><tr style="background:#f8f9fa"><th style="padding:10px;text-align:left">Evento</th><th style="padding:10px">Total</th><th style="padding:10px">Sucesso</th><th style="padding:10px">Erro</th></tr></thead>';
+          html += '<tbody>';
+
+          Object.entries(stats.byEventType).forEach(([eventType, counts]) => {
+            html += `<tr style="border-bottom:1px solid #eee">
+              <td style="padding:10px">${eventType}</td>
+              <td style="padding:10px;text-align:center">${counts.total}</td>
+              <td style="padding:10px;text-align:center;color:#28a745">${counts.success}</td>
+              <td style="padding:10px;text-align:center;color:#dc3545">${counts.error}</td>
+            </tr>`;
+          });
+
+          html += '</tbody></table>';
+        }
+
+        statsDisplay.innerHTML = html;
+      } catch (e) {
+        showAlert('Erro ao carregar estatísticas: ' + e.message, 'error');
       }
     }
 

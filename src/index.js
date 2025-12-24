@@ -28,6 +28,7 @@ const { initMetrics } = require('./services/metrics');
 const { initScheduler } = require('./services/scheduler');
 const { initBroadcast } = require('./services/broadcast');
 const { initAutoResponder } = require('./services/autoresponder');
+const { initWebhookAdvanced } = require('./services/webhook-advanced');
 
 const app = express();
 
@@ -145,6 +146,9 @@ app.listen(PORT, '0.0.0.0', async () => {
 
   // Inicializar sistema de auto-resposta
   initAutoResponder();
+
+  // Inicializar sistema de webhook avançado
+  initWebhookAdvanced();
 
   // Carregar sessões existentes
   await loadExistingSessions();
