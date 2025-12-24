@@ -77,6 +77,9 @@
     <a href="#" class="active" onclick="showSection('instances')">📋 Instâncias</a>
     <a href="#" onclick="showSection('messages')">💬 Mensagens</a>
     <a href="#" onclick="showSection('groups')">👥 Grupos</a>
+    <a href="#" onclick="showSection('contacts')">📇 Contatos</a>
+    <a href="#" onclick="showSection('autoresponder')">🤖 Auto-Resposta</a>
+    <a href="#" onclick="showSection('broadcast')">📢 Broadcast</a>
     <a href="#" onclick="showSection('scheduler')">⏰ Agendamento</a>
     <a href="#" onclick="showSection('warming')">🔥 Aquecimento</a>
     <a href="#" onclick="showSection('tools')">🔧 Ferramentas</a>
@@ -306,7 +309,170 @@
         <button class="btn btn-primary" onclick="joinGroup()">🚀 Entrar</button>
       </div>
     </div>
-    
+
+    <!-- CONTATOS -->
+    <div id="contacts" class="section hidden">
+      <div class="card">
+        <h2>📇 Gerenciar Contatos</h2>
+        <div class="form-group">
+          <label>Instância</label>
+          <select id="contactsInstance" onchange="loadContacts()"></select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadContacts()">🔄 Atualizar Lista</button>
+        <div id="contactsList" style="margin-top:15px">
+          <p style="color:#666">Selecione uma instância</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📤 Importar/Exportar</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instância</label>
+            <select id="importExportInstance"></select>
+          </div>
+          <div class="form-group">
+            <label>Formato de Exportação</label>
+            <select id="exportFormat">
+              <option value="csv">CSV</option>
+              <option value="excel">Excel</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="exportContacts()">📥 Exportar</button>
+          <button class="btn btn-secondary" onclick="syncContacts()">🔄 Sincronizar com WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTO-RESPOSTA -->
+    <div id="autoresponder" class="section hidden">
+      <div class="card">
+        <h2>🤖 Configurar Auto-Resposta IA</h2>
+        <div class="form-group">
+          <label>Instância</label>
+          <select id="autoresponderInstance"></select>
+        </div>
+        <div class="form-group">
+          <label>Chave API Groq</label>
+          <input type="text" id="autoresponderGroqKey" placeholder="gsk_...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Modelo</label>
+            <select id="autoresponderModel">
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Rápido)</option>
+              <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Preciso)</option>
+              <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Responder a</label>
+            <select id="autoresponderRespondTo">
+              <option value="all">Todos</option>
+              <option value="contacts">Apenas Contatos</option>
+              <option value="groups">Apenas Grupos</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Personalidade</label>
+          <input type="text" id="autoresponderPersonality" placeholder="Atendente prestativo e amigável" value="Atendente prestativo e amigável">
+        </div>
+        <div class="form-group">
+          <label>Contexto do Negócio</label>
+          <textarea id="autoresponderContext" placeholder="Descreva seu negócio, produtos/serviços, horários...">Sou um assistente virtual</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tamanho Máx Resposta</label>
+            <input type="number" id="autoresponderMaxLength" value="500">
+          </div>
+          <div class="form-group">
+            <label>Máx Respostas/Contato/Dia</label>
+            <input type="number" id="autoresponderMaxResponses" value="5">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hora Início</label>
+            <input type="number" id="autoresponderStartHour" value="0" min="0" max="23">
+          </div>
+          <div class="form-group">
+            <label>Hora Fim</label>
+            <input type="number" id="autoresponderEndHour" value="23" min="0" max="23">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="autoresponderWeekend" checked> Ativo nos fins de semana</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-primary" onclick="configureAutoResponder()">💾 Configurar</button>
+          <button class="btn btn-secondary" onclick="enableAutoResponder()">▶️ Ativar</button>
+          <button class="btn btn-danger" onclick="disableAutoResponder()">⏹️ Desativar</button>
+          <button class="btn btn-secondary" onclick="loadAutoResponderStats()">📊 Estatísticas</button>
+        </div>
+        <div id="autoresponderStats" style="margin-top:15px"></div>
+      </div>
+    </div>
+
+    <!-- BROADCAST -->
+    <div id="broadcast" class="section hidden">
+      <div class="card">
+        <h2>📢 Criar Campanha de Broadcast</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instância</label>
+            <select id="broadcastInstance"></select>
+          </div>
+          <div class="form-group">
+            <label>Nome da Campanha</label>
+            <input type="text" id="broadcastName" placeholder="Minha Campanha">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Números Destino (um por linha)</label>
+          <textarea id="broadcastNumbers" placeholder="5511999999999&#10;5511888888888"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Mensagem</label>
+          <textarea id="broadcastMessage" placeholder="Olá! Esta é uma mensagem de teste."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Intervalo Mín (segundos)</label>
+            <input type="number" id="broadcastMinDelay" value="30">
+          </div>
+          <div class="form-group">
+            <label>Intervalo Máx (segundos)</label>
+            <input type="number" id="broadcastMaxDelay" value="60">
+          </div>
+          <div class="form-group">
+            <label>Máx Mensagens/Hora</label>
+            <input type="number" id="broadcastMaxPerHour" value="20">
+          </div>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="broadcastSimulateTyping" checked> Simular digitação</label>
+        </div>
+        <button class="btn btn-primary" onclick="createBroadcast()">🚀 Criar Campanha</button>
+      </div>
+
+      <div class="card">
+        <h2>📋 Campanhas Ativas</h2>
+        <div class="form-group">
+          <label>Filtrar por Instância</label>
+          <select id="broadcastFilterInstance" onchange="loadBroadcasts()"></select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadBroadcasts()">🔄 Atualizar</button>
+        <div id="broadcastList" style="margin-top:15px">
+          <p style="color:#666">Selecione uma instância</p>
+        </div>
+      </div>
+    </div>
+
     <!-- AQUECIMENTO -->
     <div id="warming" class="section hidden">
       <div class="card">
@@ -380,7 +546,76 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- AGENDAMENTO -->
+    <div id="scheduler" class="section hidden">
+      <div class="card">
+        <h2>⏰ Agendar Nova Mensagem</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instância</label>
+            <select id="scheduleInstance"></select>
+          </div>
+          <div class="form-group">
+            <label>Número de Destino</label>
+            <input type="text" id="scheduleTo" placeholder="5511999999999@s.whatsapp.net">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data e Hora</label>
+            <input type="datetime-local" id="scheduleDateTime">
+          </div>
+          <div class="form-group">
+            <label>Tipo de Mensagem</label>
+            <select id="scheduleType" onchange="updateScheduleFields()">
+              <option value="text">Texto</option>
+              <option value="image">Imagem</option>
+              <option value="document">Documento</option>
+              <option value="audio">Áudio</option>
+              <option value="video">Vídeo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Campos dinâmicos baseados no tipo -->
+        <div id="scheduleFields">
+          <div class="form-group">
+            <label>Mensagem</label>
+            <textarea id="scheduleText" placeholder="Digite a mensagem a ser enviada"></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="createSchedule()">📅 Agendar</button>
+      </div>
+
+      <div class="card">
+        <h2>📋 Mensagens Agendadas</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Filtrar por Instância</label>
+            <select id="scheduleFilterInstance" onchange="loadScheduledMessages()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Filtrar por Status</label>
+            <select id="scheduleFilterStatus" onchange="loadScheduledMessages()">
+              <option value="">Todos</option>
+              <option value="pending">Pendente</option>
+              <option value="sent">Enviado</option>
+              <option value="failed">Falhado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadScheduledMessages()" style="margin-bottom:15px">🔄 Atualizar</button>
+        <div id="scheduledMessages">
+          <p style="color:#666">Carregando...</p>
+        </div>
+      </div>
+    </div>
+
     <!-- FERRAMENTAS -->
     <div id="tools" class="section hidden">
       <div class="card">
@@ -514,7 +749,7 @@
     }
     
     function updateSelects(instances) {
-      const ids = ['textInstance','imageInstance','docInstance','audioInstance','pollInstance','groupInstance','listGroupInstance','joinGroupInstance','warmingInstance','warmingPartner','checkInstance','webhookInstance'];
+      const ids = ['textInstance','imageInstance','docInstance','audioInstance','pollInstance','groupInstance','listGroupInstance','joinGroupInstance','warmingInstance','warmingPartner','checkInstance','webhookInstance','scheduleInstance','scheduleFilterInstance','contactsInstance','importExportInstance','autoresponderInstance','broadcastInstance','broadcastFilterInstance'];
       ids.forEach(id => {
         const sel = document.getElementById(id);
         const val = sel.value;
@@ -871,7 +1106,510 @@
         showAlert('Erro: ' + e.message, 'error');
       }
     }
-    
+
+    // ========== CONTATOS ==========
+    async function loadContacts() {
+      const instance = document.getElementById('contactsInstance').value;
+      if (!instance) {
+        document.getElementById('contactsList').innerHTML = '<p style="color:#666">Selecione uma instância</p>';
+        return;
+      }
+
+      try {
+        const data = await api(`/contacts/list/${instance}`, 'GET');
+        const contactsDiv = document.getElementById('contactsList');
+
+        if (!data.contacts || data.contacts.length === 0) {
+          contactsDiv.innerHTML = '<p style="color:#666">Nenhum contato encontrado</p>';
+          return;
+        }
+
+        let html = `<p style="margin-bottom:10px"><strong>Total: ${data.contacts.length} contatos</strong></p>`;
+        html += '<table style="width:100%;border-collapse:collapse;font-size:0.9rem">';
+        html += '<thead><tr style="background:#f8f9fa"><th style="padding:10px;text-align:left">Nome</th><th style="padding:10px;text-align:left">Número</th></tr></thead>';
+        html += '<tbody>';
+
+        data.contacts.slice(0, 50).forEach(contact => {
+          html += `<tr style="border-bottom:1px solid #eee">
+            <td style="padding:10px">${contact.name || '-'}</td>
+            <td style="padding:10px">${contact.number}</td>
+          </tr>`;
+        });
+
+        if (data.contacts.length > 50) {
+          html += `<tr><td colspan="2" style="padding:10px;text-align:center;color:#666">Mostrando 50 de ${data.contacts.length} contatos</td></tr>`;
+        }
+
+        html += '</tbody></table>';
+        contactsDiv.innerHTML = html;
+      } catch (e) {
+        document.getElementById('contactsList').innerHTML = `<p style="color:#dc3545">Erro ao carregar: ${e.message}</p>`;
+      }
+    }
+
+    async function exportContacts() {
+      const instance = document.getElementById('importExportInstance').value;
+      const format = document.getElementById('exportFormat').value;
+
+      if (!instance) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      try {
+        const url = `${API_URL()}/contacts/export/${instance}?format=${format}`;
+        const res = await fetch(url, {
+          headers: { 'x-api-key': API_KEY() }
+        });
+
+        if (!res.ok) throw new Error('Erro ao exportar');
+
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `contacts-${instance}.${format === 'excel' ? 'xlsx' : format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        showAlert('Contatos exportados com sucesso!', 'success');
+      } catch (e) {
+        showAlert('Erro ao exportar: ' + e.message, 'error');
+      }
+    }
+
+    async function syncContacts() {
+      const instance = document.getElementById('importExportInstance').value;
+      if (!instance) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      try {
+        await api(`/contacts/sync/${instance}`, 'POST');
+        showAlert('Sincronização iniciada! Aguarde alguns segundos e atualize a lista.', 'success');
+      } catch (e) {
+        showAlert('Erro ao sincronizar: ' + e.message, 'error');
+      }
+    }
+
+    // ========== AUTO-RESPOSTA ==========
+    async function configureAutoResponder() {
+      const instance = document.getElementById('autoresponderInstance').value;
+      const groqKey = document.getElementById('autoresponderGroqKey').value;
+
+      if (!instance || !groqKey) {
+        showAlert('Preencha instância e chave API', 'error');
+        return;
+      }
+
+      const config = {
+        groqApiKey: groqKey,
+        model: document.getElementById('autoresponderModel').value,
+        respondTo: document.getElementById('autoresponderRespondTo').value,
+        personality: document.getElementById('autoresponderPersonality').value,
+        context: document.getElementById('autoresponderContext').value,
+        maxResponseLength: parseInt(document.getElementById('autoresponderMaxLength').value),
+        maxResponsesPerDay: parseInt(document.getElementById('autoresponderMaxResponses').value),
+        activeHours: {
+          start: parseInt(document.getElementById('autoresponderStartHour').value),
+          end: parseInt(document.getElementById('autoresponderEndHour').value)
+        },
+        enabledOnWeekends: document.getElementById('autoresponderWeekend').checked
+      };
+
+      try {
+        await api('/autoresponder/configure', 'POST', { instanceName: instance, config });
+        showAlert('Auto-resposta configurada com sucesso!', 'success');
+      } catch (e) {
+        showAlert('Erro ao configurar: ' + e.message, 'error');
+      }
+    }
+
+    async function enableAutoResponder() {
+      const instance = document.getElementById('autoresponderInstance').value;
+      if (!instance) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      try {
+        await api(`/autoresponder/enable/${instance}`, 'POST');
+        showAlert('Auto-resposta ativada!', 'success');
+      } catch (e) {
+        showAlert('Erro ao ativar: ' + e.message, 'error');
+      }
+    }
+
+    async function disableAutoResponder() {
+      const instance = document.getElementById('autoresponderInstance').value;
+      if (!instance) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      try {
+        await api(`/autoresponder/disable/${instance}`, 'POST');
+        showAlert('Auto-resposta desativada!', 'success');
+      } catch (e) {
+        showAlert('Erro ao desativar: ' + e.message, 'error');
+      }
+    }
+
+    async function loadAutoResponderStats() {
+      const instance = document.getElementById('autoresponderInstance').value;
+      if (!instance) {
+        showAlert('Selecione uma instância', 'error');
+        return;
+      }
+
+      try {
+        const data = await api(`/autoresponder/stats/${instance}`, 'GET');
+        const statsDiv = document.getElementById('autoresponderStats');
+
+        let html = '<div class="warming-stats">';
+        html += `<div class="stat-card"><div class="stat-value">${data.totalResponses || 0}</div><div class="stat-label">Respostas Enviadas</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${data.uniqueContacts || 0}</div><div class="stat-label">Contatos Únicos</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value ${data.enabled ? 'style="color:#28a745"' : 'style="color:#dc3545"'}">${data.enabled ? 'Ativo' : 'Inativo'}</div><div class="stat-label">Status</div></div>`;
+        html += '</div>';
+
+        statsDiv.innerHTML = html;
+      } catch (e) {
+        document.getElementById('autoresponderStats').innerHTML = `<p style="color:#dc3545">Erro: ${e.message}</p>`;
+      }
+    }
+
+    // ========== BROADCAST ==========
+    async function createBroadcast() {
+      const instance = document.getElementById('broadcastInstance').value;
+      const name = document.getElementById('broadcastName').value;
+      const numbersText = document.getElementById('broadcastNumbers').value;
+      const message = document.getElementById('broadcastMessage').value;
+
+      if (!instance || !name || !numbersText || !message) {
+        showAlert('Preencha todos os campos', 'error');
+        return;
+      }
+
+      const recipients = numbersText.split('\n').map(n => n.trim()).filter(n => n);
+
+      const campaign = {
+        instanceName: instance,
+        name,
+        recipients,
+        message,
+        config: {
+          minDelay: parseInt(document.getElementById('broadcastMinDelay').value),
+          maxDelay: parseInt(document.getElementById('broadcastMaxDelay').value),
+          maxMessagesPerHour: parseInt(document.getElementById('broadcastMaxPerHour').value),
+          simulateTyping: document.getElementById('broadcastSimulateTyping').checked
+        }
+      };
+
+      try {
+        const result = await api('/broadcast/create', 'POST', campaign);
+        showAlert(`Campanha "${name}" criada! ID: ${result.campaignId}`, 'success');
+
+        // Limpar formulário
+        document.getElementById('broadcastName').value = '';
+        document.getElementById('broadcastNumbers').value = '';
+        document.getElementById('broadcastMessage').value = '';
+
+        loadBroadcasts();
+      } catch (e) {
+        showAlert('Erro ao criar campanha: ' + e.message, 'error');
+      }
+    }
+
+    async function loadBroadcasts() {
+      const instance = document.getElementById('broadcastFilterInstance').value;
+      if (!instance) {
+        document.getElementById('broadcastList').innerHTML = '<p style="color:#666">Selecione uma instância</p>';
+        return;
+      }
+
+      try {
+        const data = await api(`/broadcast/campaigns/${instance}`, 'GET');
+        const listDiv = document.getElementById('broadcastList');
+
+        if (!data.campaigns || data.campaigns.length === 0) {
+          listDiv.innerHTML = '<p style="color:#666">Nenhuma campanha encontrada</p>';
+          return;
+        }
+
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem">';
+        html += '<thead><tr style="background:#f8f9fa"><th style="padding:10px;text-align:left">Nome</th><th style="padding:10px;text-align:left">Status</th><th style="padding:10px;text-align:left">Progresso</th><th style="padding:10px;text-align:left">Ações</th></tr></thead>';
+        html += '<tbody>';
+
+        data.campaigns.forEach(camp => {
+          const progress = `${camp.sent}/${camp.total}`;
+          const statusColors = {
+            pending: '#6c757d',
+            running: '#28a745',
+            paused: '#ffc107',
+            completed: '#17a2b8',
+            failed: '#dc3545'
+          };
+
+          html += `<tr style="border-bottom:1px solid #eee">
+            <td style="padding:10px">${camp.name}</td>
+            <td style="padding:10px"><span style="background:${statusColors[camp.status]};color:white;padding:3px 10px;border-radius:10px;font-size:0.8rem">${camp.status}</span></td>
+            <td style="padding:10px">${progress}</td>
+            <td style="padding:10px">
+              ${camp.status === 'pending' ? `<button class="btn btn-primary btn-sm" onclick="startBroadcast('${camp.id}')">▶️ Iniciar</button>` : ''}
+              ${camp.status === 'running' ? `<button class="btn btn-secondary btn-sm" onclick="pauseBroadcast('${camp.id}')">⏸️ Pausar</button>` : ''}
+              ${camp.status === 'paused' ? `<button class="btn btn-primary btn-sm" onclick="resumeBroadcast('${camp.id}')">▶️ Retomar</button>` : ''}
+              ${camp.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="cancelBroadcast('${camp.id}')">❌ Cancelar</button>` : ''}
+            </td>
+          </tr>`;
+        });
+
+        html += '</tbody></table>';
+        listDiv.innerHTML = html;
+      } catch (e) {
+        document.getElementById('broadcastList').innerHTML = `<p style="color:#dc3545">Erro: ${e.message}</p>`;
+      }
+    }
+
+    async function startBroadcast(campaignId) {
+      try {
+        await api(`/broadcast/start/${campaignId}`, 'POST');
+        showAlert('Campanha iniciada!', 'success');
+        loadBroadcasts();
+      } catch (e) {
+        showAlert('Erro: ' + e.message, 'error');
+      }
+    }
+
+    async function pauseBroadcast(campaignId) {
+      try {
+        await api(`/broadcast/pause/${campaignId}`, 'POST');
+        showAlert('Campanha pausada!', 'success');
+        loadBroadcasts();
+      } catch (e) {
+        showAlert('Erro: ' + e.message, 'error');
+      }
+    }
+
+    async function resumeBroadcast(campaignId) {
+      try {
+        await api(`/broadcast/resume/${campaignId}`, 'POST');
+        showAlert('Campanha retomada!', 'success');
+        loadBroadcasts();
+      } catch (e) {
+        showAlert('Erro: ' + e.message, 'error');
+      }
+    }
+
+    async function cancelBroadcast(campaignId) {
+      if (!confirm('Deseja cancelar esta campanha?')) return;
+
+      try {
+        await api(`/broadcast/cancel/${campaignId}`, 'POST');
+        showAlert('Campanha cancelada!', 'success');
+        loadBroadcasts();
+      } catch (e) {
+        showAlert('Erro: ' + e.message, 'error');
+      }
+    }
+
+    // ========== AGENDAMENTO ==========
+    function updateScheduleFields() {
+      const type = document.getElementById('scheduleType').value;
+      const fieldsDiv = document.getElementById('scheduleFields');
+
+      let html = '';
+      if (type === 'text') {
+        html = `
+          <div class="form-group">
+            <label>Mensagem</label>
+            <textarea id="scheduleText" placeholder="Digite a mensagem a ser enviada"></textarea>
+          </div>
+        `;
+      } else if (type === 'image') {
+        html = `
+          <div class="form-group">
+            <label>URL da Imagem</label>
+            <input type="text" id="scheduleImageUrl" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Legenda (opcional)</label>
+            <textarea id="scheduleCaption" placeholder="Texto da legenda"></textarea>
+          </div>
+        `;
+      } else if (type === 'document') {
+        html = `
+          <div class="form-group">
+            <label>URL do Documento</label>
+            <input type="text" id="scheduleDocUrl" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Nome do Arquivo</label>
+            <input type="text" id="scheduleFileName" placeholder="documento.pdf">
+          </div>
+          <div class="form-group">
+            <label>MIME Type</label>
+            <input type="text" id="scheduleMimetype" placeholder="application/pdf">
+          </div>
+        `;
+      } else if (type === 'audio') {
+        html = `
+          <div class="form-group">
+            <label>URL do Áudio</label>
+            <input type="text" id="scheduleAudioUrl" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="schedulePtt" checked> PTT (Áudio de voz)
+            </label>
+          </div>
+        `;
+      } else if (type === 'video') {
+        html = `
+          <div class="form-group">
+            <label>URL do Vídeo</label>
+            <input type="text" id="scheduleVideoUrl" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Legenda (opcional)</label>
+            <textarea id="scheduleCaption" placeholder="Texto da legenda"></textarea>
+          </div>
+        `;
+      }
+
+      fieldsDiv.innerHTML = html;
+    }
+
+    async function createSchedule() {
+      const instance = document.getElementById('scheduleInstance').value;
+      const to = document.getElementById('scheduleTo').value;
+      const dateTime = document.getElementById('scheduleDateTime').value;
+      const type = document.getElementById('scheduleType').value;
+
+      if (!instance || !to || !dateTime) {
+        showAlert('Preencha todos os campos obrigatórios', 'error');
+        return;
+      }
+
+      const scheduledAt = new Date(dateTime).toISOString();
+
+      let content = {};
+      if (type === 'text') {
+        content = { text: document.getElementById('scheduleText').value };
+      } else if (type === 'image') {
+        content = {
+          imageUrl: document.getElementById('scheduleImageUrl').value,
+          caption: document.getElementById('scheduleCaption').value || ''
+        };
+      } else if (type === 'document') {
+        content = {
+          documentUrl: document.getElementById('scheduleDocUrl').value,
+          fileName: document.getElementById('scheduleFileName').value,
+          mimetype: document.getElementById('scheduleMimetype').value
+        };
+      } else if (type === 'audio') {
+        content = {
+          audioUrl: document.getElementById('scheduleAudioUrl').value,
+          ptt: document.getElementById('schedulePtt').checked
+        };
+      } else if (type === 'video') {
+        content = {
+          videoUrl: document.getElementById('scheduleVideoUrl').value,
+          caption: document.getElementById('scheduleCaption').value || ''
+        };
+      }
+
+      try {
+        const result = await api('/scheduler/schedule', 'POST', {
+          instanceName: instance,
+          to,
+          type,
+          content,
+          scheduledAt
+        });
+
+        showAlert('Mensagem agendada com sucesso!', 'success');
+        loadScheduledMessages();
+
+        // Limpar formulário
+        document.getElementById('scheduleText') && (document.getElementById('scheduleText').value = '');
+        document.getElementById('scheduleDateTime').value = '';
+      } catch (e) {
+        showAlert('Erro ao agendar: ' + e.message, 'error');
+      }
+    }
+
+    async function loadScheduledMessages() {
+      const instance = document.getElementById('scheduleFilterInstance').value;
+      const status = document.getElementById('scheduleFilterStatus').value;
+
+      if (!instance) {
+        document.getElementById('scheduledMessages').innerHTML = '<p style="color:#666">Selecione uma instância para ver as mensagens agendadas</p>';
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+
+        const data = await api(`/scheduler/list/${instance}?${params}`, 'GET');
+
+        const messagesDiv = document.getElementById('scheduledMessages');
+        if (!data.messages || data.messages.length === 0) {
+          messagesDiv.innerHTML = '<p style="color:#666">Nenhuma mensagem agendada encontrada</p>';
+          return;
+        }
+
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem">';
+        html += '<thead><tr style="background:#f8f9fa"><th style="padding:10px;text-align:left">Data/Hora</th><th style="padding:10px;text-align:left">Para</th><th style="padding:10px;text-align:left">Tipo</th><th style="padding:10px;text-align:left">Status</th><th style="padding:10px;text-align:left">Ações</th></tr></thead>';
+        html += '<tbody>';
+
+        data.messages.forEach(msg => {
+          const date = new Date(msg.scheduledAt).toLocaleString('pt-BR');
+          const statusColors = {
+            pending: '#ffc107',
+            sent: '#28a745',
+            failed: '#dc3545',
+            cancelled: '#6c757d'
+          };
+          const statusText = {
+            pending: 'Pendente',
+            sent: 'Enviado',
+            failed: 'Falhado',
+            cancelled: 'Cancelado'
+          };
+
+          html += `<tr style="border-bottom:1px solid #eee">
+            <td style="padding:10px">${date}</td>
+            <td style="padding:10px">${msg.to}</td>
+            <td style="padding:10px">${msg.type}</td>
+            <td style="padding:10px"><span style="background:${statusColors[msg.status]};color:white;padding:3px 10px;border-radius:10px;font-size:0.8rem">${statusText[msg.status]}</span></td>
+            <td style="padding:10px">
+              ${msg.status === 'pending' ? `<button class="btn btn-danger btn-sm" onclick="cancelSchedule('${msg.id}')">Cancelar</button>` : '-'}
+            </td>
+          </tr>`;
+        });
+
+        html += '</tbody></table>';
+        messagesDiv.innerHTML = html;
+      } catch (e) {
+        document.getElementById('scheduledMessages').innerHTML = `<p style="color:#dc3545">Erro ao carregar: ${e.message}</p>`;
+      }
+    }
+
+    async function cancelSchedule(messageId) {
+      if (!confirm('Deseja cancelar este agendamento?')) return;
+
+      try {
+        await api(`/scheduler/cancel/${messageId}`, 'DELETE');
+        showAlert('Agendamento cancelado!', 'success');
+        loadScheduledMessages();
+      } catch (e) {
+        showAlert('Erro ao cancelar: ' + e.message, 'error');
+      }
+    }
+
     // Carregar instâncias ao iniciar
     setTimeout(loadInstances, 500);
   </script>
