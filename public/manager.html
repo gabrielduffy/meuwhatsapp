@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp API Pro - Manager</title>
+  <title>WhatsBenemax - Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #075e54, #128c7e); min-height: 100vh; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #075e54, #128c7e); min-height: 100vh; }
     .header { background: rgba(0,0,0,0.2); padding: 20px; text-align: center; color: white; }
     .header h1 { font-size: 1.8rem; margin-bottom: 5px; }
     .header p { opacity: 0.9; }
@@ -66,16 +69,18 @@
   <div id="alerts"></div>
   
   <div class="header">
-    <h1>📱 WhatsApp API Pro</h1>
-    <p>Painel de Gerenciamento v2.0</p>
+    <h1>📱 WhatsBenemax</h1>
+    <p>Painel de Gerenciamento v2.1</p>
   </div>
   
   <div class="nav">
     <a href="#" class="active" onclick="showSection('instances')">📋 Instâncias</a>
     <a href="#" onclick="showSection('messages')">💬 Mensagens</a>
     <a href="#" onclick="showSection('groups')">👥 Grupos</a>
+    <a href="#" onclick="showSection('scheduler')">⏰ Agendamento</a>
     <a href="#" onclick="showSection('warming')">🔥 Aquecimento</a>
     <a href="#" onclick="showSection('tools')">🔧 Ferramentas</a>
+    <a href="/dashboard" target="_blank">📊 Dashboard</a>
     <a href="/docs" target="_blank">📖 Docs</a>
   </div>
   
