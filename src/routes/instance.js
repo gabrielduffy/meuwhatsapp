@@ -3,12 +3,13 @@ const router = express.Router();
 const { instanceLimiter } = require('../middlewares/rateLimit');
 const { validateInstance, requireConnected } = require('../middlewares/auth');
 const whatsapp = require('../services/whatsapp');
+const webhookAdvanced = require('../services/webhook-advanced');
 
 // Criar nova instância
 router.post('/create', instanceLimiter, async (req, res) => {
   try {
-    const { instanceName, proxy, token, markOnline, browser } = req.body;
-    
+    const { instanceName, proxy, token, markOnline, browser, webhookUrl, webhookConfig } = req.body;
+
     if (!instanceName) {
       return res.status(400).json({ error: 'instanceName é obrigatório' });
     }
@@ -25,6 +26,36 @@ router.post('/create', instanceLimiter, async (req, res) => {
       markOnline,
       browser
     });
+
+    // Configurar webhook se fornecido (opcional)
+    if (webhookUrl) {
+      try {
+        // Configurar webhook básico
+        whatsapp.setWebhook(instanceName, webhookUrl, webhookConfig?.eventTypes || ['all']);
+
+        // Se webhookConfig foi fornecido, configurar webhook avançado
+        if (webhookConfig) {
+          const advancedConfig = {
+            url: webhookUrl,
+            enabled: true,
+            maxRetries: webhookConfig.maxRetries || 3,
+            retryDelay: webhookConfig.retryDelay || 5000,
+            timeout: webhookConfig.timeout || 30000,
+            eventTypes: webhookConfig.eventTypes || ['message', 'message.update', 'message.receipt', 'connection.update', 'qr', 'group-participants.update']
+          };
+
+          webhookAdvanced.configureWebhook(instanceName, advancedConfig);
+          result.webhookConfigured = true;
+          result.webhookUrl = webhookUrl;
+        } else {
+          result.webhookConfigured = true;
+          result.webhookUrl = webhookUrl;
+        }
+      } catch (webhookError) {
+        console.error('Erro ao configurar webhook:', webhookError);
+        result.webhookError = webhookError.message;
+      }
+    }
 
     res.json(result);
   } catch (error) {
