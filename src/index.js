@@ -12,6 +12,8 @@ const chatRoutes = require('./routes/chat');
 const miscRoutes = require('./routes/misc');
 const webhookRoutes = require('./routes/webhook');
 const warmingRoutes = require('./routes/warming');
+const metricsRoutes = require('./routes/metrics');
+const schedulerRoutes = require('./routes/scheduler');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -19,6 +21,8 @@ const { rateLimiter } = require('./middlewares/rateLimit');
 
 // Importar serviços
 const { loadExistingSessions } = require('./services/whatsapp');
+const { initMetrics } = require('./services/metrics');
+const { initScheduler } = require('./services/scheduler');
 
 const app = express();
 
@@ -38,10 +42,10 @@ app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Rotas públicas (sem autenticação)
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '2.0.0',
+    version: '2.1.0',
     uptime: process.uptime()
   });
 });
@@ -55,12 +59,16 @@ app.get('/docs', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/docs.html'));
 });
 
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
 // Rate limiting
 app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
-  const publicPaths = ['/health', '/manager', '/docs', '/public'];
+  const publicPaths = ['/health', '/manager', '/docs', '/dashboard', '/public'];
   if (publicPaths.some(p => req.path.startsWith(p))) {
     return next();
   }
@@ -75,6 +83,8 @@ app.use('/chat', chatRoutes);
 app.use('/misc', miscRoutes);
 app.use('/webhook', webhookRoutes);
 app.use('/warming', warmingRoutes);
+app.use('/metrics', metricsRoutes);
+app.use('/scheduler', schedulerRoutes);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -90,23 +100,37 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗ █████╗ ██████╗  ║
-║   ██║    ██║██║  ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗ ║
-║   ██║ █╗ ██║███████║███████║   ██║   ███████╗███████║██████╔╝ ║
-║   ██║███╗██║██╔══██║██╔══██║   ██║   ╚════██║██╔══██║██╔═══╝  ║
-║   ╚███╔███╔╝██║  ██║██║  ██║   ██║   ███████║██║  ██║██║      ║
-║    ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝      ║
-║                     API PRO v2.0.0                            ║
-║                                                               ║
-╠═══════════════════════════════════════════════════════════════╣
-║  🌐 Servidor: http://localhost:${PORT}                          ║
-║  📖 Docs: http://localhost:${PORT}/docs                         ║
-║  🎛️  Manager: http://localhost:${PORT}/manager                  ║
-║  🔑 API Key: ${API_KEY.substring(0, 10)}...                              ║
-╚═══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗██████╗ ███████╗   ║
+║   ██║    ██║██║  ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔════╝   ║
+║   ██║ █╗ ██║███████║███████║   ██║   ███████╗██████╔╝█████╗     ║
+║   ██║███╗██║██╔══██║██╔══██║   ██║   ╚════██║██╔══██╗██╔══╝     ║
+║   ╚███╔███╔╝██║  ██║██║  ██║   ██║   ███████║██████╔╝███████╗   ║
+║    ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═════╝ ╚══════╝   ║
+║                                                                  ║
+║   ██████╗ ███████╗███╗   ██╗███████╗███████╗███╗   ███╗ █████╗  ║
+║   ██╔══██╗██╔════╝████╗  ██║██╔════╝██╔════╝████╗ ████║██╔══██╗ ║
+║   ██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║     ██╔████╔██║███████║ ║
+║   ██╔══██╗██╔══╝  ██║╚██╗██║██╔══╝  ██║     ██║╚██╔╝██║██╔══██║ ║
+║   ██████╔╝███████╗██║ ╚████║███████╗███████╗██║ ╚═╝ ██║██║  ██║ ║
+║   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ║
+║                        API v2.1.0                                ║
+║              🚀 Métricas | Agendamento | IA                      ║
+╠══════════════════════════════════════════════════════════════════╣
+║  🌐 Servidor: http://localhost:${PORT}                             ║
+║  📊 Dashboard: http://localhost:${PORT}/dashboard                  ║
+║  🎛️  Manager: http://localhost:${PORT}/manager                     ║
+║  📖 Docs: http://localhost:${PORT}/docs                            ║
+║  🔑 API Key: ${API_KEY.substring(0, 10)}...                                 ║
+╚══════════════════════════════════════════════════════════════════╝
   `);
+
+  // Inicializar sistema de métricas
+  initMetrics();
+
+  // Inicializar sistema de agendamento
+  initScheduler();
 
   // Carregar sessões existentes
   await loadExistingSessions();

@@ -6,6 +6,7 @@ const QRCode = require('qrcode');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const { v4: uuidv4 } = require('uuid');
+const { incrementMetric, updateConnectionStatus, createInstanceMetrics, removeInstanceMetrics } = require('./metrics');
 
 // Armazenamento das instâncias
 const instances = {};
@@ -97,6 +98,9 @@ async function createInstance(instanceName, options = {}) {
   instanceTokens[instanceName] = instanceToken;
   saveInstanceTokens();
 
+  // Criar métricas da instância
+  createInstanceMetrics(instanceName);
+
   // Eventos de conexão
   socket.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -128,6 +132,9 @@ async function createInstance(instanceName, options = {}) {
       instances[instanceName].user = socket.user;
       instances[instanceName].lastActivity = new Date().toISOString();
 
+      // Atualizar métricas de conexão
+      updateConnectionStatus(instanceName, 'connected');
+
       sendWebhook(instanceName, {
         event: 'connection',
         status: 'connected',
@@ -142,6 +149,9 @@ async function createInstance(instanceName, options = {}) {
       console.log(`[${instanceName}] Conexão fechada. Status: ${statusCode}. Reconectar: ${shouldReconnect}`);
 
       instances[instanceName].isConnected = false;
+
+      // Atualizar métricas de conexão
+      updateConnectionStatus(instanceName, 'disconnected');
 
       sendWebhook(instanceName, {
         event: 'connection',
@@ -193,8 +203,11 @@ async function createInstance(instanceName, options = {}) {
 
       if (!message.key.fromMe) {
         console.log(`[${instanceName}] Nova mensagem de ${message.key.remoteJid}`);
+
+        // Incrementar contador de mensagens recebidas
+        incrementMetric(instanceName, 'received');
       }
-      
+
       sendWebhook(instanceName, messageData);
     }
   });
@@ -339,6 +352,9 @@ async function deleteInstance(instanceName) {
     delete instanceTokens[instanceName];
     delete webhooks[instanceName];
     saveInstanceTokens();
+
+    // Remover métricas da instância
+    removeInstanceMetrics(instanceName);
   }
 
   const sessionPath = path.join(SESSIONS_DIR, instanceName);
@@ -422,7 +438,10 @@ async function sendText(instanceName, to, text, options = {}) {
 
   const result = await instance.socket.sendMessage(jid, messageOptions);
   instance.lastActivity = new Date().toISOString();
-  
+
+  // Incrementar métrica de mensagem enviada
+  incrementMetric(instanceName, 'sent', 1, 'text');
+
   return { success: true, messageId: result.key.id, key: result.key };
 }
 
@@ -451,7 +470,10 @@ async function sendImage(instanceName, to, imageUrl, caption = '', options = {})
 
   const result = await instance.socket.sendMessage(jid, messageOptions);
   instance.lastActivity = new Date().toISOString();
-  
+
+  // Incrementar métrica
+  incrementMetric(instanceName, 'sent', 1, 'image');
+
   return { success: true, messageId: result.key.id };
 }
 
@@ -472,6 +494,7 @@ async function sendDocument(instanceName, to, documentUrl, fileName, mimetype, c
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'document');
   return { success: true, messageId: result.key.id };
 }
 
@@ -497,6 +520,7 @@ async function sendAudio(instanceName, to, audioUrl, ptt = true, options = {}) {
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'audio');
   return { success: true, messageId: result.key.id };
 }
 
@@ -516,6 +540,7 @@ async function sendVideo(instanceName, to, videoUrl, caption = '', options = {})
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'video');
   return { success: true, messageId: result.key.id };
 }
 
@@ -533,6 +558,7 @@ async function sendSticker(instanceName, to, stickerUrl, options = {}) {
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'sticker');
   return { success: true, messageId: result.key.id };
 }
 
@@ -555,6 +581,7 @@ async function sendLocation(instanceName, to, latitude, longitude, name = '', ad
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'location');
   return { success: true, messageId: result.key.id };
 }
 
@@ -577,6 +604,7 @@ async function sendContact(instanceName, to, contactName, contactNumber, options
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'contact');
   return { success: true, messageId: result.key.id };
 }
 
@@ -645,6 +673,7 @@ async function sendPoll(instanceName, to, name, values, selectableCount = 1, opt
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'poll');
   return { success: true, messageId: result.key.id };
 }
 
@@ -667,6 +696,7 @@ async function sendReaction(instanceName, to, messageId, emoji) {
   });
 
   instance.lastActivity = new Date().toISOString();
+  incrementMetric(instanceName, 'sent', 1, 'reaction');
   return { success: true };
 }
 

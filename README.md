@@ -1,6 +1,6 @@
-# 📱 WhatsApp API Pro v2.0
+# 📱 WhatsBenemax v2.1
 
-API WhatsApp profissional multi-instância com aquecimento automático via IA.
+API WhatsApp profissional multi-instância com IA, métricas, agendamento e automação completa.
 
 ## ✨ Funcionalidades
 

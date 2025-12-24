@@ -1,7 +1,7 @@
 {
-  "name": "whatsapp-api-pro",
-  "version": "2.0.0",
-  "description": "API WhatsApp Profissional - Multi-instância com Aquecimento IA",
+  "name": "whatsbenemax-api",
+  "version": "2.1.0",
+  "description": "WhatsBenemax API - Multi-instância com IA, Métricas e Agendamento",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -21,7 +21,8 @@
     "express-rate-limit": "^7.5.0",
     "cors": "^2.8.5",
     "helmet": "^8.0.0",
-    "compression": "^1.7.5"
+    "compression": "^1.7.5",
+    "xlsx": "^0.18.5"
   },
   "engines": {
     "node": ">=18.0.0"
