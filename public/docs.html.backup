@@ -50,11 +50,6 @@
     <a href="#instancias">📋 Instâncias</a>
     <a href="#mensagens">💬 Mensagens</a>
     <a href="#grupos">👥 Grupos</a>
-    <a href="#metricas">📊 Métricas</a>
-    <a href="#agendamento">⏰ Agendamento</a>
-    <a href="#contatos">📇 Contatos</a>
-    <a href="#autoresposta">🤖 Auto-Resposta</a>
-    <a href="#broadcast">📢 Broadcast</a>
     <a href="#webhooks">🔔 Webhooks</a>
     <a href="#aquecimento">🔥 Aquecimento</a>
     <a href="#utils">🔧 Utils</a>
@@ -95,18 +90,11 @@ curl -X POST "<span class="base-url"></span>/message/send-text" \
       
       <div class="endpoint">
         <span class="method post">POST</span> <code>/instance/create</code>
-        <p>Criar nova instância (proxy e webhook opcionais)</p>
+        <p>Criar nova instância</p>
       </div>
       <pre>{
   "instanceName": "whats1",
-  "webhookUrl": "https://seu-servidor.com/webhook",  // OPCIONAL
-  "webhookConfig": {  // OPCIONAL - Se fornecido, configura webhook avançado
-    "maxRetries": 3,
-    "retryDelay": 5000,
-    "timeout": 30000,
-    "eventTypes": ["message", "connection.update"]
-  },
-  "proxy": {  // OPCIONAL
+  "proxy": {
     "host": "proxy.exemplo.com",
     "port": "8080",
     "username": "user",
@@ -500,164 +488,7 @@ curl -X POST "<span class="base-url"></span>/message/send-text" \
         <p>Status da API (sem autenticação)</p>
       </div>
     </div>
-
-    <!-- MÉTRICAS -->
-    <div class="section" id="metricas">
-      <h2>📊 Métricas & Dashboard</h2>
-      <p>Sistema de métricas em tempo real para monitoramento de instâncias.</p>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/metrics/all</code>
-        <p>Métricas de todas as instâncias</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/metrics/instance/:name</code>
-        <p>Métricas de uma instância específica</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/metrics/global</code>
-        <p>Métricas globais do sistema</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/metrics/export</code>
-        <p>Exportar métricas em CSV</p>
-      </div>
-
-      <div class="info-box success">
-        Dashboard visual disponível em <code>/dashboard</code>
-      </div>
-    </div>
-
-    <!-- AGENDAMENTO -->
-    <div class="section" id="agendamento">
-      <h2>⏰ Agendamento de Mensagens</h2>
-      <p>Agende mensagens para envio futuro com suporte a todos os tipos de mídia.</p>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/scheduler/schedule</code>
-        <p>Agendar nova mensagem</p>
-      </div>
-      <pre>{
-  "instanceName": "whats1",
-  "to": "5511999999999@s.whatsapp.net",
-  "type": "text",
-  "content": { "text": "Mensagem agendada!" },
-  "scheduledAt": "2025-12-25T10:00:00Z"
-}</pre>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/scheduler/list/:instanceName</code>
-        <p>Listar mensagens agendadas</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method delete">DELETE</span> <code>/scheduler/cancel/:messageId</code>
-        <p>Cancelar mensagem agendada</p>
-      </div>
-    </div>
-
-    <!-- CONTATOS -->
-    <div class="section" id="contatos">
-      <h2>📇 Gestão de Contatos</h2>
-      <p>Gerencie contatos com import/export e sincronização com WhatsApp.</p>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/contacts/list/:instanceName</code>
-        <p>Listar contatos</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/contacts/sync/:instanceName</code>
-        <p>Sincronizar com WhatsApp</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/contacts/export/:instanceName?format=csv</code>
-        <p>Exportar contatos (CSV, Excel, JSON)</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/contacts/import/:instanceName</code>
-        <p>Importar contatos de arquivo</p>
-      </div>
-    </div>
-
-    <!-- AUTO-RESPOSTA -->
-    <div class="section" id="autoresposta">
-      <h2>🤖 Auto-Resposta com IA</h2>
-      <p>Respostas automáticas inteligentes usando Groq (Llama 3.1).</p>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/autoresponder/configure</code>
-        <p>Configurar auto-resposta</p>
-      </div>
-      <pre>{
-  "instanceName": "whats1",
-  "config": {
-    "groqApiKey": "gsk_...",
-    "model": "llama-3.1-8b-instant",
-    "personality": "Atendente prestativo",
-    "context": "Sou uma loja de roupas",
-    "maxResponsesPerDay": 5
-  }
-}</pre>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/autoresponder/enable/:instanceName</code>
-        <p>Ativar auto-resposta</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/autoresponder/disable/:instanceName</code>
-        <p>Desativar auto-resposta</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/autoresponder/stats/:instanceName</code>
-        <p>Estatísticas de uso</p>
-      </div>
-    </div>
-
-    <!-- BROADCAST -->
-    <div class="section" id="broadcast">
-      <h2>📢 Broadcast (Disparo em Massa)</h2>
-      <p>Sistema anti-ban para envio em massa com controles inteligentes.</p>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/broadcast/create</code>
-        <p>Criar campanha de broadcast</p>
-      </div>
-      <pre>{
-  "instanceName": "whats1",
-  "name": "Campanha Black Friday",
-  "recipients": ["5511999999999", "5511888888888"],
-  "message": "Promoção especial!",
-  "config": {
-    "minDelay": 30,
-    "maxDelay": 60,
-    "maxMessagesPerHour": 20
-  }
-}</pre>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/broadcast/start/:campaignId</code>
-        <p>Iniciar campanha</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method post">POST</span> <code>/broadcast/pause/:campaignId</code>
-        <p>Pausar campanha</p>
-      </div>
-
-      <div class="endpoint">
-        <span class="method get">GET</span> <code>/broadcast/campaigns/:instanceName</code>
-        <p>Listar campanhas</p>
-      </div>
-    </div>
-
+    
     <!-- ERROS -->
     <div class="section">
       <h2>❌ Códigos de Erro</h2>

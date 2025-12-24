@@ -109,6 +109,10 @@
             <input type="text" id="newInstanceProxy" placeholder="host:port:user:pass">
           </div>
         </div>
+        <div class="form-group">
+          <label>Webhook URL (opcional) <small style="color:#666">- Configure webhook automaticamente ao criar</small></label>
+          <input type="text" id="newInstanceWebhook" placeholder="https://seu-servidor.com/webhook">
+        </div>
         <button class="btn btn-primary" onclick="createInstance()">Criar Instância</button>
       </div>
       
@@ -829,18 +833,39 @@
     async function createInstance() {
       const name = document.getElementById('newInstanceName').value.trim();
       if (!name) return showAlert('Digite o nome', 'error');
-      
+
       const proxyStr = document.getElementById('newInstanceProxy').value.trim();
       let proxy = null;
       if (proxyStr) {
         const parts = proxyStr.split(':');
         proxy = { host: parts[0], port: parts[1], username: parts[2], password: parts[3] };
       }
-      
+
+      const webhookUrl = document.getElementById('newInstanceWebhook').value.trim();
+
+      const payload = { instanceName: name, proxy };
+      if (webhookUrl) {
+        payload.webhookUrl = webhookUrl;
+        payload.webhookConfig = {
+          maxRetries: 3,
+          retryDelay: 5000,
+          timeout: 30000,
+          eventTypes: ['message', 'message.update', 'message.receipt', 'connection.update', 'qr', 'group-participants.update']
+        };
+      }
+
       try {
-        await api('/instance/create', 'POST', { instanceName: name, proxy });
-        showAlert('Instância criada!', 'success');
+        const result = await api('/instance/create', 'POST', payload);
+
+        if (result.webhookConfigured) {
+          showAlert(`Instância criada com webhook configurado! ✅`, 'success');
+        } else {
+          showAlert('Instância criada!', 'success');
+        }
+
         document.getElementById('newInstanceName').value = '';
+        document.getElementById('newInstanceProxy').value = '';
+        document.getElementById('newInstanceWebhook').value = '';
         loadInstances();
         setTimeout(() => showQR(name), 1000);
       } catch(e) {
