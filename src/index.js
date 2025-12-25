@@ -39,6 +39,7 @@ const agenteIARoutes = require('./rotas/agente-ia.rotas');
 const prospeccaoRoutes = require('./rotas/prospeccao.rotas');
 const chatInternoRoutes = require('./rotas/chat.rotas');
 const integracaoRoutes = require('./rotas/integracao.rotas');
+const crmRoutes = require('./rotas/crm.rotas');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -169,6 +170,7 @@ app.use('/api/prospeccao', prospeccaoRoutes);
 app.use('/api/chat', chatInternoRoutes);
 app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
 app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
+app.use('/api/crm', crmRoutes);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -230,6 +232,14 @@ async function initializeDatabase() {
       const chatSchema = fs.readFileSync(chatSchemaPath, 'utf8');
       await dbQuery(chatSchema);
       console.log('✅ Tabelas de Chat e Integrações criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de CRM Kanban
+    const crmSchemaPath = path.join(__dirname, 'config/crm-schema.sql');
+    if (fs.existsSync(crmSchemaPath)) {
+      const crmSchema = fs.readFileSync(crmSchemaPath, 'utf8');
+      await dbQuery(crmSchema);
+      console.log('✅ Tabelas de CRM Kanban criadas/verificadas com sucesso');
     }
 
     // Testar Redis
