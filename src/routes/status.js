@@ -56,6 +56,46 @@ router.get('/rss', async (req, res) => {
 
 // === API: STATUS ===
 
+// Endpoint de instalação manual do schema
+router.post('/api/install', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    const fs = require('fs');
+    const path = require('path');
+
+    const schemaPath = path.join(__dirname, '../../src/config/status-schema.sql');
+
+    if (!fs.existsSync(schemaPath)) {
+      return res.status(404).json({
+        error: 'Arquivo status-schema.sql não encontrado',
+        path: schemaPath
+      });
+    }
+
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+
+    // Executar o schema
+    await query(schema);
+
+    // Verificar se funcionou
+    const result = await query('SELECT COUNT(*) FROM status_services');
+    const count = parseInt(result.rows[0].count);
+
+    res.json({
+      success: true,
+      message: 'Schema executado com sucesso!',
+      services_count: count,
+      note: 'Tabelas de status criadas. Aguarde 1 minuto para os cron jobs coletarem dados.'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Debug endpoint para testar conexão e tabelas
 router.get('/api/debug', async (req, res) => {
   try {
