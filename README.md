@@ -51,13 +51,38 @@ API WhatsApp profissional multi-instância com IA, métricas, agendamento e auto
 - ✅ Proxy por instância
 - ✅ CORS e Helmet
 
+### 🗄️ Banco de Dados (Novo!)
+- ✅ **PostgreSQL** para persistência de dados
+- ✅ **Redis** para cache e filas
+- ✅ **Bull Queues** para processamento assíncrono
+- ✅ Repositories pattern para abstração de dados
+- ✅ Migração incremental (JSON como fallback)
+- ✅ Preparado para multi-tenant SaaS
+
+**📚 Documentação completa:** Veja [DATABASE.md](./DATABASE.md) para detalhes da infraestrutura.
+
 ## 🚀 Deploy no Easypanel
 
 ### 1. Criar Repositório no GitHub
 
 Faça upload de todos os arquivos para um repositório GitHub.
 
-### 2. Configurar no Easypanel
+### 2. Configurar Banco de Dados (Novo!)
+
+No Easypanel, crie os seguintes serviços:
+
+1. **PostgreSQL**
+   - Nome: `whatsbenemax-db`
+   - Versão: 16
+   - Database: `whatsbenemax`
+   - User/Password: configure conforme preferência
+
+2. **Redis**
+   - Nome: `whatsbenemax-redis`
+   - Versão: 7
+   - Password: configure conforme preferência
+
+### 3. Configurar no Easypanel
 
 1. Crie um novo App
 2. Source: GitHub → seu repositório
@@ -67,17 +92,22 @@ Faça upload de todos os arquivos para um repositório GitHub.
    - `PORT`: 3000
    - `SESSIONS_DIR`: /app/sessions
    - `DATA_DIR`: /app/data
+   - `DATABASE_URL`: postgresql://user:password@postgres:5432/whatsbenemax
+   - `REDIS_URL`: redis://:password@redis:6379
+   - `NODE_ENV`: production
 
 5. Volumes:
    - `/app/sessions` (persistir sessões)
-   - `/app/data` (persistir dados)
+   - `/app/data` (persistir dados - fallback JSON)
 
 6. Domains:
    - Port: 3000
 
-### 3. Deploy
+### 4. Deploy
 
 Clique em Deploy e aguarde o build.
+
+**Nota:** As tabelas PostgreSQL serão criadas automaticamente na primeira inicialização!
 
 ## 📖 Documentação
 
@@ -158,6 +188,9 @@ whatsapp-api-pro/
 | PORT | Porta do servidor | 3000 |
 | SESSIONS_DIR | Diretório de sessões | ./sessions |
 | DATA_DIR | Diretório de dados | ./data |
+| DATABASE_URL | Conexão PostgreSQL | postgresql://user:pass@host:5432/db |
+| REDIS_URL | Conexão Redis | redis://:password@host:6379 |
+| NODE_ENV | Ambiente (development/production) | development |
 
 ## 📝 Exemplos de Uso
 

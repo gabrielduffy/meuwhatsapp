@@ -3,6 +3,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
+const fs = require('fs');
+
+// Importar configurações de banco de dados
+const { query: dbQuery } = require('./config/database');
+const { redis, cache } = require('./config/redis');
 
 // Importar rotas
 const instanceRoutes = require('./routes/instance');
@@ -106,6 +111,35 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Erro interno do servidor' });
 });
 
+// ========== INICIALIZAÇÃO DO BANCO DE DADOS ==========
+async function initializeDatabase() {
+  try {
+    console.log('🔄 Inicializando banco de dados...');
+
+    // Verificar se o arquivo de schema existe
+    const schemaPath = path.join(__dirname, 'config/schema.sql');
+
+    if (fs.existsSync(schemaPath)) {
+      const schema = fs.readFileSync(schemaPath, 'utf8');
+
+      // Executar schema (criar tabelas, índices, triggers, etc)
+      await dbQuery(schema);
+
+      console.log('✅ Tabelas PostgreSQL criadas/verificadas com sucesso');
+    } else {
+      console.warn('⚠️  Arquivo schema.sql não encontrado, pulando criação de tabelas');
+    }
+
+    // Testar Redis
+    await redis.ping();
+    console.log('✅ Redis conectado e funcionando');
+
+  } catch (error) {
+    console.error('❌ Erro ao inicializar banco de dados:', error.message);
+    console.error('⚠️  O sistema continuará, mas funcionalidades de banco podem não funcionar');
+  }
+}
+
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`
@@ -135,6 +169,9 @@ app.listen(PORT, '0.0.0.0', async () => {
 ╚══════════════════════════════════════════════════════════════════╝
   `);
 
+  // Inicializar banco de dados PostgreSQL e Redis
+  await initializeDatabase();
+
   // Inicializar sistema de métricas
   initMetrics();
 
@@ -152,6 +189,8 @@ app.listen(PORT, '0.0.0.0', async () => {
 
   // Carregar sessões existentes
   await loadExistingSessions();
+
+  console.log('\n✅ Todos os sistemas inicializados com sucesso!\n');
 });
 
 module.exports = app;
