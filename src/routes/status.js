@@ -20,6 +20,10 @@ router.get('/subscribe', (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/status-subscribe.html'));
 });
 
+router.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/status-admin.html'));
+});
+
 // === RSS FEED ===
 
 router.get('/rss', async (req, res) => {
@@ -333,50 +337,70 @@ router.get('/api/maintenances', async (req, res) => {
   }
 });
 
+router.post('/api/maintenances', async (req, res) => {
+  try {
+    const { title, description, affected_services, scheduled_start, scheduled_end } = req.body;
+
+    if (!title || !scheduled_start || !scheduled_end) {
+      return res.status(400).json({ error: 'Título, data de início e fim são obrigatórios' });
+    }
+
+    const maintenance = await statusRepository.createMaintenance(
+      title,
+      description || '',
+      affected_services || [],
+      scheduled_start,
+      scheduled_end
+    );
+
+    res.json({
+      success: true,
+      message: 'Manutenção agendada com sucesso',
+      maintenance
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // === API: INSCRIÇÃO ===
 
 router.post('/api/subscribe', async (req, res) => {
   try {
-    const { email, telegram_chat_id, notify_on, services } = req.body;
+    const { email, notify_on, services } = req.body;
 
-    if (!email && !telegram_chat_id) {
-      return res.status(400).json({ error: 'Email ou Telegram é obrigatório' });
+    if (!email) {
+      return res.status(400).json({ error: 'Email é obrigatório' });
     }
 
-    if (email) {
-      const existing = await statusRepository.getSubscriberByEmail(email);
-      if (existing) {
-        return res.status(400).json({ error: 'Email já cadastrado' });
-      }
+    const existing = await statusRepository.getSubscriberByEmail(email);
+    if (existing) {
+      return res.status(400).json({ error: 'Email já cadastrado' });
     }
 
     const subscriber = await statusRepository.createSubscriber({
       email,
-      telegram_chat_id,
-      notify_email: !!email,
-      notify_telegram: !!telegram_chat_id,
+      telegram_chat_id: null,
+      notify_email: true,
+      notify_telegram: false,
       notify_on: notify_on || 'all',
       services: services || []
     });
 
-    if (email) {
-      const settings = await statusNotifier.getSettings();
-      await statusNotifier.sendEmail(
-        email,
-        `Confirme sua inscrição - ${settings.site_name}`,
-        `
-          <h2>Confirme sua inscrição</h2>
-          <p>Clique no link abaixo para confirmar sua inscrição e receber alertas de status:</p>
-          <p><a href="${settings.site_url}/status/verify/${subscriber.verification_token}">Confirmar inscrição</a></p>
-        `
-      );
-    } else {
-      await statusRepository.verifySubscriber(subscriber.verification_token);
-    }
+    const settings = await statusNotifier.getSettings();
+    await statusNotifier.sendEmail(
+      email,
+      `Confirme sua inscrição - ${settings.site_name}`,
+      `
+        <h2>Confirme sua inscrição</h2>
+        <p>Clique no link abaixo para confirmar sua inscrição e receber alertas de status:</p>
+        <p><a href="${settings.site_url}/status/verify/${subscriber.verification_token}">Confirmar inscrição</a></p>
+      `
+    );
 
     res.json({
       success: true,
-      message: email ? 'Verifique seu email para confirmar a inscrição' : 'Inscrição realizada com sucesso'
+      message: 'Verifique seu email para confirmar a inscrição'
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
