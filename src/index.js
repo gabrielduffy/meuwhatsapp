@@ -9,6 +9,9 @@ const fs = require('fs');
 const { query: dbQuery } = require('./config/database');
 const { redis, cache } = require('./config/redis');
 
+// Importar jobs de status (inicializa cron jobs)
+require('./jobs/statusChecker');
+
 // Importar rotas
 const instanceRoutes = require('./routes/instance');
 const messageRoutes = require('./routes/message');
@@ -22,6 +25,7 @@ const schedulerRoutes = require('./routes/scheduler');
 const contactsRoutes = require('./routes/contacts');
 const broadcastRoutes = require('./routes/broadcast');
 const autoresponderRoutes = require('./routes/autoresponder');
+const statusRoutes = require('./routes/status');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -79,7 +83,7 @@ app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
-  const publicPaths = ['/health', '/manager', '/docs', '/dashboard', '/public'];
+  const publicPaths = ['/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
   if (publicPaths.some(p => req.path.startsWith(p))) {
     return next();
   }
@@ -87,6 +91,7 @@ app.use((req, res, next) => {
 });
 
 // Registrar rotas
+app.use('/status', statusRoutes);
 app.use('/instance', instanceRoutes);
 app.use('/message', messageRoutes);
 app.use('/group', groupRoutes);
@@ -128,6 +133,14 @@ async function initializeDatabase() {
       console.log('✅ Tabelas PostgreSQL criadas/verificadas com sucesso');
     } else {
       console.warn('⚠️  Arquivo schema.sql não encontrado, pulando criação de tabelas');
+    }
+
+    // Executar schema de status
+    const statusSchemaPath = path.join(__dirname, 'config/status-schema.sql');
+    if (fs.existsSync(statusSchemaPath)) {
+      const statusSchema = fs.readFileSync(statusSchemaPath, 'utf8');
+      await dbQuery(statusSchema);
+      console.log('✅ Tabelas de Status criadas/verificadas com sucesso');
     }
 
     // Testar Redis
