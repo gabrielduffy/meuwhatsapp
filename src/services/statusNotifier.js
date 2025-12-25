@@ -57,29 +57,9 @@ const statusNotifier = {
   },
 
   async sendTelegram(chatId, message) {
-    try {
-      const settings = await this.getSettings();
-      if (!settings.telegram_bot_token) {
-        console.log('[Status] Telegram não configurado');
-        return false;
-      }
-
-      const url = `https://api.telegram.org/bot${settings.telegram_bot_token}/sendMessage`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-
-      return response.ok;
-    } catch (error) {
-      console.error('[Status] Erro ao enviar Telegram:', error.message);
-      return false;
-    }
+    // Telegram desabilitado - apenas email é suportado
+    console.log('[Status] Telegram desabilitado - notificação ignorada');
+    return false;
   },
 
   async notifyIncidentCreated(incident, service) {

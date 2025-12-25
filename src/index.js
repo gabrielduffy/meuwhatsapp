@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 // Importar configurações de banco de dados
 const { query: dbQuery } = require('./config/database');
@@ -12,7 +14,8 @@ const { redis, cache } = require('./config/redis');
 // Importar jobs de status (inicializa cron jobs)
 require('./jobs/statusChecker');
 
-// Importar rotas
+// Importar rotas existentes
+const autenticacaoRoutes = require('./rotas/autenticacao.rotas');
 const instanceRoutes = require('./routes/instance');
 const messageRoutes = require('./routes/message');
 const groupRoutes = require('./routes/group');
@@ -27,6 +30,16 @@ const broadcastRoutes = require('./routes/broadcast');
 const autoresponderRoutes = require('./routes/autoresponder');
 const statusRoutes = require('./routes/status');
 
+// Importar novas rotas SaaS
+const usuarioRoutes = require('./rotas/usuario.rotas');
+const empresaRoutes = require('./rotas/empresa.rotas');
+const planoRoutes = require('./rotas/plano.rotas');
+const contatoRoutes = require('./rotas/contato.rotas');
+const agenteIARoutes = require('./rotas/agente-ia.rotas');
+const prospeccaoRoutes = require('./rotas/prospeccao.rotas');
+const chatInternoRoutes = require('./rotas/chat.rotas');
+const integracaoRoutes = require('./rotas/integracao.rotas');
+
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
 const { rateLimiter } = require('./middlewares/rateLimit');
@@ -38,8 +51,48 @@ const { initScheduler } = require('./services/scheduler');
 const { initBroadcast } = require('./services/broadcast');
 const { initAutoResponder } = require('./services/autoresponder');
 const { initWebhookAdvanced } = require('./services/webhook-advanced');
+const chatServico = require('./servicos/chat.servico');
 
 const app = express();
+const httpServer = createServer(app);
+
+// Configurar Socket.io
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Configurar Socket.io no serviço de chat
+chatServico.configurarSocketIO(io);
+
+// Socket.io - Autenticação e gerenciamento de salas
+io.on('connection', (socket) => {
+  console.log('[Socket.io] Cliente conectado:', socket.id);
+
+  // Entrar em sala da empresa
+  socket.on('entrar_empresa', (empresaId) => {
+    socket.join(`empresa:${empresaId}`);
+    console.log(`[Socket.io] Socket ${socket.id} entrou na empresa ${empresaId}`);
+  });
+
+  // Entrar em sala de conversa
+  socket.on('entrar_conversa', (conversaId) => {
+    socket.join(`conversa:${conversaId}`);
+    console.log(`[Socket.io] Socket ${socket.id} entrou na conversa ${conversaId}`);
+  });
+
+  // Sair de sala de conversa
+  socket.on('sair_conversa', (conversaId) => {
+    socket.leave(`conversa:${conversaId}`);
+    console.log(`[Socket.io] Socket ${socket.id} saiu da conversa ${conversaId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[Socket.io] Cliente desconectado:', socket.id);
+  });
+});
 
 // Configurações
 const PORT = process.env.PORT || 3000;
@@ -90,7 +143,8 @@ app.use((req, res, next) => {
   authMiddleware(req, res, next);
 });
 
-// Registrar rotas
+// Registrar rotas existentes
+app.use('/api/autenticacao', autenticacaoRoutes);
 app.use('/status', statusRoutes);
 app.use('/instance', instanceRoutes);
 app.use('/message', messageRoutes);
@@ -104,6 +158,17 @@ app.use('/scheduler', schedulerRoutes);
 app.use('/contacts', contactsRoutes);
 app.use('/broadcast', broadcastRoutes);
 app.use('/autoresponder', autoresponderRoutes);
+
+// Registrar novas rotas SaaS
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/empresa', empresaRoutes);
+app.use('/api/planos', planoRoutes);
+app.use('/api/contatos', contatoRoutes);
+app.use('/api/agentes-ia', agenteIARoutes);
+app.use('/api/prospeccao', prospeccaoRoutes);
+app.use('/api/chat', chatInternoRoutes);
+app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
+app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -135,12 +200,36 @@ async function initializeDatabase() {
       console.warn('⚠️  Arquivo schema.sql não encontrado, pulando criação de tabelas');
     }
 
+    // Executar schema SaaS (multi-tenant, autenticação, etc)
+    const saasSchemaPath = path.join(__dirname, 'config/saas-schema.sql');
+    if (fs.existsSync(saasSchemaPath)) {
+      const saasSchema = fs.readFileSync(saasSchemaPath, 'utf8');
+      await dbQuery(saasSchema);
+      console.log('✅ Tabelas SaaS criadas/verificadas com sucesso');
+    }
+
     // Executar schema de status
     const statusSchemaPath = path.join(__dirname, 'config/status-schema.sql');
     if (fs.existsSync(statusSchemaPath)) {
       const statusSchema = fs.readFileSync(statusSchemaPath, 'utf8');
       await dbQuery(statusSchema);
       console.log('✅ Tabelas de Status criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de IA e Prospecção
+    const iaProspeccaoSchemaPath = path.join(__dirname, 'config/ia-prospeccao-schema.sql');
+    if (fs.existsSync(iaProspeccaoSchemaPath)) {
+      const iaProspeccaoSchema = fs.readFileSync(iaProspeccaoSchemaPath, 'utf8');
+      await dbQuery(iaProspeccaoSchema);
+      console.log('✅ Tabelas de IA e Prospecção criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de Chat e Integrações
+    const chatSchemaPath = path.join(__dirname, 'config/chat-schema.sql');
+    if (fs.existsSync(chatSchemaPath)) {
+      const chatSchema = fs.readFileSync(chatSchemaPath, 'utf8');
+      await dbQuery(chatSchema);
+      console.log('✅ Tabelas de Chat e Integrações criadas/verificadas com sucesso');
     }
 
     // Testar Redis
@@ -153,8 +242,8 @@ async function initializeDatabase() {
   }
 }
 
-// Iniciar servidor
-app.listen(PORT, '0.0.0.0', async () => {
+// Iniciar servidor (usar httpServer para suportar Socket.io)
+httpServer.listen(PORT, '0.0.0.0', async () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║

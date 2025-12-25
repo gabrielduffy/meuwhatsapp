@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Agendar Manutenção</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f8fafc; color: #1e293b; }
+
+    .header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 20px; }
+    .header-content { max-width: 700px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.5rem; font-weight: 700; color: #25d366; text-decoration: none; }
+    .back-link { color: #64748b; text-decoration: none; font-size: 0.9rem; }
+    .back-link:hover { color: #25d366; }
+
+    .container { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+
+    .page-header { text-align: center; margin-bottom: 40px; }
+    .page-header h1 { font-size: 2rem; margin-bottom: 10px; }
+    .page-header p { color: #64748b; }
+
+    .form-section { background: #fff; border-radius: 12px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 24px; }
+    .form-label { display: block; font-weight: 500; margin-bottom: 8px; color: #334155; }
+    .form-input, .form-textarea, .form-datetime { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; font-family: 'Poppins', sans-serif; }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-input:focus, .form-textarea:focus, .form-datetime:focus { outline: none; border-color: #25d366; }
+    .form-help { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+
+    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .checkbox-option { display: flex; align-items: center; gap: 8px; }
+    .checkbox-option input { cursor: pointer; }
+    .checkbox-option label { cursor: pointer; font-size: 0.9rem; }
+
+    .submit-btn { width: 100%; background: linear-gradient(135deg, #25d366, #128c7e); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: transform 0.2s; }
+    .submit-btn:hover { transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .alert { padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+    .alert.success { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+    .alert.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+    .footer { text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 0.85rem; }
+    .footer a { color: #25d366; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <a href="/status" class="logo">🔧 Admin - Manutenções</a>
+      <a href="/status" class="back-link">← Voltar</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>📅 Agendar Manutenção</h1>
+      <p>Programe uma janela de manutenção para notificar os usuários</p>
+    </div>
+
+    <div id="alertMessage" style="display: none;"></div>
+
+    <div class="form-section">
+      <form id="maintenanceForm">
+        <div class="form-group">
+          <label class="form-label" for="title">Título da Manutenção *</label>
+          <input type="text" id="title" name="title" class="form-input" placeholder="Ex: Atualização do banco de dados" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Descrição</label>
+          <textarea id="description" name="description" class="form-textarea" placeholder="Descreva o que será feito durante a manutenção (opcional)"></textarea>
+          <p class="form-help">Opcional - Será exibido aos usuários na página de status</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="scheduled_start">Data e Hora de Início *</label>
+          <input type="datetime-local" id="scheduled_start" name="scheduled_start" class="form-datetime" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="scheduled_end">Data e Hora de Término *</label>
+          <input type="datetime-local" id="scheduled_end" name="scheduled_end" class="form-datetime" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Serviços Afetados</label>
+          <div class="checkbox-grid" id="servicesList">
+            <p style="color: #94a3b8;">Carregando serviços...</p>
+          </div>
+          <p class="form-help">Deixe vazio para afetar todos os serviços</p>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Agendar Manutenção</button>
+      </form>
+    </div>
+
+    <div class="form-section" style="background: #eff6ff;">
+      <h3 style="margin-bottom: 12px; color: #1e40af;">💡 Como funciona</h3>
+      <ul style="color: #475569; font-size: 0.9rem; line-height: 1.8;">
+        <li><strong>Agendamento:</strong> A manutenção será automaticamente marcada como "Em andamento" quando o horário de início chegar</li>
+        <li><strong>Notificações:</strong> Todos os inscritos por email serão notificados</li>
+        <li><strong>Status Page:</strong> A manutenção aparecerá na página principal de status</li>
+        <li><strong>Término:</strong> Será automaticamente marcada como "Concluída" no horário de término</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by <a href="/docs">WhatsBenemax API</a> · <a href="/status">Página de Status</a>
+  </div>
+
+  <script>
+    async function loadServices() {
+      try {
+        const response = await fetch('/status/api/services');
+        const data = await response.json();
+
+        const container = document.getElementById('servicesList');
+
+        if (!data.services || data.services.length === 0) {
+          container.innerHTML = '<p style="color: #94a3b8;">Nenhum serviço disponível</p>';
+          return;
+        }
+
+        container.innerHTML = data.services.map(s => `
+          <div class="checkbox-option">
+            <input type="checkbox" id="service_${s.id}" name="services" value="${s.id}">
+            <label for="service_${s.id}">${s.name}</label>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Erro ao carregar serviços:', error);
+      }
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.getElementById('alertMessage');
+      alertDiv.className = `alert ${type}`;
+      alertDiv.innerHTML = message;
+      alertDiv.style.display = 'block';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Agendando...';
+
+      try {
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const scheduled_start = document.getElementById('scheduled_start').value;
+        const scheduled_end = document.getElementById('scheduled_end').value;
+
+        if (!title || !scheduled_start || !scheduled_end) {
+          showAlert('Por favor, preencha todos os campos obrigatórios', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Agendar Manutenção';
+          return;
+        }
+
+        // Validar datas
+        const start = new Date(scheduled_start);
+        const end = new Date(scheduled_end);
+
+        if (end <= start) {
+          showAlert('A data de término deve ser posterior à data de início', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Agendar Manutenção';
+          return;
+        }
+
+        const formData = {
+          title,
+          description,
+          scheduled_start: start.toISOString(),
+          scheduled_end: end.toISOString(),
+          affected_services: Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => parseInt(cb.value))
+        };
+
+        const response = await fetch('/status/api/maintenances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert(`✅ ${result.message}<br><br><a href="/status/maintenance" style="color: #166534; text-decoration: underline;">Ver manutenções agendadas</a>`, 'success');
+          document.getElementById('maintenanceForm').reset();
+        } else {
+          showAlert(`❌ Erro: ${result.error || 'Não foi possível agendar a manutenção'}`, 'error');
+        }
+      } catch (error) {
+        console.error('Erro ao agendar:', error);
+        showAlert('❌ Erro ao processar agendamento. Tente novamente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Agendar Manutenção';
+      }
+    });
+
+    loadServices();
+  </script>
+</body>
+</html>

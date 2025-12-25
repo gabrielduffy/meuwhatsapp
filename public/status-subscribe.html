@@ -73,7 +73,6 @@
         <a href="/status">Status</a>
         <a href="/status/maintenance">Manutenções</a>
         <a href="/status/subscribe" class="active">Receber Alertas</a>
-        <a href="/status/rss">📡 RSS</a>
       </nav>
     </div>
   </div>
@@ -86,32 +85,12 @@
 
     <div id="alertMessage" style="display: none;"></div>
 
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('email')">📧 Email</div>
-      <div class="tab" onclick="switchTab('telegram')">💬 Telegram</div>
-    </div>
-
     <div class="form-section">
       <form id="subscribeForm">
-        <div id="emailFields">
-          <div class="form-group">
-            <label class="form-label" for="email">Email</label>
-            <input type="email" id="email" name="email" class="form-input" placeholder="seu@email.com">
-            <p class="form-help">Você receberá um email de confirmação</p>
-          </div>
-        </div>
-
-        <div id="telegramFields" style="display: none;">
-          <div class="form-group">
-            <label class="form-label" for="telegram_chat_id">Telegram Chat ID</label>
-            <input type="text" id="telegram_chat_id" name="telegram_chat_id" class="form-input" placeholder="123456789">
-            <p class="form-help">
-              Como obter seu Chat ID:<br>
-              1. Abra <a href="https://t.me/userinfobot" target="_blank" style="color: #25d366;">@userinfobot</a> no Telegram<br>
-              2. Envie /start<br>
-              3. Copie o número do seu Chat ID
-            </p>
-          </div>
+        <div class="form-group">
+          <label class="form-label" for="email">📧 Email</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="seu@email.com" required>
+          <p class="form-help">Você receberá um email de confirmação</p>
         </div>
 
         <div class="form-group">
@@ -159,23 +138,6 @@
   </div>
 
   <script>
-    let currentTab = 'email';
-
-    function switchTab(tab) {
-      currentTab = tab;
-
-      // Update tab buttons
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-
-      // Update form fields
-      document.getElementById('emailFields').style.display = tab === 'email' ? 'block' : 'none';
-      document.getElementById('telegramFields').style.display = tab === 'telegram' ? 'block' : 'none';
-
-      // Clear previous values
-      document.getElementById('email').value = '';
-      document.getElementById('telegram_chat_id').value = '';
-    }
 
     async function loadServices() {
       try {
@@ -220,30 +182,19 @@
       submitBtn.textContent = 'Processando...';
 
       try {
+        const email = document.getElementById('email').value.trim();
+        if (!email) {
+          showAlert('Por favor, insira um email válido', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Inscrever-se';
+          return;
+        }
+
         const formData = {
+          email: email,
           notify_on: document.querySelector('input[name="notify_on"]:checked').value,
           services: Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => parseInt(cb.value))
         };
-
-        if (currentTab === 'email') {
-          const email = document.getElementById('email').value.trim();
-          if (!email) {
-            showAlert('Por favor, insira um email válido', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Inscrever-se';
-            return;
-          }
-          formData.email = email;
-        } else {
-          const chatId = document.getElementById('telegram_chat_id').value.trim();
-          if (!chatId) {
-            showAlert('Por favor, insira um Chat ID válido', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Inscrever-se';
-            return;
-          }
-          formData.telegram_chat_id = chatId;
-        }
 
         const response = await fetch('/status/api/subscribe', {
           method: 'POST',
@@ -254,12 +205,7 @@
         const result = await response.json();
 
         if (response.ok) {
-          showAlert(
-            currentTab === 'email'
-              ? '✅ Inscrição realizada! Verifique seu email para confirmar.'
-              : '✅ Inscrição realizada com sucesso! Você começará a receber alertas no Telegram.',
-            'success'
-          );
+          showAlert('✅ Inscrição realizada! Verifique seu email para confirmar.', 'success');
           document.getElementById('subscribeForm').reset();
         } else {
           showAlert(`❌ Erro: ${result.error || 'Não foi possível processar sua inscrição'}`, 'error');
