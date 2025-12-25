@@ -164,7 +164,11 @@
     async function loadStatus() {
       try {
         const response = await fetch('/status/api/current');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const data = await response.json();
+        console.log('Status data loaded:', data);
 
         document.getElementById('overallTitle').textContent = overallLabels[data.overall] || 'Status desconhecido';
         const badge = document.getElementById('overallBadge');
@@ -199,11 +203,27 @@
           `).join('');
         }
 
-        await renderServices(data.services);
+        if (data.services && Array.isArray(data.services)) {
+          await renderServices(data.services);
+        } else {
+          console.warn('No services data received');
+          document.getElementById('servicesList').innerHTML = '<p class="empty-state">Nenhum serviço configurado ainda</p>';
+        }
         await loadIncidentHistory();
 
       } catch (error) {
         console.error('Erro ao carregar status:', error);
+        document.getElementById('overallTitle').textContent = 'Erro ao carregar status';
+        document.getElementById('lastUpdated').textContent = error.message;
+        document.getElementById('servicesList').innerHTML = `
+          <div style="text-align: center; padding: 40px; color: #ef4444;">
+            <p><strong>⚠️ Erro ao carregar dados</strong></p>
+            <p style="font-size: 0.9rem;">${error.message}</p>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 12px;">
+              Verifique o console do navegador (F12) para mais detalhes
+            </p>
+          </div>
+        `;
       }
     }
 

@@ -76,4 +76,22 @@ cron.schedule('* * * * *', async () => {
 
 console.log('[Status] Jobs de monitoramento iniciados');
 
+// Executar check inicial imediatamente
+(async () => {
+  try {
+    console.log('[Status] Executando check inicial...');
+    const results = await statusMonitor.runAllChecks();
+
+    // Salvar checks iniciais
+    for (const [slug, result] of Object.entries(results)) {
+      await statusRepository.saveCheck(slug, result);
+    }
+
+    lastResults = results;
+    console.log('[Status] Check inicial concluído com sucesso');
+  } catch (error) {
+    console.error('[Status] Erro no check inicial:', error.message);
+  }
+})();
+
 module.exports = {};
