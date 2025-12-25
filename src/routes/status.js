@@ -56,8 +56,8 @@ router.get('/rss', async (req, res) => {
 
 // === API: STATUS ===
 
-// Endpoint de instalação manual do schema
-router.post('/api/install', async (req, res) => {
+// Endpoint de instalação manual do schema (GET para facilitar acesso via browser)
+router.get('/api/install', async (req, res) => {
   try {
     const { query } = require('../config/database');
     const fs = require('fs');
@@ -66,10 +66,16 @@ router.post('/api/install', async (req, res) => {
     const schemaPath = path.join(__dirname, '../../src/config/status-schema.sql');
 
     if (!fs.existsSync(schemaPath)) {
-      return res.status(404).json({
-        error: 'Arquivo status-schema.sql não encontrado',
-        path: schemaPath
-      });
+      return res.send(`
+        <html>
+          <head><title>Erro - Schema não encontrado</title></head>
+          <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+            <h1>❌ Erro</h1>
+            <p>Arquivo status-schema.sql não encontrado</p>
+            <p style="color: #666;">${schemaPath}</p>
+          </body>
+        </html>
+      `);
     }
 
     const schema = fs.readFileSync(schemaPath, 'utf8');
@@ -81,18 +87,51 @@ router.post('/api/install', async (req, res) => {
     const result = await query('SELECT COUNT(*) FROM status_services');
     const count = parseInt(result.rows[0].count);
 
-    res.json({
-      success: true,
-      message: 'Schema executado com sucesso!',
-      services_count: count,
-      note: 'Tabelas de status criadas. Aguarde 1 minuto para os cron jobs coletarem dados.'
-    });
+    // Retornar página HTML de sucesso
+    res.send(`
+      <html>
+        <head>
+          <title>✅ Instalação Concluída</title>
+          <meta http-equiv="refresh" content="5;url=/status">
+        </head>
+        <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+          <h1 style="color: #22c55e;">✅ Schema Instalado com Sucesso!</h1>
+          <p style="font-size: 1.2rem; margin: 20px 0;">
+            ${count} serviços foram configurados no banco de dados
+          </p>
+          <p style="color: #64748b;">
+            Aguarde 1 minuto para os cron jobs coletarem os dados...
+          </p>
+          <p style="margin-top: 30px;">
+            <a href="/status" style="background: #25d366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Ir para Status Page
+            </a>
+          </p>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 20px;">
+            Você será redirecionado automaticamente em 5 segundos...
+          </p>
+        </body>
+      </html>
+    `);
 
   } catch (error) {
-    res.status(500).json({
-      error: error.message,
-      stack: error.stack
-    });
+    res.send(`
+      <html>
+        <head><title>❌ Erro na Instalação</title></head>
+        <body style="font-family: sans-serif; padding: 40px;">
+          <h1 style="color: #ef4444;">❌ Erro ao Instalar Schema</h1>
+          <p><strong>Mensagem de erro:</strong></p>
+          <pre style="background: #f1f5f9; padding: 20px; border-radius: 6px; overflow-x: auto;">${error.message}</pre>
+          <details style="margin-top: 20px;">
+            <summary style="cursor: pointer; color: #3b82f6;">Ver stack trace completo</summary>
+            <pre style="background: #f1f5f9; padding: 20px; border-radius: 6px; margin-top: 10px; overflow-x: auto;">${error.stack}</pre>
+          </details>
+          <p style="margin-top: 30px;">
+            <a href="/status" style="color: #3b82f6;">← Voltar para Status Page</a>
+          </p>
+        </body>
+      </html>
+    `);
   }
 });
 
