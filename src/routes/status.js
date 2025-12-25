@@ -56,6 +56,96 @@ router.get('/rss', async (req, res) => {
 
 // === API: STATUS ===
 
+// Debug endpoint para testar conexão e tabelas
+router.get('/api/debug', async (req, res) => {
+  try {
+    const debug = {
+      timestamp: new Date().toISOString(),
+      tests: {}
+    };
+
+    // Teste 1: Verificar se a tabela status_services existe
+    try {
+      const servicesResult = await statusRepository.getAllServices();
+      debug.tests.services_table = {
+        success: true,
+        count: servicesResult.length,
+        data: servicesResult
+      };
+    } catch (e) {
+      debug.tests.services_table = {
+        success: false,
+        error: e.message
+      };
+    }
+
+    // Teste 2: Verificar status_checks
+    try {
+      const { query } = require('../config/database');
+      const result = await query('SELECT COUNT(*) FROM status_checks');
+      debug.tests.checks_table = {
+        success: true,
+        count: parseInt(result.rows[0].count)
+      };
+    } catch (e) {
+      debug.tests.checks_table = {
+        success: false,
+        error: e.message
+      };
+    }
+
+    // Teste 3: Verificar getCurrentStatus
+    try {
+      const current = await statusRepository.getCurrentStatus();
+      debug.tests.current_status = {
+        success: true,
+        count: current.length,
+        data: current
+      };
+    } catch (e) {
+      debug.tests.current_status = {
+        success: false,
+        error: e.message
+      };
+    }
+
+    // Teste 4: Verificar incidentes
+    try {
+      const incidents = await statusRepository.getActiveIncidents();
+      debug.tests.active_incidents = {
+        success: true,
+        count: incidents.length
+      };
+    } catch (e) {
+      debug.tests.active_incidents = {
+        success: false,
+        error: e.message
+      };
+    }
+
+    // Teste 5: Verificar manutenções
+    try {
+      const maintenances = await statusRepository.getScheduledMaintenances();
+      debug.tests.scheduled_maintenances = {
+        success: true,
+        count: maintenances.length
+      };
+    } catch (e) {
+      debug.tests.scheduled_maintenances = {
+        success: false,
+        error: e.message
+      };
+    }
+
+    res.json(debug);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 router.get('/api/current', async (req, res) => {
   try {
     const services = await statusRepository.getCurrentStatus();
