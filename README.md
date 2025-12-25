@@ -61,6 +61,19 @@ API WhatsApp profissional multi-instância com IA, métricas, agendamento e auto
 
 **📚 Documentação completa:** Veja [DATABASE.md](./DATABASE.md) para detalhes da infraestrutura.
 
+### 📊 Status Page (Novo!)
+- ✅ Monitoramento de 7 serviços em tempo real
+- ✅ Histórico de uptime de 90 dias
+- ✅ Detecção automática de incidentes
+- ✅ Notificações por Email e Telegram
+- ✅ Manutenções agendadas
+- ✅ RSS Feed de incidentes
+- ✅ Sistema de inscrição para alertas
+
+**📚 Documentação completa:** Veja [STATUS.md](./STATUS.md) para instruções de configuração.
+
+**🌐 Acesse:** `http://seudominio/status`
+
 ## 🚀 Deploy no Easypanel
 
 ### 1. Criar Repositório no GitHub
