@@ -13,6 +13,7 @@ const { redis, cache } = require('./config/redis');
 require('./jobs/statusChecker');
 
 // Importar rotas
+const autenticacaoRoutes = require('./rotas/autenticacao.rotas');
 const instanceRoutes = require('./routes/instance');
 const messageRoutes = require('./routes/message');
 const groupRoutes = require('./routes/group');
@@ -91,6 +92,7 @@ app.use((req, res, next) => {
 });
 
 // Registrar rotas
+app.use('/api/autenticacao', autenticacaoRoutes);
 app.use('/status', statusRoutes);
 app.use('/instance', instanceRoutes);
 app.use('/message', messageRoutes);
@@ -133,6 +135,14 @@ async function initializeDatabase() {
       console.log('✅ Tabelas PostgreSQL criadas/verificadas com sucesso');
     } else {
       console.warn('⚠️  Arquivo schema.sql não encontrado, pulando criação de tabelas');
+    }
+
+    // Executar schema SaaS (multi-tenant, autenticação, etc)
+    const saasSchemaPath = path.join(__dirname, 'config/saas-schema.sql');
+    if (fs.existsSync(saasSchemaPath)) {
+      const saasSchema = fs.readFileSync(saasSchemaPath, 'utf8');
+      await dbQuery(saasSchema);
+      console.log('✅ Tabelas SaaS criadas/verificadas com sucesso');
     }
 
     // Executar schema de status

@@ -27,7 +27,9 @@
     "ioredis": "^5.3.2",
     "bull": "^4.12.0",
     "nodemailer": "^6.9.8",
-    "rss": "^1.2.2"
+    "rss": "^1.2.2",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
   },
   "engines": {
     "node": ">=18.0.0"
