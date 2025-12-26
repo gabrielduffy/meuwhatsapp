@@ -9,7 +9,7 @@
 CREATE TABLE IF NOT EXISTS agentes_ia (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
-  instancia_id UUID REFERENCES instancias_whatsapp(id) ON DELETE CASCADE,
+  instancia_id UUID,  -- Referência à tabela instances (instance_name)
 
   nome VARCHAR(100) NOT NULL,
   ativo BOOLEAN DEFAULT false,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS mensagens_ia (
 CREATE TABLE IF NOT EXISTS campanhas_prospeccao (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
-  instancia_id UUID REFERENCES instancias_whatsapp(id),
+  instancia_id UUID,  -- Referência à tabela instances (instance_name)
 
   nome VARCHAR(200) NOT NULL,
 

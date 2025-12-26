@@ -9,7 +9,7 @@
 CREATE TABLE IF NOT EXISTS conversas_chat (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
-  instancia_id UUID REFERENCES instancias_whatsapp(id) ON DELETE CASCADE,
+  instancia_id UUID,  -- Referência à tabela instances (instance_name)
   contato_id UUID REFERENCES contatos(id) ON DELETE CASCADE,
 
   -- Status
