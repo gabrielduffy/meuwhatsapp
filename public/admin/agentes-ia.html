@@ -14,29 +14,36 @@
   <div id="headerContainer"></div>
 
   <main class="app-main">
-    <h1 class="page-title mb-6">Agentes IA - Visão Global</h1>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Agentes IA</h1>
+        <p class="page-subtitle">Gerencie agentes de inteligência artificial</p>
+      </div>
+      <button class="btn btn-primary" onclick="Agents.openCreateModal()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Novo Agente
+      </button>
+    </div>
 
     <!-- Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Total Agentes</p>
-        <h3 class="text-2xl font-bold text-purple-600">234</h3>
+        <h3 class="text-2xl font-bold text-purple-600" id="statTotal">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Ativos</p>
-        <h3 class="text-2xl font-bold text-green-600">198</h3>
+        <p class="text-sm text-gray-500 mb-1">Agentes Ativos</p>
+        <h3 class="text-2xl font-bold text-green-600" id="statAtivos">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Conversas Hoje</p>
-        <h3 class="text-2xl font-bold text-blue-600">5.234</h3>
+        <p class="text-sm text-gray-500 mb-1">Processamentos Hoje</p>
+        <h3 class="text-2xl font-bold text-blue-600" id="statProcessamentos">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Taxa Resolução</p>
-        <h3 class="text-2xl font-bold text-green-600">82.5%</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Satisfação Média</p>
-        <h3 class="text-2xl font-bold text-yellow-600">4.6/5</h3>
+        <p class="text-sm text-gray-500 mb-1">Taxa de Sucesso</p>
+        <h3 class="text-2xl font-bold text-yellow-600" id="statTaxa">95%</h3>
       </div>
     </div>
 
@@ -45,38 +52,21 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Agente</th>
-            <th>Empresa</th>
-            <th>Tipo</th>
-            <th>Conversas Hoje</th>
-            <th>Taxa Resolução</th>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Modelo</th>
+            <th>Processamentos</th>
+            <th>Última Execução</th>
             <th>Status</th>
+            <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="agentsTable">
           <tr>
-            <td class="font-semibold">Atendente Virtual</td>
-            <td>Tech Solutions</td>
-            <td><span class="badge badge-secondary">Atendimento</span></td>
-            <td>456</td>
-            <td class="text-green-600 font-semibold">85%</td>
-            <td><span class="badge badge-success">Ativo</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Vendedor Bot</td>
-            <td>Varejo Premium</td>
-            <td><span class="badge badge-secondary">Vendas</span></td>
-            <td>324</td>
-            <td class="text-green-600 font-semibold">78%</td>
-            <td><span class="badge badge-success">Ativo</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Suporte IA</td>
-            <td>E-commerce Plus</td>
-            <td><span class="badge badge-secondary">Suporte</span></td>
-            <td>289</td>
-            <td class="text-green-600 font-semibold">88%</td>
-            <td><span class="badge badge-success">Ativo</span></td>
+            <td colspan="7" class="text-center text-gray-500 py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p class="mt-2">Carregando agentes...</p>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -86,10 +76,305 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('agentes-ia');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('agentes-ia');
+
+const Agents = {
+  allAgents: [],
+
+  async init() {
+    await this.loadAgents();
+  },
+
+  async loadAgents() {
+    try {
+      const response = await API.get('/api/agentes-ia');
+      this.allAgents = response.agentes || response || [];
+
+      this.renderTable();
+      this.updateStats();
+    } catch (error) {
+      console.error('[Agents] Erro ao carregar:', error);
+      Toast.error('Erro ao carregar agentes');
+      document.getElementById('agentsTable').innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-red-500 py-8">
+            Erro ao carregar agentes. Tente novamente.
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  renderTable() {
+    const tbody = document.getElementById('agentsTable');
+
+    if (this.allAgents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-gray-500 py-8">
+            Nenhum agente encontrado. Crie seu primeiro agente!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.allAgents.map(agent => `
+      <tr>
+        <td class="font-semibold">${agent.nome || '-'}</td>
+        <td class="text-sm">${agent.descricao || '-'}</td>
+        <td class="text-sm"><span class="badge badge-secondary">${agent.modelo || 'GPT-3.5'}</span></td>
+        <td class="text-sm">${agent.total_processamentos || 0}</td>
+        <td class="text-sm">${this.formatDate(agent.ultima_execucao)}</td>
+        <td>
+          <span class="badge ${agent.ativo ? 'badge-success' : 'badge-error'}">
+            ${agent.ativo ? 'Ativo' : 'Inativo'}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-primary" onclick="Agents.testAgent(${agent.id})" title="Testar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="Agents.openEditModal(${agent.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm ${agent.ativo ? 'btn-warning' : 'btn-success'}"
+              onclick="Agents.toggleStatus(${agent.id}, ${agent.ativo})"
+              title="${agent.ativo ? 'Desativar' : 'Ativar'}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${agent.ativo ? `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                ` : `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                `}
+              </svg>
+            </button>
+            <button class="btn-sm btn-danger" onclick="Agents.deleteAgent(${agent.id})" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  updateStats() {
+    document.getElementById('statTotal').textContent = this.allAgents.length;
+    document.getElementById('statAtivos').textContent = this.allAgents.filter(a => a.ativo).length;
+
+    const totalProc = this.allAgents.reduce((sum, a) => sum + (a.total_processamentos || 0), 0);
+    document.getElementById('statProcessamentos').textContent = totalProc;
+  },
+
+  formatDate(dateString) {
+    if (!dateString) return 'Nunca';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+
+    if (hours < 1) return 'Agora há pouco';
+    if (hours < 24) return `${hours}h atrás`;
+
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  },
+
+  openCreateModal() {
+    Modal.form({
+      id: 'modal-create-agent',
+      title: 'Criar Novo Agente IA',
+      size: 'lg',
+      fields: [
+        { name: 'nome', label: 'Nome do Agente', type: 'text', required: true, placeholder: 'Ex: Atendente Virtual' },
+        { name: 'descricao', label: 'Descrição', type: 'textarea', placeholder: 'Descrição do agente e suas funções' },
+        {
+          name: 'modelo',
+          label: 'Modelo de IA',
+          type: 'select',
+          required: true,
+          defaultValue: 'gpt-3.5-turbo',
+          options: [
+            { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Rápido e Econômico)' },
+            { value: 'gpt-4', label: 'GPT-4 (Mais Inteligente)' },
+            { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (Equilibrado)' }
+          ]
+        },
+        { name: 'prompt_sistema', label: 'Prompt do Sistema', type: 'textarea', required: true, placeholder: 'Instruções para o agente...', help: 'Define o comportamento e personalidade do agente' },
+        { name: 'temperatura', label: 'Temperatura (Criatividade)', type: 'number', defaultValue: '0.7', min: 0, max: 2, help: '0 = Mais determinístico, 2 = Mais criativo' },
+        { name: 'max_tokens', label: 'Máximo de Tokens', type: 'number', defaultValue: '500', min: 50, max: 4000 },
+        { name: 'ativo', label: 'Agente ativo', type: 'checkbox', defaultValue: true }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando agente...');
+
+          await API.post('/api/agentes-ia', data);
+
+          Modal.closeLoading();
+          Toast.success('Agente criado com sucesso!');
+          await this.loadAgents();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar agente');
+          return false;
+        }
+      }
+    });
+  },
+
+  async openEditModal(agentId) {
+    try {
+      Modal.loading('Carregando agente...');
+
+      const response = await API.get(`/api/agentes-ia/${agentId}`);
+      const agent = response.agente || response;
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-agent',
+        title: 'Editar Agente IA',
+        size: 'lg',
+        data: agent,
+        fields: [
+          { name: 'nome', label: 'Nome do Agente', type: 'text', required: true },
+          { name: 'descricao', label: 'Descrição', type: 'textarea' },
+          {
+            name: 'modelo',
+            label: 'Modelo de IA',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Rápido e Econômico)' },
+              { value: 'gpt-4', label: 'GPT-4 (Mais Inteligente)' },
+              { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (Equilibrado)' }
+            ]
+          },
+          { name: 'prompt_sistema', label: 'Prompt do Sistema', type: 'textarea', required: true },
+          { name: 'temperatura', label: 'Temperatura', type: 'number', min: 0, max: 2 },
+          { name: 'max_tokens', label: 'Máximo de Tokens', type: 'number', min: 50, max: 4000 },
+          { name: 'ativo', label: 'Agente ativo', type: 'checkbox' }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando agente...');
+
+            await API.put(`/api/agentes-ia/${agentId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Agente atualizado com sucesso!');
+            await this.loadAgents();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar agente');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar agente');
+    }
+  },
+
+  async testAgent(agentId) {
+    Modal.form({
+      id: 'modal-test-agent',
+      title: 'Testar Agente IA',
+      size: 'md',
+      fields: [
+        { name: 'mensagem', label: 'Mensagem de Teste', type: 'textarea', required: true, placeholder: 'Digite uma mensagem para testar o agente...' }
+      ],
+      submitText: 'Enviar Teste',
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Processando com IA...');
+
+          const response = await API.post(`/api/agentes-ia/${agentId}/testar`, data);
+
+          Modal.closeLoading();
+          Modal.close('modal-test-agent');
+          Modal.destroy('modal-test-agent');
+
+          // Mostrar resultado
+          Modal.view({
+            title: 'Resposta do Agente',
+            size: 'md',
+            data: {
+              'Mensagem Enviada': data.mensagem,
+              'Resposta': response.resposta || response.resultado || 'Nenhuma resposta',
+              'Tokens Usados': response.tokens_usados || '-',
+              'Tempo de Resposta': response.tempo ? `${response.tempo}ms` : '-'
+            }
+          });
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error('Erro ao testar agente');
+          return false;
+        }
+      }
+    });
+  },
+
+  async toggleStatus(agentId, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+    const endpoint = isActive ? 'desativar' : 'ativar';
+
+    Modal.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Agente`,
+      message: `Deseja realmente ${action} este agente?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      danger: isActive,
+      onConfirm: async () => {
+        try {
+          await API.post(`/api/agentes-ia/${agentId}/${endpoint}`);
+          Toast.success(`Agente ${action}do com sucesso!`);
+          await this.loadAgents();
+        } catch (error) {
+          Toast.error(`Erro ao ${action} agente`);
+        }
+      }
+    });
+  },
+
+  async deleteAgent(agentId) {
+    Modal.confirm({
+      title: 'Excluir Agente',
+      message: 'Tem certeza que deseja excluir este agente? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/api/agentes-ia/${agentId}`);
+          Toast.success('Agente excluído com sucesso!');
+          await this.loadAgents();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao excluir agente');
+        }
+      }
+    });
+  }
+};
+
+// Inicializar
+Agents.init();
 </script>
 
 </body>
