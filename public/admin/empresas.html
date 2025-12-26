@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Empresas - Admin WhatsBenemax</title>
+  <title>Minha Empresa - Admin WhatsBenemax</title>
   <link rel="stylesheet" href="/css/app.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -16,104 +16,78 @@
   <main class="app-main">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="page-title">Empresas</h1>
-        <p class="page-subtitle">Gerencie todas as empresas da plataforma</p>
+        <h1 class="page-title">Minha Empresa</h1>
+        <p class="page-subtitle">Gerencie informações, plano e uso</p>
       </div>
-      <button class="btn btn-primary" onclick="novaEmpresa()">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      <button class="btn btn-primary" onclick="Empresa.openEditModal()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
         </svg>
-        Nova Empresa
+        Editar Empresa
       </button>
     </div>
 
-    <!-- Filtros -->
+    <!-- Informações da Empresa -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="card lg:col-span-2">
+        <h3 class="font-bold mb-4">Informações da Empresa</h3>
+        <div class="grid grid-cols-2 gap-4" id="companyInfo">
+          <div class="col-span-2 text-center text-gray-500 py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <p class="mt-2">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-4">Plano Atual</h3>
+        <div id="planInfo">
+          <div class="text-center text-gray-500 py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <p class="mt-2">Carregando...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Uso e Limites -->
     <div class="card mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-2">Buscar</label>
-          <input type="text" id="searchInput" placeholder="Nome ou email..." class="input" onkeyup="filtrar()">
+      <h3 class="font-bold mb-4">Uso e Limites</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="usageStats">
+        <div class="text-center text-gray-500">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- Créditos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="card">
+        <h3 class="font-bold mb-4">Créditos</h3>
+        <div id="creditsInfo">
+          <div class="text-center text-gray-500 py-4">Carregando...</div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Status</label>
-          <select id="statusFilter" class="input" onchange="filtrar()">
-            <option value="">Todos</option>
-            <option value="ativo">Ativo</option>
-            <option value="trial">Trial</option>
-            <option value="inativo">Inativo</option>
-            <option value="bloqueado">Bloqueado</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Plano</label>
-          <select id="planoFilter" class="input" onchange="filtrar()">
-            <option value="">Todos</option>
-            <option value="Básico">Básico</option>
-            <option value="Premium">Premium</option>
-            <option value="Enterprise">Enterprise</option>
-          </select>
-        </div>
-        <div class="flex items-end">
-          <button class="btn btn-outline w-full" onclick="limparFiltros()">Limpar Filtros</button>
+      </div>
+
+      <div class="card">
+        <h3 class="font-bold mb-4">Transações Recentes</h3>
+        <div id="transactionsInfo">
+          <div class="text-center text-gray-500 py-4">Carregando...</div>
         </div>
       </div>
     </div>
 
-    <!-- Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Total Empresas</p>
-        <h3 class="text-2xl font-bold text-purple-600" id="totalEmpresas">142</h3>
+    <!-- White-label (se disponível) -->
+    <div class="card" id="whitelabelSection" style="display: none;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold">Configurações White-label</h3>
+        <button class="btn btn-outline" onclick="Empresa.openWhitelabelModal()">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          Editar
+        </button>
       </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Empresas Ativas</p>
-        <h3 class="text-2xl font-bold text-green-600" id="empresasAtivas">128</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Em Trial</p>
-        <h3 class="text-2xl font-bold text-yellow-600" id="empresasTrial">8</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Bloqueadas</p>
-        <h3 class="text-2xl font-bold text-red-600" id="empresasBloqueadas">6</h3>
-      </div>
-    </div>
-
-    <!-- Tabela -->
-    <div class="card">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Empresa</th>
-            <th>Email</th>
-            <th>Plano</th>
-            <th>Usuários</th>
-            <th>Instâncias</th>
-            <th>MRR</th>
-            <th>Status</th>
-            <th>Criado em</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="empresasTable">
-          <tr>
-            <td colspan="9" class="text-center py-8 text-gray-500">Carregando...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Paginação -->
-    <div class="flex items-center justify-between mt-6">
-      <div class="text-sm text-gray-600">
-        Mostrando <span id="showing">1-50</span> de <span id="total">142</span> empresas
-      </div>
-      <div class="flex gap-2">
-        <button class="btn btn-outline btn-sm" onclick="previousPage()">Anterior</button>
-        <button class="btn btn-outline btn-sm">1</button>
-        <button class="btn btn-outline btn-sm">2</button>
-        <button class="btn btn-outline btn-sm">3</button>
-        <button class="btn btn-outline btn-sm" onclick="nextPage()">Próximo</button>
+      <div class="grid grid-cols-2 gap-4" id="whitelabelInfo">
+        <div class="text-center text-gray-500 py-4">Carregando...</div>
       </div>
     </div>
   </main>
@@ -121,127 +95,363 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
-// Renderizar template
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('empresas');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('empresas');
 
-// Dados Mock
-const empresasMock = [
-  { id: 1, nome: 'Tech Solutions LTDA', email: 'contato@techsolutions.com', plano: 'Enterprise', usuarios: 20, instancias: 10, mrr: 797, status: 'ativo', criado: '15/01/2024' },
-  { id: 2, nome: 'Varejo Premium', email: 'admin@varejopremium.com', plano: 'Premium', usuarios: 5, instancias: 3, mrr: 297, status: 'ativo', criado: '20/01/2024' },
-  { id: 3, nome: 'Startup XYZ', email: 'contato@startupxyz.com', plano: 'Básico', usuarios: 2, instancias: 1, mrr: 97, status: 'trial', criado: '25/01/2024' },
-  { id: 4, nome: 'E-commerce Plus', email: 'suporte@ecommerceplus.com', plano: 'Premium', usuarios: 8, instancias: 5, mrr: 297, status: 'ativo', criado: '10/02/2024' },
-  { id: 5, nome: 'Marketing Digital Pro', email: 'contato@mdpro.com', plano: 'Enterprise', usuarios: 15, instancias: 8, mrr: 797, status: 'ativo', criado: '01/02/2024' },
-  { id: 6, nome: 'Consultoria ABC', email: 'admin@consultoriaabc.com', plano: 'Básico', usuarios: 3, instancias: 2, mrr: 97, status: 'ativo', criado: '12/02/2024' },
-  { id: 7, nome: 'Loja Virtual 123', email: 'contato@loja123.com', plano: 'Premium', usuarios: 6, instancias: 4, mrr: 297, status: 'trial', criado: '18/02/2024' },
-  { id: 8, nome: 'Agência Criativa', email: 'hello@agenciacriativa.com', plano: 'Básico', usuarios: 2, instancias: 1, mrr: 97, status: 'inativo', criado: '05/01/2024' },
-  { id: 9, nome: 'SaaS Inovador', email: 'contato@saasinovador.com', plano: 'Enterprise', usuarios: 25, instancias: 12, mrr: 797, status: 'ativo', criado: '08/02/2024' },
-  { id: 10, nome: 'Delivery Express', email: 'admin@deliveryexpress.com', plano: 'Premium', usuarios: 10, instancias: 6, mrr: 297, status: 'bloqueado', criado: '22/01/2024' }
-];
+const Empresa = {
+  company: null,
+  plan: null,
+  usage: null,
+  credits: null,
+  transactions: [],
 
-let empresasFiltradas = [...empresasMock];
+  async init() {
+    await Promise.all([
+      this.loadCompany(),
+      this.loadPlan(),
+      this.loadUsage(),
+      this.loadCredits(),
+      this.loadTransactions()
+    ]);
+  },
 
-function renderEmpresas() {
-  const tbody = document.getElementById('empresasTable');
+  async loadCompany() {
+    try {
+      const response = await API.get('/api/empresa');
+      this.company = response.empresa || response;
+      this.renderCompanyInfo();
+    } catch (error) {
+      console.error('[Empresa] Erro ao carregar empresa:', error);
+      Toast.error('Erro ao carregar informações da empresa');
+    }
+  },
 
-  if (empresasFiltradas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-500">Nenhuma empresa encontrada</td></tr>';
-    return;
-  }
+  async loadPlan() {
+    try {
+      const response = await API.get('/api/empresa/plano');
+      this.plan = response.plano_atual || response;
+      this.renderPlanInfo();
 
-  tbody.innerHTML = empresasFiltradas.map(e => `
-    <tr>
-      <td class="font-semibold">${e.nome}</td>
-      <td class="text-sm">${e.email}</td>
-      <td><span class="badge badge-secondary">${e.plano}</span></td>
-      <td>${e.usuarios}</td>
-      <td>${e.instancias}</td>
-      <td class="font-semibold text-green-600">R$ ${e.mrr.toFixed(2)}</td>
-      <td><span class="badge badge-${getBadgeColor(e.status)}">${capitalizeFirst(e.status)}</span></td>
-      <td class="text-sm">${e.criado}</td>
-      <td>
-        <div class="flex gap-2">
-          <button class="btn-sm btn-outline" onclick="verEmpresa(${e.id})" title="Ver detalhes">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-            </svg>
-          </button>
-          <button class="btn-sm btn-outline" onclick="editarEmpresa(${e.id})" title="Editar">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-          </button>
+      // Mostrar seção white-label se disponível
+      if (this.company?.whitelabel_ativo) {
+        document.getElementById('whitelabelSection').style.display = 'block';
+        this.renderWhitelabelInfo();
+      }
+    } catch (error) {
+      console.error('[Empresa] Erro ao carregar plano:', error);
+    }
+  },
+
+  async loadUsage() {
+    try {
+      const response = await API.get('/api/empresa/uso');
+      this.usage = response;
+      this.renderUsageStats();
+    } catch (error) {
+      console.error('[Empresa] Erro ao carregar uso:', error);
+    }
+  },
+
+  async loadCredits() {
+    try {
+      const response = await API.get('/api/empresa/creditos');
+      this.credits = response;
+      this.renderCreditsInfo();
+    } catch (error) {
+      console.error('[Empresa] Erro ao carregar créditos:', error);
+    }
+  },
+
+  async loadTransactions() {
+    try {
+      const response = await API.get('/api/empresa/transacoes?limite=5');
+      this.transactions = response.transacoes || [];
+      this.renderTransactions();
+    } catch (error) {
+      console.error('[Empresa] Erro ao carregar transações:', error);
+    }
+  },
+
+  renderCompanyInfo() {
+    const c = this.company;
+    document.getElementById('companyInfo').innerHTML = `
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Nome</label>
+        <p class="font-semibold">${c.nome || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+        <p>${c.email || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Telefone</label>
+        <p>${c.telefone || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Documento</label>
+        <p>${c.documento || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Cidade/Estado</label>
+        <p>${c.cidade || '-'} / ${c.estado || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">CEP</label>
+        <p>${c.cep || '-'}</p>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-500 mb-1">Endereço</label>
+        <p>${c.endereco || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
+        <span class="badge ${this.getStatusClass(c.status)}">
+          ${this.getStatusLabel(c.status)}
+        </span>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Criada em</label>
+        <p>${this.formatDate(c.criado_em)}</p>
+      </div>
+    `;
+  },
+
+  renderPlanInfo() {
+    const p = this.plan;
+    document.getElementById('planInfo').innerHTML = `
+      <div class="mb-4">
+        <h4 class="text-2xl font-bold text-purple-600">${p.nome || 'Nenhum plano'}</h4>
+        <p class="text-3xl font-bold text-green-600 mt-2">${this.formatCurrency(p.preco_mensal)}<span class="text-sm text-gray-500">/mês</span></p>
+      </div>
+      <div class="border-t pt-3">
+        <p class="text-sm text-gray-500 mb-1">Recursos:</p>
+        <ul class="text-sm space-y-1">
+          <li>✓ Até ${p.max_usuarios || 0} usuários</li>
+          <li>✓ Até ${p.max_instancias || 0} instâncias</li>
+          <li>✓ Até ${p.max_contatos || 0} contatos</li>
+        </ul>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-primary w-full" onclick="window.location.href='planos.html'">
+          Ver Todos os Planos
+        </button>
+      </div>
+    `;
+  },
+
+  renderUsageStats() {
+    const { uso, limites, percentual } = this.usage;
+    document.getElementById('usageStats').innerHTML = `
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Usuários</span>
+          <span class="text-sm text-gray-500">${uso.usuarios} / ${limites.max_usuarios}</span>
         </div>
-      </td>
-    </tr>
-  `).join('');
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-purple-600 h-2 rounded-full" style="width: ${percentual.usuarios}%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">${percentual.usuarios}% utilizado</p>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Instâncias</span>
+          <span class="text-sm text-gray-500">${uso.instancias} / ${limites.max_instancias}</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentual.instancias}%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">${percentual.instancias}% utilizado</p>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Contatos</span>
+          <span class="text-sm text-gray-500">${uso.contatos} / ${limites.max_contatos}</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-green-600 h-2 rounded-full" style="width: ${percentual.contatos}%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">${percentual.contatos}% utilizado</p>
+      </div>
+    `;
+  },
 
-  document.getElementById('total').textContent = empresasFiltradas.length;
-  document.getElementById('showing').textContent = `1-${Math.min(50, empresasFiltradas.length)}`;
-}
+  renderCreditsInfo() {
+    document.getElementById('creditsInfo').innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-500">Saldo de Créditos</span>
+        <span class="text-2xl font-bold text-green-600">${this.credits.saldo_creditos || 0}</span>
+      </div>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-500">Usados Este Mês</span>
+        <span class="text-lg font-semibold text-red-600">${this.credits.creditos_usados_mes || 0}</span>
+      </div>
+      ${this.credits.creditos_resetam_em ? `
+        <div class="text-xs text-gray-500 mt-2">
+          Próximo reset: ${this.formatDate(this.credits.creditos_resetam_em)}
+        </div>
+      ` : ''}
+    `;
+  },
 
-function filtrar() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const status = document.getElementById('statusFilter').value;
-  const plano = document.getElementById('planoFilter').value;
+  renderTransactions() {
+    if (this.transactions.length === 0) {
+      document.getElementById('transactionsInfo').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma transação ainda</p>';
+      return;
+    }
 
-  empresasFiltradas = empresasMock.filter(e => {
-    const matchSearch = !search || e.nome.toLowerCase().includes(search) || e.email.toLowerCase().includes(search);
-    const matchStatus = !status || e.status === status;
-    const matchPlano = !plano || e.plano === plano;
-    return matchSearch && matchStatus && matchPlano;
-  });
+    document.getElementById('transactionsInfo').innerHTML = `
+      <div class="space-y-2">
+        ${this.transactions.slice(0, 5).map(t => `
+          <div class="flex items-center justify-between border-b pb-2">
+            <div>
+              <p class="text-sm font-semibold">${t.tipo}</p>
+              <p class="text-xs text-gray-500">${this.formatDate(t.criado_em)}</p>
+            </div>
+            <span class="font-bold ${t.valor > 0 ? 'text-green-600' : 'text-red-600'}">
+              ${t.valor > 0 ? '+' : ''}${t.valor}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
 
-  renderEmpresas();
-}
+  renderWhitelabelInfo() {
+    const c = this.company;
+    document.getElementById('whitelabelInfo').innerHTML = `
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Logo URL</label>
+        <p class="text-sm truncate">${c.logo_url || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Domínio Customizado</label>
+        <p class="text-sm">${c.dominio_customizado || '-'}</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Cor Primária</label>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded border" style="background-color: ${c.cor_primaria || '#8B5CF6'}"></div>
+          <p class="text-sm">${c.cor_primaria || '#8B5CF6'}</p>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-500 mb-1">Cor Secundária</label>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded border" style="background-color: ${c.cor_secundaria || '#3B82F6'}"></div>
+          <p class="text-sm">${c.cor_secundaria || '#3B82F6'}</p>
+        </div>
+      </div>
+    `;
+  },
 
-function limparFiltros() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('statusFilter').value = '';
-  document.getElementById('planoFilter').value = '';
-  empresasFiltradas = [...empresasMock];
-  renderEmpresas();
-}
+  openEditModal() {
+    Modal.form({
+      id: 'modal-edit-company',
+      title: 'Editar Empresa',
+      size: 'lg',
+      data: this.company,
+      fields: [
+        { name: 'nome', label: 'Nome da Empresa', type: 'text', required: true },
+        { name: 'email', label: 'Email', type: 'email', required: true },
+        { name: 'telefone', label: 'Telefone', type: 'tel', placeholder: '5511999999999' },
+        { name: 'documento', label: 'CNPJ/CPF', type: 'text' },
+        { name: 'endereco', label: 'Endereço', type: 'text' },
+        { name: 'cidade', label: 'Cidade', type: 'text' },
+        { name: 'estado', label: 'Estado', type: 'text', placeholder: 'SP' },
+        { name: 'cep', label: 'CEP', type: 'text', placeholder: '00000-000' }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Atualizando empresa...');
 
-function getBadgeColor(status) {
-  const colors = {
-    'ativo': 'success',
-    'trial': 'warning',
-    'inativo': 'secondary',
-    'bloqueado': 'error'
-  };
-  return colors[status] || 'secondary';
-}
+          await API.put('/api/empresa', data);
 
-function capitalizeFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+          Modal.closeLoading();
+          Toast.success('Empresa atualizada com sucesso!');
+          await this.loadCompany();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao atualizar empresa');
+          return false;
+        }
+      }
+    });
+  },
 
-function novaEmpresa() {
-  Toast.info('Modal de criar empresa em desenvolvimento');
-}
+  openWhitelabelModal() {
+    Modal.form({
+      id: 'modal-edit-whitelabel',
+      title: 'Configurações White-label',
+      size: 'md',
+      data: this.company,
+      fields: [
+        { name: 'logo_url', label: 'URL do Logo', type: 'url', placeholder: 'https://...' },
+        { name: 'dominio_customizado', label: 'Domínio Customizado', type: 'text', placeholder: 'app.suaempresa.com' },
+        { name: 'cor_primaria', label: 'Cor Primária', type: 'color', defaultValue: '#8B5CF6' },
+        { name: 'cor_secundaria', label: 'Cor Secundária', type: 'color', defaultValue: '#3B82F6' }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Atualizando white-label...');
 
-function verEmpresa(id) {
-  Toast.info(`Visualizando empresa #${id}`);
-}
+          await API.put('/api/empresa/whitelabel', data);
 
-function editarEmpresa(id) {
-  Toast.info(`Editando empresa #${id}`);
-}
+          Modal.closeLoading();
+          Toast.success('Configurações atualizadas com sucesso!');
+          await this.loadCompany();
+          this.renderWhitelabelInfo();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao atualizar configurações');
+          return false;
+        }
+      }
+    });
+  },
 
-function previousPage() {
-  Toast.info('Página anterior');
-}
+  formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value || 0);
+  },
 
-function nextPage() {
-  Toast.info('Próxima página');
-}
+  formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  },
+
+  getStatusClass(status) {
+    const classes = {
+      ativo: 'badge-success',
+      trial: 'badge-warning',
+      inativo: 'badge-secondary',
+      bloqueado: 'badge-error'
+    };
+    return classes[status] || 'badge-secondary';
+  },
+
+  getStatusLabel(status) {
+    const labels = {
+      ativo: 'Ativo',
+      trial: 'Trial',
+      inativo: 'Inativo',
+      bloqueado: 'Bloqueado'
+    };
+    return labels[status] || status;
+  }
+};
 
 // Inicializar
-renderEmpresas();
+Empresa.init();
 </script>
 
 </body>
