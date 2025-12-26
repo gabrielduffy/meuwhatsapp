@@ -13,6 +13,7 @@ const { redis, cache } = require('./config/redis');
 
 // Importar jobs de status (inicializa cron jobs)
 require('./jobs/statusChecker');
+const { iniciarTarefaFollowup } = require('./tarefas/followup.tarefa');
 
 // Importar rotas existentes
 const autenticacaoRoutes = require('./rotas/autenticacao.rotas');
@@ -40,6 +41,7 @@ const prospeccaoRoutes = require('./rotas/prospeccao.rotas');
 const chatInternoRoutes = require('./rotas/chat.rotas');
 const integracaoRoutes = require('./rotas/integracao.rotas');
 const crmRoutes = require('./rotas/crm.rotas');
+const followupRoutes = require('./rotas/followup.rotas');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -171,6 +173,7 @@ app.use('/api/chat', chatInternoRoutes);
 app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
 app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
 app.use('/api/crm', crmRoutes);
+app.use('/api/followup', followupRoutes);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -242,6 +245,14 @@ async function initializeDatabase() {
       console.log('✅ Tabelas de CRM Kanban criadas/verificadas com sucesso');
     }
 
+    // Executar schema de Follow-up Inteligente
+    const followupSchemaPath = path.join(__dirname, 'config/followup-schema.sql');
+    if (fs.existsSync(followupSchemaPath)) {
+      const followupSchema = fs.readFileSync(followupSchemaPath, 'utf8');
+      await dbQuery(followupSchema);
+      console.log('✅ Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
+    }
+
     // Testar Redis
     await redis.ping();
     console.log('✅ Redis conectado e funcionando');
@@ -298,6 +309,9 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
 
   // Inicializar sistema de webhook avançado
   initWebhookAdvanced();
+
+  // Inicializar tarefa de follow-up
+  iniciarTarefaFollowup();
 
   // Carregar sessões existentes
   await loadExistingSessions();
