@@ -153,7 +153,7 @@ const AdminTemplate = {
   init(activePage) {
     // Carregar dark mode do localStorage
     if (localStorage.getItem('darkMode') === 'true') {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     }
 
     // Verificar autenticação
@@ -200,14 +200,14 @@ const AdminTemplate = {
    * Toggle Dark Mode
    */
   toggleDarkMode() {
-    const html = document.documentElement;
-    const isDark = html.classList.contains('dark');
+    const body = document.body;
+    const isDark = body.classList.contains('dark');
 
     if (isDark) {
-      html.classList.remove('dark');
+      body.classList.remove('dark');
       localStorage.setItem('darkMode', 'false');
     } else {
-      html.classList.add('dark');
+      body.classList.add('dark');
       localStorage.setItem('darkMode', 'true');
     }
   },

@@ -19,6 +19,12 @@
         <h1 class="page-title">Usuários</h1>
         <p class="page-subtitle">Gerencie todos os usuários da plataforma</p>
       </div>
+      <button class="btn btn-primary" onclick="Users.openCreateModal()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Novo Usuário
+      </button>
     </div>
 
     <!-- Filtros -->
@@ -26,11 +32,11 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-sm font-medium mb-2">Buscar</label>
-          <input type="text" id="searchInput" placeholder="Nome ou email..." class="input">
+          <input type="text" id="searchInput" placeholder="Nome ou email..." class="input" onkeyup="Users.applyFilters()">
         </div>
         <div>
           <label class="block text-sm font-medium mb-2">Função</label>
-          <select id="funcaoFilter" class="input">
+          <select id="funcaoFilter" class="input" onchange="Users.applyFilters()">
             <option value="">Todos</option>
             <option value="administrador">Administrador</option>
             <option value="empresa">Empresa (Dono)</option>
@@ -40,35 +46,35 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-2">Status</label>
-          <select id="statusFilter" class="input">
+          <select id="statusFilter" class="input" onchange="Users.applyFilters()">
             <option value="">Todos</option>
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo</option>
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
           </select>
         </div>
         <div class="flex items-end">
-          <button class="btn btn-outline w-full">Limpar Filtros</button>
+          <button class="btn btn-outline w-full" onclick="Users.clearFilters()">Limpar Filtros</button>
         </div>
       </div>
     </div>
 
     <!-- Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6" id="statsContainer">
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Total Usuários</p>
-        <h3 class="text-2xl font-bold text-purple-600">1.238</h3>
+        <h3 class="text-2xl font-bold text-purple-600" id="statTotal">-</h3>
       </div>
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Usuários Ativos</p>
-        <h3 class="text-2xl font-bold text-green-600">1.185</h3>
+        <h3 class="text-2xl font-bold text-green-600" id="statAtivos">-</h3>
       </div>
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Administradores</p>
-        <h3 class="text-2xl font-bold text-blue-600">5</h3>
+        <h3 class="text-2xl font-bold text-blue-600" id="statAdmins">-</h3>
       </div>
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Afiliados</p>
-        <h3 class="text-2xl font-bold text-yellow-600">45</h3>
+        <h3 class="text-2xl font-bold text-yellow-600" id="statAfiliados">-</h3>
       </div>
     </div>
 
@@ -81,12 +87,19 @@
             <th>Email</th>
             <th>Empresa</th>
             <th>Função</th>
-            <th>Último Acesso</th>
+            <th>Criado em</th>
             <th>Status</th>
             <th>Ações</th>
           </tr>
         </thead>
-        <tbody id="usuariosTable"></tbody>
+        <tbody id="usuariosTable">
+          <tr>
+            <td colspan="7" class="text-center text-gray-500 py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p class="mt-2">Carregando usuários...</p>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </main>
@@ -94,37 +107,345 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('usuarios');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('usuarios');
 
-const usuarios = [
-  { nome: 'João Silva', email: 'joao@techsolutions.com', empresa: 'Tech Solutions LTDA', funcao: 'empresa', ultimo: '2 min atrás', status: 'ativo' },
-  { nome: 'Maria Santos', email: 'maria@varejo.com', empresa: 'Varejo Premium', funcao: 'usuario', ultimo: '5 min atrás', status: 'ativo' },
-  { nome: 'Carlos Souza', email: 'carlos@startup.com', empresa: 'Startup XYZ', funcao: 'empresa', ultimo: '1 hora atrás', status: 'ativo' },
-  { nome: 'Ana Lima', email: 'ana@ecommerce.com', empresa: 'E-commerce Plus', funcao: 'usuario', ultimo: '3 horas atrás', status: 'ativo' },
-  { nome: 'Pedro Costa', email: 'pedro@marketing.com', empresa: 'Marketing Digital Pro', funcao: 'administrador', ultimo: '10 min atrás', status: 'ativo' },
-  { nome: 'Julia Mendes', email: 'julia@consultoria.com', empresa: 'Consultoria ABC', funcao: 'usuario', ultimo: '2 dias atrás', status: 'inativo' }
-];
+const Users = {
+  allUsers: [],
+  filteredUsers: [],
 
-document.getElementById('usuariosTable').innerHTML = usuarios.map(u => `
-  <tr>
-    <td class="font-semibold">${u.nome}</td>
-    <td class="text-sm">${u.email}</td>
-    <td>${u.empresa}</td>
-    <td><span class="badge badge-secondary">${u.funcao.charAt(0).toUpperCase() + u.funcao.slice(1)}</span></td>
-    <td class="text-sm">${u.ultimo}</td>
-    <td><span class="badge badge-${u.status === 'ativo' ? 'success' : 'error'}">${u.status.charAt(0).toUpperCase() + u.status.slice(1)}</span></td>
-    <td>
-      <button class="btn-sm btn-outline" onclick="Toast.info('Visualizar usuário')">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        </svg>
-      </button>
-    </td>
-  </tr>
-`).join('');
+  async init() {
+    await this.loadUsers();
+  },
+
+  async loadUsers() {
+    try {
+      const params = this.getFilterParams();
+      const response = await API.get('/api/usuarios', params);
+
+      this.allUsers = response.usuarios || response || [];
+      this.filteredUsers = [...this.allUsers];
+
+      this.renderTable();
+      this.updateStats();
+    } catch (error) {
+      console.error('[Users] Erro ao carregar:', error);
+      Toast.error('Erro ao carregar usuários');
+      document.getElementById('usuariosTable').innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-red-500 py-8">
+            Erro ao carregar usuários. Tente novamente.
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  getFilterParams() {
+    const params = {};
+
+    const search = document.getElementById('searchInput')?.value;
+    const funcao = document.getElementById('funcaoFilter')?.value;
+    const ativo = document.getElementById('statusFilter')?.value;
+
+    if (search) {
+      params.nome = search;
+      params.email = search;
+    }
+    if (funcao) params.funcao = funcao;
+    if (ativo) params.ativo = ativo;
+
+    return params;
+  },
+
+  applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const funcao = document.getElementById('funcaoFilter').value;
+    const ativo = document.getElementById('statusFilter').value;
+
+    this.filteredUsers = this.allUsers.filter(user => {
+      const matchSearch = !search ||
+        user.nome.toLowerCase().includes(search) ||
+        user.email.toLowerCase().includes(search);
+
+      const matchFuncao = !funcao || user.funcao === funcao;
+
+      const matchStatus = !ativo ||
+        (ativo === 'true' && user.ativo) ||
+        (ativo === 'false' && !user.ativo);
+
+      return matchSearch && matchFuncao && matchStatus;
+    });
+
+    this.renderTable();
+  },
+
+  clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('funcaoFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    this.applyFilters();
+  },
+
+  renderTable() {
+    const tbody = document.getElementById('usuariosTable');
+
+    if (this.filteredUsers.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-gray-500 py-8">
+            Nenhum usuário encontrado
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.filteredUsers.map(user => `
+      <tr>
+        <td class="font-semibold">${user.nome || '-'}</td>
+        <td class="text-sm">${user.email}</td>
+        <td class="text-sm">${user.empresa_nome || user.empresa_id || '-'}</td>
+        <td>
+          <span class="badge ${this.getFuncaoBadge(user.funcao)}">
+            ${this.getFuncaoLabel(user.funcao)}
+          </span>
+        </td>
+        <td class="text-sm">${this.formatDate(user.criado_em)}</td>
+        <td>
+          <span class="badge ${user.ativo ? 'badge-success' : 'badge-error'}">
+            ${user.ativo ? 'Ativo' : 'Inativo'}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-outline" onclick="Users.openEditModal(${user.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm ${user.ativo ? 'btn-warning' : 'btn-success'}"
+              onclick="Users.toggleStatus(${user.id}, ${user.ativo})"
+              title="${user.ativo ? 'Desativar' : 'Ativar'}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${user.ativo ? `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                ` : `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                `}
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="Users.resetPassword(${user.id})" title="Redefinir senha">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-danger" onclick="Users.deleteUser(${user.id})" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  updateStats() {
+    document.getElementById('statTotal').textContent = this.allUsers.length;
+    document.getElementById('statAtivos').textContent = this.allUsers.filter(u => u.ativo).length;
+    document.getElementById('statAdmins').textContent = this.allUsers.filter(u => u.funcao === 'administrador').length;
+    document.getElementById('statAfiliados').textContent = this.allUsers.filter(u => u.funcao === 'afiliado').length;
+  },
+
+  getFuncaoBadge(funcao) {
+    const badges = {
+      'administrador': 'badge-error',
+      'empresa': 'badge-primary',
+      'usuario': 'badge-secondary',
+      'afiliado': 'badge-warning'
+    };
+    return badges[funcao] || 'badge-secondary';
+  },
+
+  getFuncaoLabel(funcao) {
+    const labels = {
+      'administrador': 'Administrador',
+      'empresa': 'Empresa',
+      'usuario': 'Usuário',
+      'afiliado': 'Afiliado'
+    };
+    return labels[funcao] || funcao;
+  },
+
+  formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  },
+
+  openCreateModal() {
+    Modal.form({
+      id: 'modal-create-user',
+      title: 'Criar Novo Usuário',
+      size: 'md',
+      fields: [
+        { name: 'nome', label: 'Nome', type: 'text', required: true, placeholder: 'Nome completo' },
+        { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'email@exemplo.com' },
+        { name: 'senha', label: 'Senha', type: 'password', required: true, placeholder: 'Mínimo 8 caracteres' },
+        {
+          name: 'funcao',
+          label: 'Função',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'usuario', label: 'Usuário' },
+            { value: 'empresa', label: 'Empresa (Dono)' },
+            { value: 'administrador', label: 'Administrador' },
+            { value: 'afiliado', label: 'Afiliado' }
+          ]
+        },
+        { name: 'ativo', label: 'Usuário ativo', type: 'checkbox', defaultValue: true }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando usuário...');
+
+          await API.post('/api/usuarios', {
+            ...data,
+            empresa_id: Auth.getUser().empresa_id // Use empresa atual se não especificado
+          });
+
+          Modal.closeLoading();
+          Toast.success('Usuário criado com sucesso!');
+          await this.loadUsers();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar usuário');
+          return false; // Não fecha o modal
+        }
+      }
+    });
+  },
+
+  async openEditModal(userId) {
+    try {
+      Modal.loading('Carregando usuário...');
+
+      const response = await API.get(`/api/usuarios/${userId}`);
+      const user = response.usuario || response;
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-user',
+        title: 'Editar Usuário',
+        size: 'md',
+        data: user,
+        fields: [
+          { name: 'nome', label: 'Nome', type: 'text', required: true },
+          { name: 'email', label: 'Email', type: 'email', required: true },
+          {
+            name: 'funcao',
+            label: 'Função',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'usuario', label: 'Usuário' },
+              { value: 'empresa', label: 'Empresa (Dono)' },
+              { value: 'administrador', label: 'Administrador' },
+              { value: 'afiliado', label: 'Afiliado' }
+            ]
+          },
+          { name: 'ativo', label: 'Usuário ativo', type: 'checkbox' }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando usuário...');
+
+            await API.put(`/api/usuarios/${userId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Usuário atualizado com sucesso!');
+            await this.loadUsers();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar usuário');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar usuário');
+    }
+  },
+
+  async toggleStatus(userId, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+    const endpoint = isActive ? 'desativar' : 'ativar';
+
+    Modal.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Usuário`,
+      message: `Deseja realmente ${action} este usuário?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      danger: isActive,
+      onConfirm: async () => {
+        try {
+          await API.post(`/api/usuarios/${userId}/${endpoint}`);
+          Toast.success(`Usuário ${action}do com sucesso!`);
+          await this.loadUsers();
+        } catch (error) {
+          Toast.error(`Erro ao ${action} usuário`);
+        }
+      }
+    });
+  },
+
+  async resetPassword(userId) {
+    Modal.confirm({
+      title: 'Redefinir Senha',
+      message: 'Deseja enviar um email de redefinição de senha para este usuário?',
+      confirmText: 'Enviar Email',
+      onConfirm: async () => {
+        try {
+          await API.post(`/api/usuarios/${userId}/redefinir-senha`);
+          Toast.success('Email de redefinição enviado!');
+        } catch (error) {
+          Toast.error('Erro ao enviar email de redefinição');
+        }
+      }
+    });
+  },
+
+  async deleteUser(userId) {
+    Modal.confirm({
+      title: 'Excluir Usuário',
+      message: 'Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/api/usuarios/${userId}`);
+          Toast.success('Usuário excluído com sucesso!');
+          await this.loadUsers();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao excluir usuário');
+        }
+      }
+    });
+  }
+};
+
+// Inicializar
+Users.init();
 </script>
 
 </body>
