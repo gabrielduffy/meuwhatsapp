@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Editor de Agente IA - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="btn btn-outline" onclick="testarAgente()">🧪 Testar Agente</button><button class="btn btn-primary" onclick="salvarAgente()">✓ Salvar Agente</button><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div></div></div></header>
+<main class="app-main">
+<div class="mb-6"><h1 class="page-title">Editor de Agente IA</h1><p class="page-subtitle">Configure a personalidade e conhecimento do seu assistente inteligente</p></div>
+
+<!-- Tabs -->
+<div class="tabs mb-6"><button class="tab active" onclick="showTab('configuracoes')">⚙️ Configurações</button><button class="tab" onclick="showTab('personalidade')">🎭 Personalidade</button><button class="tab" onclick="showTab('conhecimento')">📚 Base de Conhecimento</button><button class="tab" onclick="showTab('acoes')">⚡ Ações</button></div>
+
+<!-- Configurações Tab -->
+<div id="tab-configuracoes">
+<div class="card mb-6">
+<h3 class="font-bold mb-4">Informações Básicas</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Nome do Agente</label><input type="text" class="input" placeholder="Ex: Assistente de Vendas" id="nomeAgente" value="Assistente de Vendas"></div>
+<div><label class="block text-sm font-semibold mb-2">Objetivo Principal</label><select class="input"><option selected>Atendimento ao Cliente</option><option>Vendas e Conversão</option><option>Suporte Técnico</option><option>Qualificação de Leads</option><option>Agendamento</option></select></div>
+<div class="md:col-span-2"><label class="block text-sm font-semibold mb-2">Descrição</label><textarea class="input" rows="2" placeholder="Descreva a função deste agente...">Assistente inteligente para atendimento e vendas via WhatsApp</textarea></div>
+</div>
+</div>
+
+<div class="card">
+<h3 class="font-bold mb-4">Configurações de Ativação</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Status do Agente</div><div class="text-sm text-gray-500">Ativar ou desativar o agente</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Instâncias Vinculadas</label><select class="input" multiple size="3"><option selected>Instância Principal</option><option>Instância 2</option><option>Instância 3</option></select><p class="text-sm text-gray-500 mt-1">Segure Ctrl/Cmd para selecionar múltiplas</p></div>
+<div><label class="block text-sm font-semibold mb-2">Horário de Funcionamento</label><div class="grid grid-cols-2 gap-4"><div><label class="text-sm">Das</label><input type="time" class="input" value="09:00"></div><div><label class="text-sm">Até</label><input type="time" class="input" value="18:00"></div></div></div>
+<div><label class="block text-sm font-semibold mb-2">Dias da Semana</label><div class="flex flex-wrap gap-2"><label class="flex items-center gap-2"><input type="checkbox" checked>Seg</label><label class="flex items-center gap-2"><input type="checkbox" checked>Ter</label><label class="flex items-center gap-2"><input type="checkbox" checked>Qua</label><label class="flex items-center gap-2"><input type="checkbox" checked>Qui</label><label class="flex items-center gap-2"><input type="checkbox" checked>Sex</label><label class="flex items-center gap-2"><input type="checkbox">Sáb</label><label class="flex items-center gap-2"><input type="checkbox">Dom</label></div></div>
+</div>
+</div>
+</div>
+
+<!-- Personalidade Tab -->
+<div id="tab-personalidade" class="hidden">
+<div class="card mb-6">
+<h3 class="font-bold mb-4">Prompt do Sistema</h3>
+<p class="text-sm text-gray-500 mb-3">Defina a personalidade e o comportamento do agente</p>
+<textarea class="input" rows="10" id="systemPrompt">Você é um assistente de vendas profissional e amigável. Seu nome é Assistente de Vendas.
+
+Suas responsabilidades:
+- Atender clientes de forma cordial e eficiente
+- Responder dúvidas sobre produtos e serviços
+- Qualificar leads e identificar oportunidades
+- Agendar reuniões quando necessário
+- Coletar informações de contato
+
+Diretrizes de comportamento:
+- Seja sempre educado e use emojis com moderação
+- Faça perguntas para entender melhor a necessidade do cliente
+- Seja direto e objetivo nas respostas
+- Se não souber algo, seja honesto e ofereça alternativas
+- Evite respostas muito longas
+
+Tom de voz: Profissional, amigável e prestativo</textarea>
+</div>
+
+<div class="card">
+<h3 class="font-bold mb-4">Configurações de Tom</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Formalidade</label><input type="range" class="w-full" min="1" max="5" value="3"><div class="flex justify-between text-xs text-gray-500"><span>Informal</span><span>Formal</span></div></div>
+<div><label class="block text-sm font-semibold mb-2">Criatividade</label><input type="range" class="w-full" min="1" max="5" value="2"><div class="flex justify-between text-xs text-gray-500"><span>Conservador</span><span>Criativo</span></div></div>
+<div><label class="block text-sm font-semibold mb-2">Tamanho das Respostas</label><select class="input"><option>Muito Curtas</option><option selected>Curtas</option><option>Médias</option><option>Longas</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Uso de Emojis</label><select class="input"><option>Nunca</option><option>Raramente</option><option selected>Moderado</option><option>Frequente</option></select></div>
+</div>
+</div>
+</div>
+
+<!-- Base de Conhecimento Tab -->
+<div id="tab-conhecimento" class="hidden">
+<div class="card mb-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold">Documentos de Conhecimento</h3>
+<button class="btn btn-primary" onclick="adicionarDocumento()">➕ Adicionar Documento</button>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+<div class="flex items-center gap-3"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><div><div class="font-semibold">Catálogo de Produtos 2024</div><div class="text-sm text-gray-500">Atualizado em 15/12/2024</div></div></div>
+<div class="flex gap-2"><button class="btn-sm btn-outline">📝 Editar</button><button class="btn-sm btn-error">🗑️</button></div>
+</div>
+<div class="flex items-center justify-between p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+<div class="flex items-center gap-3"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><div><div class="font-semibold">FAQ - Perguntas Frequentes</div><div class="text-sm text-gray-500">Atualizado em 10/12/2024</div></div></div>
+<div class="flex gap-2"><button class="btn-sm btn-outline">📝 Editar</button><button class="btn-sm btn-error">🗑️</button></div>
+</div>
+<div class="flex items-center justify-between p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+<div class="flex items-center gap-3"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><div><div class="font-semibold">Política de Preços</div><div class="text-sm text-gray-500">Atualizado em 01/12/2024</div></div></div>
+<div class="flex gap-2"><button class="btn-sm btn-outline">📝 Editar</button><button class="btn-sm btn-error">🗑️</button></div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3 class="font-bold mb-4">Links de Referência</h3>
+<div class="space-y-3">
+<div class="flex gap-2"><input type="url" class="input flex-1" placeholder="https://seusite.com/pagina"><button class="btn btn-outline">➕</button></div>
+<div class="text-sm text-gray-500">O agente poderá acessar informações destes sites em tempo real</div>
+</div>
+</div>
+</div>
+
+<!-- Ações Tab -->
+<div id="tab-acoes" class="hidden">
+<div class="card">
+<h3 class="font-bold mb-4">Ações Automáticas</h3>
+<p class="text-sm text-gray-500 mb-4">Configure ações que o agente pode executar automaticamente</p>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Criar contato automaticamente</div><div class="text-sm text-gray-500">Adiciona novos contatos ao CRM</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Adicionar tags em conversas</div><div class="text-sm text-gray-500">Marca automaticamente com tags relevantes</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Criar negociação no CRM</div><div class="text-sm text-gray-500">Cria oportunidade quando identificar interesse</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Transferir para humano</div><div class="text-sm text-gray-500">Notifica equipe quando necessário</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Agendar follow-up</div><div class="text-sm text-gray-500">Agenda automaticamente próximo contato</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Agentes IA',href:'/agente-ia.html'},{label:'Editor',href:'/agente-ia-editor.html',active:true}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function showTab(name){document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'));document.getElementById(`tab-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');}function adicionarDocumento(){Toast.info('Abrir modal para adicionar documento');}function testarAgente(){Toast.info('Abrir modal de teste do agente');}function salvarAgente(){Toast.success('Agente salvo com sucesso!');setTimeout(()=>window.location.href='/agente-ia.html',1500);}</script>
+</body>
+</html>

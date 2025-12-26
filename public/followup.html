@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Follow-up Inteligente - WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="app-sidebar" id="sidebar">
+      <div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div>
+      <nav class="sidebar-menu" id="sidebarMenu"></nav>
+    </aside>
+
+    <header class="app-header">
+      <button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+      <div class="header-actions">
+        <button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
+        <div class="user-menu"><img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="flex items-center justify-between mb-6">
+        <div><h1 class="page-title">Follow-up Inteligente</h1><p class="page-subtitle">Automatize sequências de mensagens</p></div>
+        <button onclick="window.location.href='/followup/nova.html'" class="btn btn-primary">➕ Nova Sequência</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="card"><p class="text-sm text-gray-600">Sequências Ativas</p><h3 class="text-2xl font-bold mt-1" id="kpi-ativas">0</h3></div>
+        <div class="card"><p class="text-sm text-gray-600">Inscritos Ativos</p><h3 class="text-2xl font-bold mt-1" id="kpi-inscritos">0</h3></div>
+        <div class="card"><p class="text-sm text-gray-600">Taxa de Sucesso</p><h3 class="text-2xl font-bold mt-1" id="kpi-taxa">0%</h3></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Minhas Sequências</h3></div>
+        <div class="card-body"><table class="table"><thead><tr><th>Nome</th><th>Gatilho</th><th>Inscritos</th><th>Status</th><th>Ações</th></tr></thead><tbody id="sequenciasTable"></tbody></table></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    Auth.checkAuth();
+    const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}
+    function loadMenu(){const m=[{label:'Dashboard',href:'/dashboard.html'},{label:'CRM',href:'/crm.html'},{label:'Follow-up',href:'/followup.html',active:true},{label:'Agente IA',href:'/agente-ia.html'}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}
+
+    async function loadSequencias(){
+      try{
+        const seq=await API.get('/api/followup/sequencias');
+        document.getElementById('kpi-ativas').textContent=seq.filter(s=>s.ativo).length;
+        document.getElementById('kpi-inscritos').textContent=seq.reduce((sum,s)=>sum+(s.totalInscritos||0),0);
+        document.getElementById('sequenciasTable').innerHTML=seq.map(s=>`
+          <tr>
+            <td class="font-semibold">${s.nome}</td>
+            <td><span class="badge badge-info">${s.gatilho_tipo}</span></td>
+            <td>${s.totalInscritos||0}</td>
+            <td><span class="badge badge-${s.ativo?'success':'error'}">${s.ativo?'Ativa':'Pausada'}</span></td>
+            <td><button class="btn-sm btn-outline" onclick="editarSequencia('${s.id}')">Editar</button></td>
+          </tr>
+        `).join('');
+      }catch(e){Toast.error('Erro ao carregar sequências');}
+    }
+
+    function editarSequencia(id){window.location.href=`/followup/editar.html?id=${id}`;}
+    loadSequencias();
+  </script>
+</body>
+</html>

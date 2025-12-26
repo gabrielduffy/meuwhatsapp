@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Kanban - WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <aside class="app-sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        <span>WhatsBenemax</span>
+      </div>
+      <nav class="sidebar-menu" id="sidebarMenu"></nav>
+    </aside>
+
+    <header class="app-header">
+      <button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+      <div class="header-actions">
+        <button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
+        <div class="user-menu" onclick="toggleUserMenu()">
+          <img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar">
+          <div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="flex items-center justify-between mb-6">
+        <div><h1 class="page-title">CRM Kanban</h1><p class="page-subtitle">Gerencie suas negociações visualmente</p></div>
+        <div class="flex gap-3">
+          <button onclick="Modal.open('modalFunil')" class="btn btn-outline">⚙️ Gerenciar Funis</button>
+          <button onclick="Modal.open('modalNovaNegociacao')" class="btn btn-primary">➕ Nova Negociação</button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <select id="selectFunil" onchange="loadEtapas()" class="input">
+          <option value="">Selecione um funil...</option>
+        </select>
+      </div>
+
+      <div id="kanbanBoard" class="flex gap-4 overflow-x-auto pb-4">
+        <!-- Colunas do Kanban serão carregadas aqui -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Nova Negociação -->
+  <div id="modalNovaNegociacao" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova Negociação</h3>
+        <button onclick="Modal.close('modalNovaNegociacao')" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNegociacao" class="space-y-4">
+          <div><label class="block text-sm font-semibold mb-2">Contato</label><select class="input" id="contatoId" required><option value="">Selecione...</option></select></div>
+          <div><label class="block text-sm font-semibold mb-2">Título</label><input type="text" class="input" id="titulo" required></div>
+          <div><label class="block text-sm font-semibold mb-2">Valor (R$)</label><input type="number" class="input" id="valor" step="0.01"></div>
+          <div><label class="block text-sm font-semibold mb-2">Etapa</label><select class="input" id="etapaId" required></select></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button onclick="Modal.close('modalNovaNegociacao')" class="btn btn-secondary">Cancelar</button>
+        <button onclick="criarNegociacao()" class="btn btn-primary">Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    Auth.checkAuth();
+    const user = Auth.getUser();
+    if(user) { document.getElementById('userName').textContent = user.nome; loadMenu(); }
+
+    function toggleUserMenu() {}
+    function loadMenu() {
+      const menu = [
+        {label:'Dashboard',href:'/dashboard.html'},{label:'Instâncias',href:'/instancias.html'},{label:'Contatos',href:'/contatos.html'},
+        {label:'CRM Kanban',href:'/crm.html',active:true},{label:'Follow-up',href:'/followup.html'},{label:'Agente IA',href:'/agente-ia.html'},
+        {label:'Chat',href:'/chat.html'},{label:'White Label',href:'/whitelabel.html'},{label:'Equipe',href:'/equipe.html'}
+      ];
+      document.getElementById('sidebarMenu').innerHTML = menu.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');
+    }
+
+    async function loadFunis() {
+      try {
+        const funis = await API.get('/api/crm/funis');
+        const select = document.getElementById('selectFunil');
+        select.innerHTML = '<option value="">Selecione um funil...</option>' + funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+        if(funis.length>0) { select.value=funis[0].id; loadEtapas(); }
+      } catch(e) { Toast.error('Erro ao carregar funis'); }
+    }
+
+    async function loadEtapas() {
+      const funilId = document.getElementById('selectFunil').value;
+      if(!funilId) return;
+
+      try {
+        const etapas = await API.get(`/api/crm/funis/${funilId}/etapas`);
+        const board = document.getElementById('kanbanBoard');
+
+        board.innerHTML = etapas.map(etapa => `
+          <div class="flex-shrink-0 w-80">
+            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-900 dark:text-white">${etapa.nome}</h3>
+                <span class="badge badge-primary">${etapa.negociacoes?.length || 0}</span>
+              </div>
+              <div id="etapa-${etapa.id}" class="space-y-3 min-h-[200px]">
+                ${(etapa.negociacoes || []).map(neg => `
+                  <div class="card cursor-move" draggable="true">
+                    <h4 class="font-semibold text-sm">${neg.titulo}</h4>
+                    <p class="text-xs text-gray-500 mt-1">${neg.contato?.nome || 'Sem contato'}</p>
+                    ${neg.valor ? `<p class="text-sm font-bold text-purple-600 mt-2">R$ ${neg.valor.toLocaleString('pt-BR')}</p>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        // Sortable.js para drag&drop
+        etapas.forEach(etapa => {
+          new Sortable(document.getElementById(`etapa-${etapa.id}`), {
+            group: 'kanban',
+            animation: 150,
+            onEnd: async (evt) => {
+              const negId = evt.item.dataset.id;
+              const novaEtapa = evt.to.id.replace('etapa-','');
+              // await API.put(`/api/crm/negociacoes/${negId}/mover`, {etapaId: novaEtapa});
+              Toast.success('Negociação movida!');
+            }
+          });
+        });
+      } catch(e) { Toast.error('Erro ao carregar etapas'); }
+    }
+
+    async function criarNegociacao() {
+      const data = {
+        contatoId: document.getElementById('contatoId').value,
+        titulo: document.getElementById('titulo').value,
+        valor: document.getElementById('valor').value,
+        etapaId: document.getElementById('etapaId').value
+      };
+      try {
+        await API.post('/api/crm/negociacoes', data);
+        Toast.success('Negociação criada!');
+        Modal.close('modalNovaNegociacao');
+        loadEtapas();
+      } catch(e) { Toast.error('Erro ao criar negociação'); }
+    }
+
+    loadFunis();
+  </script>
+</body>
+</html>

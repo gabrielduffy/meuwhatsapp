@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Dashboard Afiliado - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script><script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=Afiliado&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Afiliado</div></div></div></div></header>
+<main class="app-main">
+<div class="mb-6"><h1 class="page-title">Dashboard do Afiliado</h1><p class="page-subtitle">Acompanhe seus ganhos e indicações</p></div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Ganhos Totais</p><h3 class="text-2xl font-bold text-green-600">R$ 3.450,00</h3></div><div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">A Receber</p><h3 class="text-2xl font-bold text-purple-600">R$ 580,00</h3></div><div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Total Indicações</p><h3 class="text-2xl font-bold">23</h3></div><div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Assinantes Ativos</p><h3 class="text-2xl font-bold">18</h3></div><div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div></div></div>
+</div>
+
+<!-- Link de Afiliado -->
+<div class="card mb-6" style="background:linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%);color:white;">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<h3 class="text-lg font-bold mb-4">🔗 Seu Link de Indicação</h3>
+<div class="bg-white/10 rounded-lg p-3 mb-3">
+<input type="text" id="linkAfiliado" class="bg-transparent border-0 text-white w-full" value="https://whatsbenemax.com/ref/abc123def" readonly>
+</div>
+<div class="flex gap-2">
+<button class="btn bg-white text-purple-600 hover:bg-gray-100" onclick="copiarLink()">📋 Copiar Link</button>
+<button class="btn bg-white/20 hover:bg-white/30" onclick="compartilharLink()">📤 Compartilhar</button>
+</div>
+</div>
+<div class="text-center">
+<h3 class="text-lg font-bold mb-4">📱 QR Code</h3>
+<div class="bg-white rounded-lg p-4 inline-block">
+<canvas id="qrcode" class="mx-auto"></canvas>
+</div>
+<button class="btn bg-white/20 hover:bg-white/30 mt-3" onclick="baixarQRCode()">⬇️ Baixar QR Code</button>
+</div>
+</div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs mb-6"><button class="tab active" onclick="showTab('comissoes')">💰 Comissões</button><button class="tab" onclick="showTab('indicacoes')">👥 Indicações</button><button class="tab" onclick="showTab('saques')">🏦 Saques</button><button class="tab" onclick="showTab('dados-bancarios')">💳 Dados Bancários</button></div>
+
+<!-- Comissões Tab -->
+<div id="tab-comissoes">
+<div class="card">
+<table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Plano</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead><tbody id="comissoesTable"></tbody></table>
+</div>
+</div>
+
+<!-- Indicações Tab -->
+<div id="tab-indicacoes" class="hidden">
+<div class="card">
+<table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Data Cadastro</th><th>Status</th><th>Comissão Total</th></tr></thead><tbody id="indicacoesTable"></tbody></table>
+</div>
+</div>
+
+<!-- Saques Tab -->
+<div id="tab-saques" class="hidden">
+<div class="mb-4"><button class="btn btn-primary" onclick="solicitarSaque()">💸 Solicitar Saque</button></div>
+<div class="card">
+<table class="table"><thead><tr><th>Número</th><th>Data Solicitação</th><th>Valor</th><th>Status</th><th>Data Pagamento</th></tr></thead><tbody id="saquesTable"></tbody></table>
+</div>
+</div>
+
+<!-- Dados Bancários Tab -->
+<div id="tab-dados-bancarios" class="hidden">
+<div class="card">
+<form class="space-y-4" onsubmit="salvarDadosBancarios(event)">
+<h3 class="font-bold mb-4">Dados para Recebimento</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Tipo de Chave PIX</label><select class="input" id="tipoChavePix"><option>CPF</option><option>CNPJ</option><option>Email</option><option>Celular</option><option>Aleatória</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Chave PIX</label><input type="text" class="input" id="chavePix" placeholder="Digite sua chave PIX"></div>
+<div><label class="block text-sm font-semibold mb-2">Banco</label><input type="text" class="input" id="banco" placeholder="Nome do banco"></div>
+<div><label class="block text-sm font-semibold mb-2">Agência</label><input type="text" class="input" id="agencia" placeholder="0000"></div>
+<div><label class="block text-sm font-semibold mb-2">Conta</label><input type="text" class="input" id="conta" placeholder="00000-0"></div>
+<div><label class="block text-sm font-semibold mb-2">Tipo de Conta</label><select class="input" id="tipoConta"><option>Corrente</option><option>Poupança</option></select></div>
+<div class="md:col-span-2"><label class="block text-sm font-semibold mb-2">Titular da Conta</label><input type="text" class="input" id="titular" placeholder="Nome completo"></div>
+<div class="md:col-span-2"><label class="block text-sm font-semibold mb-2">CPF/CNPJ do Titular</label><input type="text" class="input" id="documentoTitular" placeholder="000.000.000-00"></div>
+</div>
+<button type="submit" class="btn btn-primary">Salvar Dados Bancários</button>
+</form>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Dashboard',href:'/afiliado/dashboard.html',active:true},{label:'Materiais',href:'/afiliado/materiais.html'}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function gerarQRCode(){const link=document.getElementById('linkAfiliado').value;const canvas=document.getElementById('qrcode');QRCode.toCanvas(canvas,link,{width:200,margin:2,color:{dark:'#5B21B6',light:'#FFFFFF'}},function(error){if(error)console.error(error);});}function copiarLink(){const link=document.getElementById('linkAfiliado');link.select();navigator.clipboard.writeText(link.value);Toast.success('Link copiado!');}function compartilharLink(){const link=document.getElementById('linkAfiliado').value;if(navigator.share){navigator.share({title:'WhatsBenemax - Indicação',text:'Conheça o WhatsBenemax!',url:link});}else{copiarLink();}}function baixarQRCode(){const canvas=document.getElementById('qrcode');const url=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download='qrcode-afiliado.png';a.click();Toast.success('QR Code baixado!');}function loadComissoes(){const comissoes=[{data:'20/12/2024',cliente:'João Silva',plano:'Premium',tipo:'Recorrente',valor:89.10,status:'paga'},{data:'15/12/2024',cliente:'Maria Santos',plano:'Básico',tipo:'Recorrente',valor:29.10,status:'paga'},{data:'10/12/2024',cliente:'Pedro Costa',plano:'Enterprise',tipo:'Primeira venda',valor:239.10,status:'paga'},{data:'05/12/2024',cliente:'Ana Oliveira',plano:'Premium',tipo:'Recorrente',valor:89.10,status:'pendente'}];document.getElementById('comissoesTable').innerHTML=comissoes.map(c=>`<tr><td class="text-sm">${c.data}</td><td class="font-semibold">${c.cliente}</td><td><span class="badge badge-secondary">${c.plano}</span></td><td class="text-sm">${c.tipo}</td><td class="font-bold text-green-600">R$ ${c.valor.toFixed(2)}</td><td><span class="badge badge-${c.status==='paga'?'success':'warning'}">${c.status.charAt(0).toUpperCase()+c.status.slice(1)}</span></td></tr>`).join('');}function loadIndicacoes(){const indicacoes=[{nome:'João Silva',email:'joao@email.com',plano:'Premium',dataCadastro:'15/11/2024',status:'ativo',comissaoTotal:267.30},{nome:'Maria Santos',email:'maria@email.com',plano:'Básico',dataCadastro:'20/11/2024',status:'ativo',comissaoTotal:87.30},{nome:'Pedro Costa',email:'pedro@email.com',plano:'Enterprise',dataCadastro:'25/11/2024',status:'ativo',comissaoTotal:717.30},{nome:'Ana Oliveira',email:'ana@email.com',plano:'Premium',dataCadastro:'01/12/2024',status:'ativo',comissaoTotal:178.20},{nome:'Carlos Lima',email:'carlos@email.com',plano:'Básico',dataCadastro:'10/12/2024',status:'inativo',comissaoTotal:29.10}];document.getElementById('indicacoesTable').innerHTML=indicacoes.map(i=>`<tr><td class="font-semibold">${i.nome}</td><td class="text-sm">${i.email}</td><td><span class="badge badge-secondary">${i.plano}</span></td><td class="text-sm">${i.dataCadastro}</td><td><span class="badge badge-${i.status==='ativo'?'success':'error'}">${i.status.charAt(0).toUpperCase()+i.status.slice(1)}</span></td><td class="font-bold text-green-600">R$ ${i.comissaoTotal.toFixed(2)}</td></tr>`).join('');}function loadSaques(){const saques=[{numero:'#2024-003',dataSolicitacao:'01/12/2024',valor:2870.00,status:'pago',dataPagamento:'05/12/2024'},{numero:'#2024-002',dataSolicitacao:'01/11/2024',valor:1520.00,status:'pago',dataPagamento:'05/11/2024'},{numero:'#2024-001',dataSolicitacao:'01/10/2024',valor:980.00,status:'pago',dataPagamento:'05/10/2024'}];document.getElementById('saquesTable').innerHTML=saques.map(s=>`<tr><td class="font-semibold">${s.numero}</td><td class="text-sm">${s.dataSolicitacao}</td><td class="font-bold text-green-600">R$ ${s.valor.toFixed(2)}</td><td><span class="badge badge-${s.status==='pago'?'success':s.status==='processando'?'warning':'secondary'}">${s.status.charAt(0).toUpperCase()+s.status.slice(1)}</span></td><td class="text-sm">${s.dataPagamento||'-'}</td></tr>`).join('');}function solicitarSaque(){Toast.info('Abrir modal de solicitação de saque');}function salvarDadosBancarios(e){e.preventDefault();Toast.success('Dados bancários salvos com sucesso!');}function showTab(name){document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'));document.getElementById(`tab-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');if(name==='indicacoes')loadIndicacoes();if(name==='saques')loadSaques();}gerarQRCode();loadComissoes();</script>
+</body>
+</html>

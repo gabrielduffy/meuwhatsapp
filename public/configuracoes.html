@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Configurações - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><button class="header-btn" onclick="window.location.href='/notificacoes.html'"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="notification-badge">3</span></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div></div></div></header>
+<main class="app-main">
+<h1 class="page-title mb-6">Configurações</h1>
+
+<!-- Tabs -->
+<div class="tabs mb-6"><button class="tab active" onclick="showTab('perfil')">👤 Perfil</button><button class="tab" onclick="showTab('empresa')">🏢 Empresa</button><button class="tab" onclick="showTab('notificacoes')">🔔 Notificações</button><button class="tab" onclick="showTab('seguranca')">🔒 Segurança</button><button class="tab" onclick="showTab('preferencias')">⚙️ Preferências</button></div>
+
+<!-- Perfil Tab -->
+<div id="tab-perfil">
+<div class="card">
+<form class="space-y-4">
+<div class="flex items-center gap-4 mb-6">
+<img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="w-20 h-20 rounded-full">
+<div>
+<button type="button" class="btn btn-outline mb-2">📷 Alterar Foto</button>
+<p class="text-sm text-gray-500">JPG, PNG ou GIF. Máx 2MB</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Nome Completo</label><input type="text" class="input" value="João Silva"></div>
+<div><label class="block text-sm font-semibold mb-2">Email</label><input type="email" class="input" value="joao@empresa.com"></div>
+<div><label class="block text-sm font-semibold mb-2">Telefone</label><input type="tel" class="input" value="(11) 99999-9999"></div>
+<div><label class="block text-sm font-semibold mb-2">Cargo</label><input type="text" class="input" value="Gerente de Vendas"></div>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Bio</label><textarea class="input" rows="3" placeholder="Conte um pouco sobre você..."></textarea></div>
+<button type="submit" class="btn btn-primary">Salvar Alterações</button>
+</form>
+</div>
+</div>
+
+<!-- Empresa Tab -->
+<div id="tab-empresa" class="hidden">
+<div class="card">
+<form class="space-y-4">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+<svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+</div>
+<div>
+<button type="button" class="btn btn-outline mb-2">📷 Logo da Empresa</button>
+<p class="text-sm text-gray-500">Será exibido no sistema</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Razão Social</label><input type="text" class="input" value="Empresa LTDA"></div>
+<div><label class="block text-sm font-semibold mb-2">Nome Fantasia</label><input type="text" class="input" value="Minha Empresa"></div>
+<div><label class="block text-sm font-semibold mb-2">CNPJ</label><input type="text" class="input" value="12.345.678/0001-90"></div>
+<div><label class="block text-sm font-semibold mb-2">Telefone</label><input type="tel" class="input" value="(11) 3333-4444"></div>
+<div><label class="block text-sm font-semibold mb-2">Email</label><input type="email" class="input" value="contato@empresa.com"></div>
+<div><label class="block text-sm font-semibold mb-2">Site</label><input type="url" class="input" value="https://empresa.com.br"></div>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Endereço Completo</label><textarea class="input" rows="2">Rua Exemplo, 123 - Centro - São Paulo/SP - CEP 01234-567</textarea></div>
+<button type="submit" class="btn btn-primary">Salvar Alterações</button>
+</form>
+</div>
+</div>
+
+<!-- Notificações Tab -->
+<div id="tab-notificacoes" class="hidden">
+<div class="card">
+<h3 class="font-bold mb-4">Preferências de Notificação</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Novas mensagens</div><div class="text-sm text-gray-500">Receba notificação quando chegar nova mensagem</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Negociações CRM</div><div class="text-sm text-gray-500">Notificações sobre mudanças nas negociações</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Follow-up</div><div class="text-sm text-gray-500">Alertas de follow-up agendados</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Relatórios</div><div class="text-sm text-gray-500">Relatórios semanais por email</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Marketing</div><div class="text-sm text-gray-500">Novidades e atualizações do sistema</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+</div>
+<h3 class="font-bold mt-6 mb-4">Canais de Notificação</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4" checked><span>Email</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4" checked><span>Notificações Push</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4"><span>SMS</span></label>
+<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4"><span>WhatsApp</span></label>
+</div>
+</div>
+</div>
+
+<!-- Segurança Tab -->
+<div id="tab-seguranca" class="hidden">
+<div class="card mb-6">
+<h3 class="font-bold mb-4">Alterar Senha</h3>
+<form class="space-y-4">
+<div><label class="block text-sm font-semibold mb-2">Senha Atual</label><input type="password" class="input"></div>
+<div><label class="block text-sm font-semibold mb-2">Nova Senha</label><input type="password" class="input"></div>
+<div><label class="block text-sm font-semibold mb-2">Confirmar Nova Senha</label><input type="password" class="input"></div>
+<button type="submit" class="btn btn-primary">Alterar Senha</button>
+</form>
+</div>
+<div class="card">
+<h3 class="font-bold mb-4">Autenticação de Dois Fatores (2FA)</h3>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
+<div><div class="font-semibold">2FA está desativado</div><div class="text-sm text-gray-500">Adicione uma camada extra de segurança</div></div>
+<button class="btn btn-primary">Ativar 2FA</button>
+</div>
+<h3 class="font-bold mb-4 mt-6">Sessões Ativas</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"><div class="flex items-center gap-3"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg><div><div class="font-semibold">Chrome - Windows</div><div class="text-sm text-gray-500">São Paulo, Brasil • Agora</div></div></div><span class="badge badge-success">Atual</span></div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"><div class="flex items-center gap-3"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg><div><div class="font-semibold">Safari - iPhone</div><div class="text-sm text-gray-500">São Paulo, Brasil • 2 horas atrás</div></div></div><button class="btn-sm btn-error">Encerrar</button></div>
+</div>
+</div>
+</div>
+
+<!-- Preferências Tab -->
+<div id="tab-preferencias" class="hidden">
+<div class="card">
+<h3 class="font-bold mb-4">Interface</h3>
+<div class="space-y-4 mb-6">
+<div><label class="block text-sm font-semibold mb-2">Tema</label><select class="input"><option>Modo Claro</option><option>Modo Escuro</option><option selected>Automático (Sistema)</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Idioma</label><select class="input"><option selected>Português (Brasil)</option><option>English</option><option>Español</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Fuso Horário</label><select class="input"><option selected>América/São Paulo (GMT-3)</option><option>América/Fortaleza (GMT-3)</option><option>América/Manaus (GMT-4)</option></select></div>
+</div>
+<h3 class="font-bold mb-4">Chat e Mensagens</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Som de notificação</div><div class="text-sm text-gray-500">Reproduzir som ao receber mensagens</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Visualização prévia</div><div class="text-sm text-gray-500">Mostrar prévia de mensagens nas notificações</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Enter para enviar</div><div class="text-sm text-gray-500">Pressionar Enter envia a mensagem</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Dashboard',href:'/dashboard.html'},{label:'Configurações',href:'/configuracoes.html',active:true}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function showTab(name){document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'));document.getElementById(`tab-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');}</script>
+</body>
+</html>

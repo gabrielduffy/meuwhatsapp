@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Editor de Follow-up - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="btn btn-outline" onclick="salvarRascunho()">💾 Salvar Rascunho</button><button class="btn btn-primary" onclick="publicarSequencia()">✓ Publicar Sequência</button><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div></div></div></header>
+<main class="app-main">
+<div class="mb-6"><h1 class="page-title">Editor de Sequência de Follow-up</h1><p class="page-subtitle">Crie automações inteligentes para nutrir seus leads</p></div>
+
+<!-- Configurações Gerais -->
+<div class="card mb-6">
+<h3 class="font-bold mb-4">Configurações da Sequência</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="block text-sm font-semibold mb-2">Nome da Sequência</label><input type="text" class="input" placeholder="Ex: Boas-vindas novos leads" id="nomeSequencia"></div>
+<div><label class="block text-sm font-semibold mb-2">Gatilho de Início</label><select class="input" id="gatilho"><option>Novo contato adicionado</option><option>Tag específica adicionada</option><option>Entrada em funil CRM</option><option>Evento personalizado</option><option>Manual</option></select></div>
+<div class="md:col-span-2"><label class="block text-sm font-semibold mb-2">Descrição</label><textarea class="input" rows="2" placeholder="Descreva o objetivo desta sequência..." id="descricao"></textarea></div>
+</div>
+</div>
+
+<!-- Editor de Etapas -->
+<div class="card mb-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold">Etapas da Sequência</h3>
+<button class="btn btn-primary" onclick="adicionarEtapa()">➕ Adicionar Etapa</button>
+</div>
+<div id="etapasList" class="space-y-4">
+<!-- Etapa 1 -->
+<div class="p-4 border-2 border-purple-600 rounded-lg bg-purple-50 dark:bg-purple-900/10">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+<h4 class="font-bold">Primeira Mensagem</h4>
+</div>
+<div class="flex gap-2">
+<button class="btn-sm btn-outline" onclick="editarEtapa(1)">✏️</button>
+<button class="btn-sm btn-error" onclick="removerEtapa(1)">🗑️</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+<div><label class="block text-sm font-semibold mb-2">Aguardar</label><div class="flex gap-2"><input type="number" class="input" value="0" style="width:80px"><select class="input flex-1"><option>minutos</option><option>horas</option><option selected>dias</option></select></div></div>
+<div><label class="block text-sm font-semibold mb-2">Tipo de Ação</label><select class="input"><option selected>Enviar mensagem</option><option>Enviar arquivo</option><option>Marcar tag</option><option>Mover para funil</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Instância</label><select class="input"><option>Todas disponíveis</option><option>Instância Principal</option><option>Instância 2</option></select></div>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Mensagem</label><textarea class="input" rows="3" placeholder="Digite a mensagem... Use {{nome}}, {{email}}, etc para personalizar">Olá {{nome}}! 👋
+
+Seja bem-vindo(a) à nossa plataforma! Estamos muito felizes em ter você conosco.</textarea></div>
+<div class="flex items-center gap-2 mt-3">
+<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4"><span class="text-sm">Parar sequência se responder</span></label>
+</div>
+</div>
+
+<!-- Etapa 2 -->
+<div class="flex justify-center">
+<div class="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+</div>
+<div class="p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-gray-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+<h4 class="font-bold">Acompanhamento</h4>
+</div>
+<div class="flex gap-2">
+<button class="btn-sm btn-outline" onclick="editarEtapa(2)">✏️</button>
+<button class="btn-sm btn-error" onclick="removerEtapa(2)">🗑️</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+<div><label class="block text-sm font-semibold mb-2">Aguardar</label><div class="flex gap-2"><input type="number" class="input" value="3" style="width:80px"><select class="input flex-1"><option>minutos</option><option>horas</option><option selected>dias</option></select></div></div>
+<div><label class="block text-sm font-semibold mb-2">Tipo de Ação</label><select class="input"><option selected>Enviar mensagem</option><option>Enviar arquivo</option><option>Marcar tag</option><option>Mover para funil</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Instância</label><select class="input"><option selected>Todas disponíveis</option><option>Instância Principal</option></select></div>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Mensagem</label><textarea class="input" rows="3">Oi {{nome}}!
+
+Vi que você ainda não explorou nossa plataforma. Precisa de ajuda para começar? 🚀</textarea></div>
+<div class="flex items-center gap-2 mt-3">
+<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4" checked><span class="text-sm">Parar sequência se responder</span></label>
+</div>
+</div>
+
+<!-- Etapa 3 -->
+<div class="flex justify-center">
+<div class="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+</div>
+<div class="p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-gray-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+<h4 class="font-bold">Oferta Especial</h4>
+</div>
+<div class="flex gap-2">
+<button class="btn-sm btn-outline" onclick="editarEtapa(3)">✏️</button>
+<button class="btn-sm btn-error" onclick="removerEtapa(3)">🗑️</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+<div><label class="block text-sm font-semibold mb-2">Aguardar</label><div class="flex gap-2"><input type="number" class="input" value="7" style="width:80px"><select class="input flex-1"><option>minutos</option><option>horas</option><option selected>dias</option></select></div></div>
+<div><label class="block text-sm font-semibold mb-2">Tipo de Ação</label><select class="input"><option selected>Enviar mensagem</option><option>Enviar arquivo</option><option>Marcar tag</option><option>Mover para funil</option></select></div>
+<div><label class="block text-sm font-semibold mb-2">Instância</label><select class="input"><option selected>Todas disponíveis</option></select></div>
+</div>
+<div><label class="block text-sm font-semibold mb-2">Mensagem</label><textarea class="input" rows="3">{{nome}}, temos uma oferta especial para você! 🎁
+
+Aproveite 20% OFF no plano Premium nos primeiros 3 meses. Que tal começar agora?</textarea></div>
+</div>
+</div>
+</div>
+
+<!-- Configurações Avançadas -->
+<div class="card">
+<h3 class="font-bold mb-4">Configurações Avançadas</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Parar ao receber resposta</div><div class="text-sm text-gray-500">Interrompe automaticamente quando o lead responder</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Respeitar horário comercial</div><div class="text-sm text-gray-500">Enviar apenas de Seg-Sex, 9h-18h</div></div>
+<label class="switch"><input type="checkbox"><span class="slider"></span></label>
+</div>
+<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+<div><div class="font-semibold">Notificar responsável</div><div class="text-sm text-gray-500">Enviar notificação quando lead responder</div></div>
+<label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Follow-up',href:'/followup.html'},{label:'Editor',href:'/followup-editor.html',active:true}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function adicionarEtapa(){Toast.info('Adicionar nova etapa');}function editarEtapa(n){Toast.info('Editar etapa '+n);}function removerEtapa(n){if(confirm('Tem certeza que deseja remover esta etapa?')){Toast.success('Etapa removida');}}function salvarRascunho(){Toast.success('Rascunho salvo com sucesso!');}function publicarSequencia(){const nome=document.getElementById('nomeSequencia').value;if(!nome){Toast.error('Preencha o nome da sequência');return;}Toast.success('Sequência publicada!');setTimeout(()=>window.location.href='/followup.html',1500);}</script>
+</body>
+</html>

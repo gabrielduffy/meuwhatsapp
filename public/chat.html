@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Chat - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><input type="text" placeholder="Buscar conversas..." class="input" style="width:300px" onkeyup="buscarConversas(this.value)"><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><button class="header-btn" onclick="window.location.href='/notificacoes.html'"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="notification-badge">3</span></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=User&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Usuário</div></div></div></div></header>
+<main class="app-main p-0" style="max-width:100%;">
+<div class="flex h-full">
+<!-- Coluna 1: Lista de Conversas -->
+<div class="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800">
+<div class="p-4 border-b border-gray-200 dark:border-gray-700">
+<h2 class="font-bold text-lg">Conversas</h2>
+<div class="flex gap-2 mt-3">
+<button class="btn-sm btn-primary flex-1" onclick="filtrarConversas('todas')">Todas</button>
+<button class="btn-sm btn-outline flex-1" onclick="filtrarConversas('nao-lidas')">Não Lidas</button>
+</div>
+</div>
+<div id="conversasList" class="flex-1 overflow-y-auto"></div>
+</div>
+
+<!-- Coluna 2: Mensagens -->
+<div class="flex-1 flex flex-col bg-white dark:bg-gray-800">
+<div id="chatHeader" class="p-4 border-b border-gray-200 dark:border-gray-700 hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img id="chatAvatar" class="w-10 h-10 rounded-full">
+<div>
+<h3 id="chatNome" class="font-bold"></h3>
+<p id="chatStatus" class="text-sm text-gray-500"></p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="header-btn"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+<button class="header-btn"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg></button>
+</div>
+</div>
+</div>
+<div id="mensagensArea" class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
+<div class="flex items-center justify-center h-full text-gray-400">
+<div class="text-center">
+<svg class="w-24 h-24 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+<p class="text-lg font-semibold">Selecione uma conversa</p>
+<p class="text-sm">Escolha uma conversa da lista para começar</p>
+</div>
+</div>
+</div>
+<div id="inputArea" class="p-4 border-t border-gray-200 dark:border-gray-700 hidden">
+<div class="flex gap-2">
+<button class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
+<button class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg></button>
+<input type="text" id="messageInput" class="input flex-1" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter') enviarMensagem()">
+<button class="btn btn-primary" onclick="enviarMensagem()">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+</button>
+</div>
+</div>
+</div>
+
+<!-- Coluna 3: Detalhes do Contato -->
+<div id="detalhesContato" class="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hidden overflow-y-auto">
+<div class="p-6 text-center border-b border-gray-200 dark:border-gray-700">
+<img id="detalheAvatar" class="w-24 h-24 rounded-full mx-auto mb-3">
+<h3 id="detalheNome" class="font-bold text-xl mb-1"></h3>
+<p id="detalheTelefone" class="text-sm text-gray-500 mb-3"></p>
+<div class="flex gap-2 justify-center">
+<span id="detalheEtiquetas"></span>
+</div>
+</div>
+<div class="p-4">
+<h4 class="font-bold mb-3">Informações</h4>
+<div class="space-y-3 text-sm">
+<div class="flex justify-between"><span class="text-gray-500">Email:</span><span id="detalheEmail">-</span></div>
+<div class="flex justify-between"><span class="text-gray-500">Empresa:</span><span id="detalheEmpresa">-</span></div>
+<div class="flex justify-between"><span class="text-gray-500">Cidade:</span><span id="detalheCidade">-</span></div>
+<div class="flex justify-between"><span class="text-gray-500">Desde:</span><span id="detalheCriado">-</span></div>
+</div>
+<h4 class="font-bold mt-6 mb-3">Negociações</h4>
+<div id="detalheNegociacoes" class="space-y-2"></div>
+<h4 class="font-bold mt-6 mb-3">Ações Rápidas</h4>
+<div class="space-y-2">
+<button class="btn btn-outline w-full">Adicionar ao CRM</button>
+<button class="btn btn-outline w-full">Adicionar Etiqueta</button>
+<button class="btn btn-outline w-full">Ver Histórico</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Dashboard',href:'/dashboard.html'},{label:'Instâncias',href:'/instancias.html'},{label:'Contatos',href:'/contatos.html'},{label:'Chat',href:'/chat.html',active:true},{label:'CRM Kanban',href:'/crm.html'}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}let conversaSelecionada=null;async function loadConversas(){try{const conversas=[{id:1,nome:'João Silva',telefone:'5511999999999',avatar:'https://ui-avatars.com/api/?name=Joao+Silva&background=5B21B6&color=fff',ultima_mensagem:'Olá, gostaria de saber mais sobre...',timestamp:'10:30',nao_lida:true,mensagens_nao_lidas:3},{id:2,nome:'Maria Santos',telefone:'5511888888888',avatar:'https://ui-avatars.com/api/?name=Maria+Santos&background=7C3AED&color=fff',ultima_mensagem:'Obrigada pelo atendimento!',timestamp:'09:15',nao_lida:false},{id:3,nome:'Pedro Costa',telefone:'5511777777777',avatar:'https://ui-avatars.com/api/?name=Pedro+Costa&background=5B21B6&color=fff',ultima_mensagem:'Quando posso realizar o pagamento?',timestamp:'Ontem',nao_lida:true,mensagens_nao_lidas:1}];document.getElementById('conversasList').innerHTML=conversas.map(c=>`<div class="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${c.nao_lida?'bg-purple-50 dark:bg-purple-900/20':''}" onclick="abrirConversa(${c.id})"><div class="flex items-center gap-3"><img src="${c.avatar}" class="w-12 h-12 rounded-full"><div class="flex-1 min-w-0"><div class="flex items-center justify-between mb-1"><h4 class="font-semibold truncate">${c.nome}</h4><span class="text-xs text-gray-500">${c.timestamp}</span></div><div class="flex items-center justify-between"><p class="text-sm text-gray-600 dark:text-gray-400 truncate">${c.ultima_mensagem}</p>${c.mensagens_nao_lidas?`<span class="badge badge-primary ml-2">${c.mensagens_nao_lidas}</span>`:''}</div></div></div></div>`).join('');}catch(e){Toast.error('Erro ao carregar conversas');}}async function abrirConversa(id){conversaSelecionada=id;const contato={id:id,nome:'João Silva',telefone:'5511999999999',avatar:'https://ui-avatars.com/api/?name=Joao+Silva&background=5B21B6&color=fff',email:'joao@email.com',empresa:'Empresa XYZ',cidade:'São Paulo',criado:'15/01/2024',etiquetas:['Cliente','VIP']};document.getElementById('chatHeader').classList.remove('hidden');document.getElementById('inputArea').classList.remove('hidden');document.getElementById('detalhesContato').classList.remove('hidden');document.getElementById('chatAvatar').src=contato.avatar;document.getElementById('chatNome').textContent=contato.nome;document.getElementById('chatStatus').textContent='online';const mensagens=[{tipo:'recebida',texto:'Olá, gostaria de saber mais sobre o produto',timestamp:'10:25'},{tipo:'enviada',texto:'Olá! Claro, ficarei feliz em ajudar. Sobre qual produto você gostaria de saber?',timestamp:'10:26'},{tipo:'recebida',texto:'Sobre o plano Premium',timestamp:'10:30'}];document.getElementById('mensagensArea').innerHTML=mensagens.map(m=>`<div class="mb-4 flex ${m.tipo==='enviada'?'justify-end':'justify-start'}"><div class="max-w-[70%] ${m.tipo==='enviada'?'bg-purple-600 text-white':'bg-white dark:bg-gray-700'} rounded-lg p-3 shadow"><p>${m.texto}</p><p class="text-xs ${m.tipo==='enviada'?'text-purple-200':'text-gray-500'} mt-1">${m.timestamp}</p></div></div>`).join('');document.getElementById('detalheAvatar').src=contato.avatar;document.getElementById('detalheNome').textContent=contato.nome;document.getElementById('detalheTelefone').textContent=Format.phone(contato.telefone);document.getElementById('detalheEmail').textContent=contato.email;document.getElementById('detalheEmpresa').textContent=contato.empresa;document.getElementById('detalheCidade').textContent=contato.cidade;document.getElementById('detalheCriado').textContent=contato.criado;document.getElementById('detalheEtiquetas').innerHTML=contato.etiquetas.map(e=>`<span class="badge badge-primary">${e}</span>`).join(' ');}function enviarMensagem(){const input=document.getElementById('messageInput');const texto=input.value.trim();if(!texto||!conversaSelecionada)return;const now=new Date();const timestamp=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');const mensagensArea=document.getElementById('mensagensArea');const novaMensagem=document.createElement('div');novaMensagem.className='mb-4 flex justify-end';novaMensagem.innerHTML=`<div class="max-w-[70%] bg-purple-600 text-white rounded-lg p-3 shadow"><p>${texto}</p><p class="text-xs text-purple-200 mt-1">${timestamp}</p></div>`;mensagensArea.appendChild(novaMensagem);input.value='';mensagensArea.scrollTop=mensagensArea.scrollHeight;}function buscarConversas(q){console.log('Buscar:',q);}function filtrarConversas(tipo){console.log('Filtrar:',tipo);}loadConversas();</script>
+</body>
+</html>
