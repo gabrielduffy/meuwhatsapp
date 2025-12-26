@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Materiais de Marketing - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=Afiliado&background=5B21B6&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Afiliado</div></div></div></div></header>
+<main class="app-main">
+<div class="mb-6"><h1 class="page-title">Materiais de Marketing</h1><p class="page-subtitle">Baixe materiais prontos para promover o WhatsBenemax</p></div>
+
+<!-- Tabs -->
+<div class="tabs mb-6"><button class="tab active" onclick="showTab('banners')">🖼️ Banners</button><button class="tab" onclick="showTab('videos')">🎥 Vídeos</button><button class="tab" onclick="showTab('textos')">📝 Textos Prontos</button><button class="tab" onclick="showTab('email')">📧 Templates Email</button></div>
+
+<!-- Banners Tab -->
+<div id="tab-banners">
+<div class="mb-4"><input type="text" class="input" placeholder="Buscar banners..." style="max-width:300px"></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="card"><div class="bg-gradient-to-r from-purple-600 to-purple-800 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">WhatsBenemax</h3><p class="text-sm">Automação WhatsApp</p></div></div><h4 class="font-semibold mb-2">Banner Quadrado 1080x1080</h4><p class="text-sm text-gray-500 mb-3">Instagram Posts</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+<div class="card"><div class="bg-gradient-to-r from-blue-600 to-blue-800 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">Automatize seu WhatsApp</h3><p class="text-sm">Teste Grátis por 7 dias</p></div></div><h4 class="font-semibold mb-2">Banner Retângulo 1200x628</h4><p class="text-sm text-gray-500 mb-3">Facebook Ads</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+<div class="card"><div class="bg-gradient-to-r from-green-600 to-green-800 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">CRM + IA + WhatsApp</h3><p class="text-sm">Tudo em uma plataforma</p></div></div><h4 class="font-semibold mb-2">Banner Stories 1080x1920</h4><p class="text-sm text-gray-500 mb-3">Instagram Stories</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+<div class="card"><div class="bg-gradient-to-r from-red-600 to-red-800 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">Black Friday</h3><p class="text-sm">50% OFF na assinatura</p></div></div><h4 class="font-semibold mb-2">Banner Promocional 1200x628</h4><p class="text-sm text-gray-500 mb-3">Campanhas Especiais</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+<div class="card"><div class="bg-gradient-to-r from-yellow-600 to-yellow-800 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">Aumente suas Vendas</h3><p class="text-sm">Com WhatsApp Automático</p></div></div><h4 class="font-semibold mb-2">Banner Wide 728x90</h4><p class="text-sm text-gray-500 mb-3">Google Ads</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+<div class="card"><div class="bg-gradient-to-r from-purple-600 to-pink-600 h-48 rounded-lg mb-3 flex items-center justify-center text-white"><div class="text-center"><h3 class="font-bold text-xl mb-2">Comece Hoje</h3><p class="text-sm">Setup em 5 minutos</p></div></div><h4 class="font-semibold mb-2">Banner Skyscraper 160x600</h4><p class="text-sm text-gray-500 mb-3">Sites e Blogs</p><button class="btn btn-outline w-full">📥 Baixar PNG</button></div>
+</div>
+</div>
+
+<!-- Vídeos Tab -->
+<div id="tab-videos" class="hidden">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="card"><div class="bg-gray-800 h-64 rounded-lg mb-3 flex items-center justify-center"><svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h4 class="font-semibold mb-2">Tutorial Completo - 5 minutos</h4><p class="text-sm text-gray-500 mb-3">Demonstração completa da plataforma</p><div class="flex gap-2"><button class="btn btn-outline flex-1">👁️ Assistir</button><button class="btn btn-primary flex-1">📥 Baixar MP4</button></div></div>
+<div class="card"><div class="bg-gray-800 h-64 rounded-lg mb-3 flex items-center justify-center"><svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h4 class="font-semibold mb-2">Depoimento Cliente - 2 minutos</h4><p class="text-sm text-gray-500 mb-3">Case de sucesso real</p><div class="flex gap-2"><button class="btn btn-outline flex-1">👁️ Assistir</button><button class="btn btn-primary flex-1">📥 Baixar MP4</button></div></div>
+<div class="card"><div class="bg-gray-800 h-64 rounded-lg mb-3 flex items-center justify-center"><svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h4 class="font-semibold mb-2">Vídeo Explicativo - 1 minuto</h4><p class="text-sm text-gray-500 mb-3">O que é o WhatsBenemax</p><div class="flex gap-2"><button class="btn btn-outline flex-1">👁️ Assistir</button><button class="btn btn-primary flex-1">📥 Baixar MP4</button></div></div>
+<div class="card"><div class="bg-gray-800 h-64 rounded-lg mb-3 flex items-center justify-center"><svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h4 class="font-semibold mb-2">Comparativo Concorrentes - 3 minutos</h4><p class="text-sm text-gray-500 mb-3">Por que escolher o WhatsBenemax</p><div class="flex gap-2"><button class="btn btn-outline flex-1">👁️ Assistir</button><button class="btn btn-primary flex-1">📥 Baixar MP4</button></div></div>
+</div>
+</div>
+
+<!-- Textos Prontos Tab -->
+<div id="tab-textos" class="hidden">
+<div class="space-y-4">
+<div class="card"><h4 class="font-semibold mb-2">Post Redes Sociais - Introdução</h4><div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-3"><p class="text-sm whitespace-pre-line">🚀 Transforme seu atendimento no WhatsApp com o WhatsBenemax!
+
+✅ CRM Completo
+✅ Automação com IA
+✅ Follow-up Inteligente
+✅ Integrações Poderosas
+
+Teste GRÁTIS por 7 dias!
+👉 [SEU LINK DE AFILIADO]
+
+#WhatsApp #Automacao #CRM #VendasOnline</p></div><button class="btn btn-outline" onclick="copiarTexto(this)">📋 Copiar Texto</button></div>
+
+<div class="card"><h4 class="font-semibold mb-2">Email Marketing - Apresentação</h4><div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-3"><p class="text-sm whitespace-pre-line">Assunto: Descubra a plataforma que vai revolucionar seu WhatsApp
+
+Olá!
+
+Você sabia que pode automatizar completamente seu atendimento no WhatsApp?
+
+O WhatsBenemax é a solução completa que une:
+• CRM Kanban para gerenciar suas vendas
+• Agentes de IA para atendimento 24/7
+• Follow-up automático para nutrir leads
+• Integrações com todas suas ferramentas
+
+E o melhor: você pode testar GRÁTIS por 7 dias!
+
+Clique aqui e comece agora: [SEU LINK DE AFILIADO]
+
+Abraços!</p></div><button class="btn btn-outline" onclick="copiarTexto(this)">📋 Copiar Texto</button></div>
+
+<div class="card"><h4 class="font-semibold mb-2">WhatsApp/Telegram - Pitch Rápido</h4><div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-3"><p class="text-sm whitespace-pre-line">Oi! Tudo bem?
+
+Preciso te mostrar uma plataforma incrível que descobri! 🚀
+
+É o WhatsBenemax - automatiza TODO o seu WhatsApp com IA.
+
+Imagina ter um assistente virtual trabalhando 24/7, respondendo clientes, qualificando leads e fechando vendas enquanto você dorme! 😴💰
+
+Teste grátis: [SEU LINK]
+
+Vale MUITO a pena conhecer!</p></div><button class="btn btn-outline" onclick="copiarTexto(this)">📋 Copiar Texto</button></div>
+</div>
+</div>
+
+<!-- Templates Email Tab -->
+<div id="tab-email" class="hidden">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="card"><h4 class="font-semibold mb-2">Newsletter Semanal</h4><p class="text-sm text-gray-500 mb-3">Template HTML responsivo</p><button class="btn btn-outline w-full">📥 Baixar HTML</button></div>
+<div class="card"><h4 class="font-semibold mb-2">Email Promoção</h4><p class="text-sm text-gray-500 mb-3">Para campanhas especiais</p><button class="btn btn-outline w-full">📥 Baixar HTML</button></div>
+<div class="card"><h4 class="font-semibold mb-2">Email Boas-vindas</h4><p class="text-sm text-gray-500 mb-3">Primeiro contato com leads</p><button class="btn btn-outline w-full">📥 Baixar HTML</button></div>
+<div class="card"><h4 class="font-semibold mb-2">Email Reengajamento</h4><p class="text-sm text-gray-500 mb-3">Para leads inativos</p><button class="btn btn-outline w-full">📥 Baixar HTML</button></div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Dashboard',href:'/afiliado/dashboard.html'},{label:'Materiais',href:'/afiliado/materiais.html',active:true}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function showTab(name){document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'));document.getElementById(`tab-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');}function copiarTexto(btn){const card=btn.closest('.card');const texto=card.querySelector('.bg-gray-50').textContent;navigator.clipboard.writeText(texto);Toast.success('Texto copiado!');}</script>
+</body>
+</html>
