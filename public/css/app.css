@@ -55,8 +55,17 @@ body.dark {
   box-shadow: 4px 0 6px rgba(0, 0, 0, 0.1);
 }
 
-.app-sidebar.collapsed {
+.app-sidebar.collapsed,
+.app-sidebar.sidebar-collapsed {
   width: 80px;
+}
+
+.app-sidebar.sidebar-collapsed .app-header {
+  left: 80px;
+}
+
+.app-sidebar.sidebar-collapsed ~ .app-main {
+  margin-left: 80px;
 }
 
 .sidebar-logo {
