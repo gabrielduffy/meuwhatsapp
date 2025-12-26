@@ -13,6 +13,8 @@ const { redis, cache } = require('./config/redis');
 
 // Importar jobs de status (inicializa cron jobs)
 require('./jobs/statusChecker');
+const { iniciarTarefaFollowup } = require('./tarefas/followup.tarefa');
+const { iniciarTarefaWhiteLabel } = require('./tarefas/whitelabel.tarefa');
 
 // Importar rotas existentes
 const autenticacaoRoutes = require('./rotas/autenticacao.rotas');
@@ -39,10 +41,14 @@ const agenteIARoutes = require('./rotas/agente-ia.rotas');
 const prospeccaoRoutes = require('./rotas/prospeccao.rotas');
 const chatInternoRoutes = require('./rotas/chat.rotas');
 const integracaoRoutes = require('./rotas/integracao.rotas');
+const crmRoutes = require('./rotas/crm.rotas');
+const followupRoutes = require('./rotas/followup.rotas');
+const whitelabelRoutes = require('./rotas/whitelabel.rotas');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
 const { rateLimiter } = require('./middlewares/rateLimit');
+const { whitelabelMiddleware } = require('./middlewares/whitelabel.middleware');
 
 // Importar serviços
 const { loadExistingSessions } = require('./services/whatsapp');
@@ -108,6 +114,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Servir arquivos estáticos
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
+// White Label - detectar domínio customizado
+app.use(whitelabelMiddleware);
+
 // Rotas públicas (sem autenticação)
 app.get('/health', (req, res) => {
   res.json({
@@ -116,6 +125,11 @@ app.get('/health', (req, res) => {
     version: '2.1.0',
     uptime: process.uptime()
   });
+});
+
+// Landing Page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Páginas HTML
@@ -136,8 +150,8 @@ app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
-  const publicPaths = ['/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
-  if (publicPaths.some(p => req.path.startsWith(p))) {
+  const publicPaths = ['/', '/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
+  if (publicPaths.some(p => req.path === p || req.path.startsWith(p))) {
     return next();
   }
   authMiddleware(req, res, next);
@@ -169,6 +183,9 @@ app.use('/api/prospeccao', prospeccaoRoutes);
 app.use('/api/chat', chatInternoRoutes);
 app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
 app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
+app.use('/api/crm', crmRoutes);
+app.use('/api/followup', followupRoutes);
+app.use('/api/whitelabel', whitelabelRoutes);
 
 // Rota de fallback para 404
 app.use((req, res) => {
@@ -232,6 +249,30 @@ async function initializeDatabase() {
       console.log('✅ Tabelas de Chat e Integrações criadas/verificadas com sucesso');
     }
 
+    // Executar schema de CRM Kanban
+    const crmSchemaPath = path.join(__dirname, 'config/crm-schema.sql');
+    if (fs.existsSync(crmSchemaPath)) {
+      const crmSchema = fs.readFileSync(crmSchemaPath, 'utf8');
+      await dbQuery(crmSchema);
+      console.log('✅ Tabelas de CRM Kanban criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de Follow-up Inteligente
+    const followupSchemaPath = path.join(__dirname, 'config/followup-schema.sql');
+    if (fs.existsSync(followupSchemaPath)) {
+      const followupSchema = fs.readFileSync(followupSchemaPath, 'utf8');
+      await dbQuery(followupSchema);
+      console.log('✅ Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de White Label
+    const whitelabelSchemaPath = path.join(__dirname, 'config/whitelabel-schema.sql');
+    if (fs.existsSync(whitelabelSchemaPath)) {
+      const whitelabelSchema = fs.readFileSync(whitelabelSchemaPath, 'utf8');
+      await dbQuery(whitelabelSchema);
+      console.log('✅ Tabelas de White Label criadas/verificadas com sucesso');
+    }
+
     // Testar Redis
     await redis.ping();
     console.log('✅ Redis conectado e funcionando');
@@ -288,6 +329,12 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
 
   // Inicializar sistema de webhook avançado
   initWebhookAdvanced();
+
+  // Inicializar tarefa de follow-up
+  iniciarTarefaFollowup();
+
+  // Inicializar tarefa de white label
+  iniciarTarefaWhiteLabel();
 
   // Carregar sessões existentes
   await loadExistingSessions();

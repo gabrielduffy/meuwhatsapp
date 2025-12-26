@@ -1,0 +1,171 @@
+version: '3.8'
+
+services:
+  # Traefik - Reverse Proxy com SSL automático
+  traefik:
+    image: traefik:v2.10
+    container_name: whatsbenemax-traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - whatsbenemax-network
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+      - ./traefik/config.yml:/config.yml:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  # PostgreSQL - Banco de dados
+  postgres:
+    image: postgres:15-alpine
+    container_name: whatsbenemax-postgres
+    restart: unless-stopped
+    networks:
+      - whatsbenemax-network
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-whatsbenemax}
+      POSTGRES_USER: ${POSTGRES_USER:-whatsbenemax}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whatsbenemax}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - Cache e filas
+  redis:
+    image: redis:7-alpine
+    container_name: whatsbenemax-redis
+    restart: unless-stopped
+    networks:
+      - whatsbenemax-network
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Aplicação WhatsApp API
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsbenemax-app
+    restart: unless-stopped
+    networks:
+      - whatsbenemax-network
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-whatsbenemax}
+      DB_USER: ${POSTGRES_USER:-whatsbenemax}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      # API
+      PORT: 3000
+      API_KEY: ${API_KEY}
+      NODE_ENV: production
+
+      # Groq AI
+      GROQ_API_KEY: ${GROQ_API_KEY}
+
+      # Email (SMTP)
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+
+      # WhatsApp
+      WHATSAPP_SESSION_PATH: /app/sessions
+
+      # White Label
+      ENABLE_WHITE_LABEL: "true"
+      BASE_DOMAIN: ${DOMAIN}
+
+    volumes:
+      - ./sessions:/app/sessions
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+
+      # Roteamento HTTP -> HTTPS
+      - "traefik.http.routers.app.entrypoints=http"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      - "traefik.http.routers.app.middlewares=https-redirect"
+
+      # Roteamento HTTPS
+      - "traefik.http.routers.app-secure.entrypoints=https"
+      - "traefik.http.routers.app-secure.rule=Host(`${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      - "traefik.http.routers.app-secure.tls=true"
+      - "traefik.http.routers.app-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.app-secure.service=app"
+
+      # Middleware HTTPS redirect
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+
+      # Serviço
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+
+      # Headers de segurança
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.X-Robots-Tag=noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+
+      # Wildcard SSL
+      - "traefik.http.routers.app-secure.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.app-secure.tls.domains[0].sans=*.${DOMAIN}"
+
+networks:
+  whatsbenemax-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
