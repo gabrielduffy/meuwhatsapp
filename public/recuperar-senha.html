@@ -64,7 +64,7 @@
       spinner.classList.remove('hidden');
 
       try {
-        await API.post('/api/auth/recuperar-senha', { email });
+        await API.post('/api/autenticacao/esqueci-senha', { email });
 
         Toast.success('Link de recuperação enviado! Verifique seu email.');
 

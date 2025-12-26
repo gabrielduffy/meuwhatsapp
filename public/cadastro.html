@@ -242,7 +242,7 @@
       spinner.classList.remove('hidden');
 
       try {
-        const response = await API.post('/api/auth/cadastro', {
+        const response = await API.post('/api/autenticacao/cadastrar', {
           nome: document.getElementById('nome').value,
           email: document.getElementById('email').value,
           senha: document.getElementById('senha').value,

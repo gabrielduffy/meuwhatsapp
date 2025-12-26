@@ -176,13 +176,13 @@
       btnSpinner.classList.remove('hidden');
 
       try {
-        const response = await API.post('/api/auth/login', {
+        const response = await API.post('/api/autenticacao/entrar', {
           email,
           senha: password,
         });
 
         // Salvar token e dados do usuário
-        Auth.setToken(response.token);
+        Auth.setToken(response.tokenAcesso);
         Auth.setUser(response.usuario);
 
         Toast.success('Login realizado com sucesso!');
