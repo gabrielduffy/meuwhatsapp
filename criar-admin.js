@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-// Configuração do banco (usar DATABASE_URL do Easypanel)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 });
@@ -12,41 +11,51 @@ async function criarAdministrador() {
   try {
     await client.query('BEGIN');
 
-    // 1. Criar empresa principal (se não existir)
+    // 1. Criar plano Enterprise (se não existir)
+    await client.query(`
+      INSERT INTO planos (nome, preco_mensal, limite_instancias, limite_mensagens_mes)
+      VALUES ('Enterprise', 79700, 999, 999999)
+      ON CONFLICT (nome) DO NOTHING
+    `);
+
+    const planoResult = await client.query(`
+      SELECT id FROM planos WHERE nome = 'Enterprise'
+    `);
+    const planoId = planoResult.rows[0]?.id;
+
+    // 2. Criar empresa
     const empresaResult = await client.query(`
       INSERT INTO empresas (
         nome,
-        cnpj,
+        slug,
+        documento,
         email,
         telefone,
-        plano,
+        plano_id,
         status,
-        limite_usuarios,
-        limite_instancias,
-        limite_mensagens_mes
+        saldo_creditos
       ) VALUES (
         'WhatsBenemax Admin',
-        '00.000.000/0001-00',
+        'whatsbenemax-admin',
+        '00000000000000',
         'admin@whatsbenemax.com',
-        '(00) 00000-0000',
-        'enterprise',
-        'ativa',
-        999,
-        999,
+        '00000000000',
+        $1,
+        'ativo',
         999999
       )
-      ON CONFLICT (email) DO UPDATE
+      ON CONFLICT (slug) DO UPDATE
       SET nome = EXCLUDED.nome
       RETURNING id
-    `);
+    `, [planoId]);
 
     const empresaId = empresaResult.rows[0].id;
     console.log('✅ Empresa criada/atualizada:', empresaId);
 
-    // 2. Hash da senha
+    // 3. Hash da senha
     const senhaHash = await bcrypt.hash('412trocar', 10);
 
-    // 3. Criar usuário administrador
+    // 4. Criar usuário administrador
     const usuarioResult = await client.query(`
       INSERT INTO usuarios (
         empresa_id,
@@ -55,6 +64,7 @@ async function criarAdministrador() {
         senha_hash,
         funcao,
         ativo,
+        email_verificado,
         avatar_url
       ) VALUES (
         $1,
@@ -63,13 +73,15 @@ async function criarAdministrador() {
         $2,
         'administrador',
         true,
+        true,
         'https://ui-avatars.com/api/?name=Gabriel+Duffy&background=5B21B6&color=fff'
       )
       ON CONFLICT (email) DO UPDATE
       SET
         senha_hash = EXCLUDED.senha_hash,
         funcao = EXCLUDED.funcao,
-        ativo = true
+        ativo = true,
+        email_verificado = true
       RETURNING id, email, funcao
     `, [empresaId, senhaHash]);
 
@@ -78,15 +90,15 @@ async function criarAdministrador() {
     await client.query('COMMIT');
 
     console.log('\n🎉 USUÁRIO ADMINISTRADOR CRIADO COM SUCESSO!\n');
-    console.log('📧 Email:', usuario.email);
+    console.log('📧 Email: gabriel.duffy@hotmail.com');
     console.log('🔑 Senha: 412trocar');
     console.log('👤 Função:', usuario.funcao);
     console.log('🆔 ID:', usuario.id);
-    console.log('\n✅ Você já pode fazer login no sistema!');
+    console.log('\n✅ Você já pode fazer login no sistema!\n');
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('❌ Erro ao criar administrador:', error.message);
+    console.error('❌ Erro:', error.message);
     throw error;
   } finally {
     client.release();
@@ -94,7 +106,6 @@ async function criarAdministrador() {
   }
 }
 
-// Executar
 criarAdministrador()
   .then(() => process.exit(0))
   .catch(err => {
