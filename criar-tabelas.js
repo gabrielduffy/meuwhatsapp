@@ -49,7 +49,8 @@ async function main() {
     await pool.query('SELECT NOW()');
     console.log('✅ Conectado com sucesso!\n');
 
-    // Executar schemas em ordem
+    // Executar schemas em ordem (saas-schema.sql PRIMEIRO porque tem a tabela empresas)
+    await executarSchema('saas-schema.sql', 'Tabelas SaaS (empresas, planos, usuários)');
     await executarSchema('crm-schema.sql', 'Tabelas de CRM Kanban');
     await executarSchema('followup-schema.sql', 'Tabelas de Follow-up Inteligente');
     await executarSchema('whitelabel-schema.sql', 'Tabelas de White Label');
