@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const whitelabelRepo = require('../repositorios/whitelabel.repositorio');
 const whitelabelServico = require('../servicos/whitelabel.servico');
-const { autenticar } = require('../middlewares/autenticacao.middleware');
+const { autenticarMiddleware } = require('../middlewares/autenticacao');
 
 // Aplicar autenticação em todas as rotas
-router.use(autenticar);
+router.use(autenticarMiddleware);
 
 // ==================== CONFIGURAÇÕES ====================
 

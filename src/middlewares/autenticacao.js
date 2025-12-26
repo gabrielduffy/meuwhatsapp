@@ -8,9 +8,7 @@ const empresaRepositorio = require('../repositorios/empresa.repositorio');
  */
 async function autenticarMiddleware(req, res, next) {
   try {
-    //
-
- Extrair token do header
+    // Extrair token do header
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.status(401).json({ erro: 'Token não fornecido' });

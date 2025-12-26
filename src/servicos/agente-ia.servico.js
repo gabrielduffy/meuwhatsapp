@@ -3,10 +3,16 @@ const agenteRepositorio = require('../repositorios/agente-ia.repositorio');
 const empresaRepositorio = require('../repositorios/empresa.repositorio');
 const { debitarCreditos } = require('../middlewares/creditos');
 
-// Inicializar Groq
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+// Inicializar Groq apenas se API key estiver configurada
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
+  });
+  console.log('✅ Groq AI inicializado');
+} else {
+  console.warn('⚠️  GROQ_API_KEY não configurada - funcionalidades de IA estarão desabilitadas');
+}
 
 /**
  * Serviço de Agente IA
@@ -50,6 +56,11 @@ async function processarMensagem(agenteId, empresaId, mensagemUsuario, contexto 
 
   if (!agente.ativo) {
     throw new Error('Agente está desativado');
+  }
+
+  // Verificar se Groq está disponível
+  if (!groq) {
+    throw new Error('Groq AI não está configurado. Configure a GROQ_API_KEY para usar agentes de IA.');
   }
 
   // Verificar créditos (10 créditos base + tokens)
@@ -220,6 +231,11 @@ async function testarAgente(empresaId, agenteId, mensagemTeste) {
 
   if (!agente) {
     throw new Error('Agente não encontrado');
+  }
+
+  // Verificar se Groq está disponível
+  if (!groq) {
+    throw new Error('Groq AI não está configurado. Configure a GROQ_API_KEY para usar agentes de IA.');
   }
 
   try {
