@@ -10,13 +10,28 @@ const path = require('path');
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'whatsbenemax',
-  user: process.env.DB_USER || 'whatsbenemax',
-  password: process.env.DB_PASSWORD,
-});
+// Suporta tanto DATABASE_URL (Easypanel) quanto variáveis separadas
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // Usar DATABASE_URL do Easypanel
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+  };
+  console.log('📌 Usando DATABASE_URL do Easypanel');
+} else {
+  // Usar variáveis separadas
+  poolConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'whatsbenemax',
+    user: process.env.DB_USER || 'whatsbenemax',
+    password: process.env.DB_PASSWORD,
+  };
+  console.log('📌 Usando variáveis DB_HOST, DB_PORT, etc.');
+}
+
+const pool = new Pool(poolConfig);
 
 async function executarSchema(nomeArquivo, descricao) {
   console.log(`\n📄 ${descricao}...`);
@@ -49,8 +64,6 @@ async function main() {
   console.log('╚════════════════════════════════════════════════════════╝');
 
   console.log('\n🔌 Conectando ao banco de dados...');
-  console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
-  console.log(`   Database: ${process.env.DB_NAME || 'whatsbenemax'}`);
 
   try {
     // Testar conexão
