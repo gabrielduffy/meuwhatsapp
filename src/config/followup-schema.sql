@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS sequencias_followup (
   */
 
   -- Configurações
-  instancia_id UUID REFERENCES instancias_whatsapp(id),
+  instancia_id UUID,  -- Referência à tabela instances (instance_name)
   usar_agente_ia BOOLEAN DEFAULT false,
   agente_id UUID REFERENCES agentes_ia(id),
 
