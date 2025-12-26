@@ -11,35 +11,23 @@ async function criarAdministrador() {
   try {
     await client.query('BEGIN');
 
-    // 1. Criar plano Enterprise (se não existir)
-    await client.query(`
-      INSERT INTO planos (nome, preco_mensal, limite_instancias, limite_mensagens_mes)
-      VALUES ('Enterprise', 79700, 999, 999999)
-      ON CONFLICT (nome) DO NOTHING
-    `);
+    // 1. Pegar qualquer plano existente (ou deixar NULL)
+    const planoResult = await client.query(`SELECT id FROM planos LIMIT 1`);
+    const planoId = planoResult.rows[0]?.id || null;
 
-    const planoResult = await client.query(`
-      SELECT id FROM planos WHERE nome = 'Enterprise'
-    `);
-    const planoId = planoResult.rows[0]?.id;
-
-    // 2. Criar empresa
+    // 2. Criar empresa simples
     const empresaResult = await client.query(`
       INSERT INTO empresas (
         nome,
         slug,
-        documento,
         email,
-        telefone,
         plano_id,
         status,
         saldo_creditos
       ) VALUES (
-        'WhatsBenemax Admin',
-        'whatsbenemax-admin',
-        '00000000000000',
-        'admin@whatsbenemax.com',
-        '00000000000',
+        'Admin Company',
+        'admin-company',
+        'admin@company.com',
         $1,
         'ativo',
         999999
@@ -50,7 +38,7 @@ async function criarAdministrador() {
     `, [planoId]);
 
     const empresaId = empresaResult.rows[0].id;
-    console.log('✅ Empresa criada/atualizada:', empresaId);
+    console.log('✅ Empresa criada:', empresaId);
 
     // 3. Hash da senha
     const senhaHash = await bcrypt.hash('412trocar', 10);
@@ -64,8 +52,7 @@ async function criarAdministrador() {
         senha_hash,
         funcao,
         ativo,
-        email_verificado,
-        avatar_url
+        email_verificado
       ) VALUES (
         $1,
         'Gabriel Duffy',
@@ -73,15 +60,13 @@ async function criarAdministrador() {
         $2,
         'administrador',
         true,
-        true,
-        'https://ui-avatars.com/api/?name=Gabriel+Duffy&background=5B21B6&color=fff'
+        true
       )
       ON CONFLICT (email) DO UPDATE
       SET
         senha_hash = EXCLUDED.senha_hash,
         funcao = EXCLUDED.funcao,
-        ativo = true,
-        email_verificado = true
+        ativo = true
       RETURNING id, email, funcao
     `, [empresaId, senhaHash]);
 
@@ -89,12 +74,11 @@ async function criarAdministrador() {
 
     await client.query('COMMIT');
 
-    console.log('\n🎉 USUÁRIO ADMINISTRADOR CRIADO COM SUCESSO!\n');
+    console.log('\n🎉 SUCESSO!\n');
     console.log('📧 Email: gabriel.duffy@hotmail.com');
     console.log('🔑 Senha: 412trocar');
     console.log('👤 Função:', usuario.funcao);
-    console.log('🆔 ID:', usuario.id);
-    console.log('\n✅ Você já pode fazer login no sistema!\n');
+    console.log('\n✅ Faça login agora!\n');
 
   } catch (error) {
     await client.query('ROLLBACK');
