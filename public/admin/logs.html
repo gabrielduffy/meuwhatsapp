@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logs & Auditoria - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Logs & Auditoria</h1>
+        <p class="page-subtitle">Monitoramento de atividades do sistema</p>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Nível</label>
+          <select class="input">
+            <option value="">Todos</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Módulo</label>
+          <select class="input">
+            <option value="">Todos</option>
+            <option value="auth">Autenticação</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="crm">CRM</option>
+            <option value="api">API</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Usuário</label>
+          <input type="text" placeholder="Email ou nome..." class="input">
+        </div>
+        <div class="flex items-end">
+          <button class="btn btn-outline w-full">Filtrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Nível</th>
+            <th>Módulo</th>
+            <th>Usuário</th>
+            <th>Ação</th>
+            <th>IP</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-sm">26/12/2024 14:32:15</td>
+            <td><span class="badge badge-secondary">INFO</span></td>
+            <td>Auth</td>
+            <td class="text-sm">admin@system.com</td>
+            <td class="font-semibold">Login bem-sucedido</td>
+            <td class="text-sm">192.168.1.1</td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Ver detalhes')">Ver</button></td>
+          </tr>
+          <tr>
+            <td class="text-sm">26/12/2024 14:28:42</td>
+            <td><span class="badge badge-warning">WARNING</span></td>
+            <td>WhatsApp</td>
+            <td class="text-sm">joao@tech.com</td>
+            <td class="font-semibold">Instância desconectada</td>
+            <td class="text-sm">192.168.1.5</td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Ver detalhes')">Ver</button></td>
+          </tr>
+          <tr>
+            <td class="text-sm">26/12/2024 14:15:03</td>
+            <td><span class="badge badge-error">ERROR</span></td>
+            <td>API</td>
+            <td class="text-sm">maria@varejo.com</td>
+            <td class="font-semibold">Falha ao enviar mensagem</td>
+            <td class="text-sm">192.168.1.8</td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Ver detalhes')">Ver</button></td>
+          </tr>
+          <tr>
+            <td class="text-sm">26/12/2024 14:10:28</td>
+            <td><span class="badge badge-secondary">INFO</span></td>
+            <td>CRM</td>
+            <td class="text-sm">carlos@startup.com</td>
+            <td class="font-semibold">Lead criado</td>
+            <td class="text-sm">192.168.1.12</td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Ver detalhes')">Ver</button></td>
+          </tr>
+          <tr>
+            <td class="text-sm">26/12/2024 14:05:17</td>
+            <td><span class="badge badge-error">CRITICAL</span></td>
+            <td>System</td>
+            <td class="text-sm">system</td>
+            <td class="font-semibold">Erro ao conectar database</td>
+            <td class="text-sm">127.0.0.1</td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Ver detalhes')">Ver</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('logs');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('logs');
+</script>
+
+</body>
+</html>

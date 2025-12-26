@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">CRM - Visão Global</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Leads</p>
+        <h3 class="text-2xl font-bold text-purple-600">12.453</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Novos (30d)</p>
+        <h3 class="text-2xl font-bold text-blue-600">1.234</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Em Atendimento</p>
+        <h3 class="text-2xl font-bold text-yellow-600">892</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Convertidos</p>
+        <h3 class="text-2xl font-bold text-green-600">3.456</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Conversão</p>
+        <h3 class="text-2xl font-bold text-green-600">27.7%</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <h3 class="font-bold mb-4">Leads por Empresa</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Total Leads</th>
+            <th>Novos (30d)</th>
+            <th>Em Atendimento</th>
+            <th>Convertidos</th>
+            <th>Taxa Conversão</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Tech Solutions</td>
+            <td>2.345</td>
+            <td>234</td>
+            <td>156</td>
+            <td>678</td>
+            <td class="font-semibold text-green-600">28.9%</td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Varejo Premium</td>
+            <td>1.892</td>
+            <td>189</td>
+            <td>98</td>
+            <td>523</td>
+            <td class="font-semibold text-green-600">27.6%</td>
+          </tr>
+          <tr>
+            <td class="font-semibold">E-commerce Plus</td>
+            <td>1.567</td>
+            <td>145</td>
+            <td>87</td>
+            <td>412</td>
+            <td class="font-semibold text-green-600">26.3%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('crm');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('crm');
+</script>
+
+</body>
+</html>

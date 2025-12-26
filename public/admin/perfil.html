@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Meu Perfil</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Card Perfil -->
+      <div class="card">
+        <div class="text-center">
+          <img src="https://ui-avatars.com/api/?name=Admin&background=5B21B6&color=fff&size=128" class="w-32 h-32 rounded-full mx-auto mb-4">
+          <h3 class="font-bold text-xl" id="profileName">Gabriel Duffy</h3>
+          <p class="text-gray-500 text-sm" id="profileRole">Administrador</p>
+          <button class="btn btn-outline mt-4 w-full" onclick="Toast.info('Alterar foto')">Alterar Foto</button>
+        </div>
+      </div>
+
+      <!-- Dados Pessoais -->
+      <div class="lg:col-span-2 card">
+        <h3 class="font-bold mb-4">Dados Pessoais</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Nome Completo</label>
+            <input type="text" class="input" value="Gabriel Duffy" id="inputName">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Email</label>
+            <input type="email" class="input" value="gabriel.duffy@hotmail.com" id="inputEmail">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Telefone</label>
+            <input type="tel" class="input" value="+55 11 98765-4321">
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="salvarPerfil()">Salvar Alterações</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alterar Senha -->
+      <div class="lg:col-span-3 card">
+        <h3 class="font-bold mb-4">Alterar Senha</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Senha Atual</label>
+            <input type="password" class="input" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Nova Senha</label>
+            <input type="password" class="input" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Confirmar Senha</label>
+            <input type="password" class="input" placeholder="••••••••">
+          </div>
+        </div>
+        <div class="mt-4">
+          <button class="btn btn-primary" onclick="alterarSenha()">Alterar Senha</button>
+        </div>
+      </div>
+
+      <!-- Segurança -->
+      <div class="lg:col-span-3 card">
+        <h3 class="font-bold mb-4">Segurança</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold">Autenticação de 2 Fatores</p>
+              <p class="text-sm text-gray-500">Adicione uma camada extra de segurança</p>
+            </div>
+            <button class="btn btn-outline" onclick="Toast.info('Configurar 2FA')">Configurar</button>
+          </div>
+          <div class="border-t pt-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold">Sessões Ativas</p>
+                <p class="text-sm text-gray-500">Gerencie seus dispositivos conectados</p>
+              </div>
+              <button class="btn btn-outline" onclick="Toast.info('Ver sessões')">Ver Sessões</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('perfil');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('perfil');
+
+// Preencher com dados do usuário
+const user = Auth.getUser();
+if (user) {
+  document.getElementById('profileName').textContent = user.nome || 'Administrador';
+  document.getElementById('profileRole').textContent = user.funcao || 'Admin';
+  document.getElementById('inputName').value = user.nome || '';
+  document.getElementById('inputEmail').value = user.email || '';
+}
+
+function salvarPerfil() {
+  Toast.success('Perfil atualizado com sucesso!');
+}
+
+function alterarSenha() {
+  Toast.success('Senha alterada com sucesso!');
+}
+</script>
+
+</body>
+</html>

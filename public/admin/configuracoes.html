@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Configurações do Sistema</h1>
+
+    <!-- Tabs -->
+    <div class="tabs mb-6">
+      <button class="tab active" onclick="showTab('geral')">Geral</button>
+      <button class="tab" onclick="showTab('email')">Email</button>
+      <button class="tab" onclick="showTab('pagamento')">Pagamento</button>
+      <button class="tab" onclick="showTab('seguranca')">Segurança</button>
+    </div>
+
+    <!-- Tab Geral -->
+    <div id="tab-geral" class="card">
+      <h3 class="font-bold mb-4">Configurações Gerais</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Nome da Plataforma</label>
+          <input type="text" class="input" value="WhatsBenemax" placeholder="Nome da plataforma">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">URL Base</label>
+          <input type="text" class="input" value="https://app.whatsbenemax.com" placeholder="URL base">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Email de Suporte</label>
+          <input type="email" class="input" value="suporte@whatsbenemax.com" placeholder="Email de suporte">
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="manuten" class="w-4 h-4">
+          <label for="manuten" class="text-sm">Modo Manutenção</label>
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="Toast.success('Configurações salvas')">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Email -->
+    <div id="tab-email" class="card hidden">
+      <h3 class="font-bold mb-4">Configurações de Email</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Provedor SMTP</label>
+          <select class="input">
+            <option>SendGrid</option>
+            <option>Mailgun</option>
+            <option>AWS SES</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">API Key</label>
+          <input type="password" class="input" value="••••••••••••••••" placeholder="API Key">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Email Remetente</label>
+          <input type="email" class="input" value="noreply@whatsbenemax.com" placeholder="Email remetente">
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="Toast.success('Configurações de email salvas')">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Pagamento -->
+    <div id="tab-pagamento" class="card hidden">
+      <h3 class="font-bold mb-4">Configurações de Pagamento</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Gateway de Pagamento</label>
+          <select class="input">
+            <option>Stripe</option>
+            <option>PagSeguro</option>
+            <option>Mercado Pago</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Chave Pública</label>
+          <input type="text" class="input" value="pk_live_••••••••••••••••" placeholder="Public key">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Chave Secreta</label>
+          <input type="password" class="input" value="sk_live_••••••••••••••••" placeholder="Secret key">
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="Toast.success('Configurações de pagamento salvas')">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Segurança -->
+    <div id="tab-seguranca" class="card hidden">
+      <h3 class="font-bold mb-4">Configurações de Segurança</h3>
+      <div class="space-y-4">
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="2fa" class="w-4 h-4" checked>
+          <label for="2fa" class="text-sm">Exigir autenticação de 2 fatores para admins</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="passexp" class="w-4 h-4">
+          <label for="passexp" class="text-sm">Senhas expiram após 90 dias</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="ipblock" class="w-4 h-4" checked>
+          <label for="ipblock" class="text-sm">Bloquear IPs suspeitos automaticamente</label>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Tentativas de Login Permitidas</label>
+          <input type="number" class="input" value="5" min="3" max="10">
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="Toast.success('Configurações de segurança salvas')">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('configuracoes');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('configuracoes');
+
+function showTab(name) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+  document.getElementById(`tab-${name}`).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

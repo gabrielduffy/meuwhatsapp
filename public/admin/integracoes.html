@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integrações - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Integrações - Visão Global</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Integrações</p>
+        <h3 class="text-2xl font-bold text-purple-600">342</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Ativas</p>
+        <h3 class="text-2xl font-bold text-green-600">298</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Com Erro</p>
+        <h3 class="text-2xl font-bold text-red-600">12</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Sincronizações Hoje</p>
+        <h3 class="text-2xl font-bold text-blue-600">8.234</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Serviço</th>
+            <th>Tipo</th>
+            <th>Sincronizações</th>
+            <th>Última Sinc.</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Tech Solutions</td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-bold">H</div>
+                HubSpot
+              </div>
+            </td>
+            <td><span class="badge badge-secondary">CRM</span></td>
+            <td>1.234</td>
+            <td class="text-sm">5 min atrás</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">E-commerce Plus</td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center text-green-600 font-bold">S</div>
+                Shopify
+              </div>
+            </td>
+            <td><span class="badge badge-secondary">E-commerce</span></td>
+            <td>892</td>
+            <td class="text-sm">2 min atrás</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Marketing Pro</td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center text-orange-600 font-bold">M</div>
+                Mailchimp
+              </div>
+            </td>
+            <td><span class="badge badge-secondary">Email Marketing</span></td>
+            <td>567</td>
+            <td class="text-sm">10 min atrás</td>
+            <td><span class="badge badge-error">Erro</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('integracoes');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('integracoes');
+</script>
+
+</body>
+</html>

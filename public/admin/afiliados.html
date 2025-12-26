@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Afiliados - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Afiliados</h1>
+        <p class="page-subtitle">Gerencie o programa de afiliados</p>
+      </div>
+      <button class="btn btn-primary" onclick="Toast.info('Criar afiliado')">Novo Afiliado</button>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Afiliados</p>
+        <h3 class="text-2xl font-bold text-purple-600">45</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Afiliados Ativos</p>
+        <h3 class="text-2xl font-bold text-green-600">32</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Comissões Pagas</p>
+        <h3 class="text-2xl font-bold text-green-600">R$ 12.450,00</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">A Pagar este Mês</p>
+        <h3 class="text-2xl font-bold text-yellow-600">R$ 3.280,00</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Afiliado</th>
+            <th>Email</th>
+            <th>Código</th>
+            <th>Indicações</th>
+            <th>Assinantes Ativos</th>
+            <th>Comissão Total</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="afiliadosTable"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('afiliados');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('afiliados');
+
+const afiliados = [
+  { nome: 'Carlos Souza', email: 'carlos@afiliado.com', codigo: 'CARLOS2024', indicacoes: 23, assinantes: 18, comissao: 3450, status: 'ativo' },
+  { nome: 'Ana Lima', email: 'ana@afiliado.com', codigo: 'ANA2024', indicacoes: 15, assinantes: 12, comissao: 2180, status: 'ativo' },
+  { nome: 'Pedro Santos', email: 'pedro@afiliado.com', codigo: 'PEDRO2024', indicacoes: 8, assinantes: 6, comissao: 980, status: 'ativo' },
+  { nome: 'Julia Costa', email: 'julia@afiliado.com', codigo: 'JULIA2024', indicacoes: 5, assinantes: 3, comissao: 450, status: 'inativo' }
+];
+
+document.getElementById('afiliadosTable').innerHTML = afiliados.map(a => `
+  <tr>
+    <td class="font-semibold">${a.nome}</td>
+    <td class="text-sm">${a.email}</td>
+    <td><span class="badge badge-secondary">${a.codigo}</span></td>
+    <td>${a.indicacoes}</td>
+    <td>${a.assinantes}</td>
+    <td class="font-semibold text-green-600">R$ ${a.comissao.toFixed(2)}</td>
+    <td><span class="badge badge-${a.status === 'ativo' ? 'success' : 'error'}">${a.status.charAt(0).toUpperCase() + a.status.slice(1)}</span></td>
+    <td>
+      <button class="btn-sm btn-outline" onclick="Toast.info('Ver afiliado')">Ver</button>
+    </td>
+  </tr>
+`).join('');
+</script>
+
+</body>
+</html>

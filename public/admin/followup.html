@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Follow-up - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Follow-up - Visão Global</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Campanhas</p>
+        <h3 class="text-2xl font-bold text-purple-600">89</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Ativas</p>
+        <h3 class="text-2xl font-bold text-green-600">67</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Mensagens Enviadas Hoje</p>
+        <h3 class="text-2xl font-bold text-blue-600">3.245</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Abertura</p>
+        <h3 class="text-2xl font-bold text-green-600">68.5%</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Resposta</p>
+        <h3 class="text-2xl font-bold text-yellow-600">32.4%</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Campanha</th>
+            <th>Empresa</th>
+            <th>Tipo</th>
+            <th>Enviadas</th>
+            <th>Taxa Abertura</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Recuperação Carrinho</td>
+            <td>E-commerce Plus</td>
+            <td><span class="badge badge-secondary">Vendas</span></td>
+            <td>1.234</td>
+            <td class="text-green-600 font-semibold">72%</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Pós-Venda</td>
+            <td>Varejo Premium</td>
+            <td><span class="badge badge-secondary">Relacionamento</span></td>
+            <td>892</td>
+            <td class="text-green-600 font-semibold">65%</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Reativação Clientes</td>
+            <td>Tech Solutions</td>
+            <td><span class="badge badge-secondary">Vendas</span></td>
+            <td>567</td>
+            <td class="text-green-600 font-semibold">58%</td>
+            <td><span class="badge badge-warning">Pausada</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('followup');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('followup');
+</script>
+
+</body>
+</html>

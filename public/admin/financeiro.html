@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financeiro - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Financeiro</h1>
+
+    <!-- KPIs Financeiros -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">MRR (Receita Recorrente)</p>
+        <h3 class="text-2xl font-bold text-green-600">R$ 42.180,00</h3>
+        <p class="text-xs text-green-600 mt-1">↑ 15% vs mês anterior</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">ARR (Anual)</p>
+        <h3 class="text-2xl font-bold text-purple-600">R$ 506.160,00</h3>
+        <p class="text-xs text-purple-600 mt-1">Projeção anual</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Inadimplência</p>
+        <h3 class="text-2xl font-bold text-red-600">R$ 2.340,00</h3>
+        <p class="text-xs text-gray-500 mt-1">6 empresas atrasadas</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Comissões Afiliados</p>
+        <h3 class="text-2xl font-bold text-yellow-600">R$ 3.280,00</h3>
+        <p class="text-xs text-gray-500 mt-1">A pagar este mês</p>
+      </div>
+    </div>
+
+    <!-- Gráfico MRR -->
+    <div class="card mb-6">
+      <h3 class="font-bold mb-4">Evolução MRR (12 meses)</h3>
+      <div style="height: 300px;">
+        <canvas id="chartMRR"></canvas>
+      </div>
+    </div>
+
+    <!-- Transações Recentes -->
+    <div class="card">
+      <h3 class="font-bold mb-4">Transações Recentes</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Empresa</th>
+            <th>Plano</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Método</th>
+          </tr>
+        </thead>
+        <tbody id="transacoesTable"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('financeiro');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('financeiro');
+
+// Dados transações
+const transacoes = [
+  { data: '26/12/2024', empresa: 'Tech Solutions', plano: 'Enterprise', valor: 797, status: 'pago', metodo: 'Cartão' },
+  { data: '25/12/2024', empresa: 'Varejo Premium', plano: 'Premium', valor: 297, status: 'pago', metodo: 'PIX' },
+  { data: '24/12/2024', empresa: 'Startup XYZ', plano: 'Básico', valor: 97, status: 'pendente', metodo: 'Boleto' },
+  { data: '23/12/2024', empresa: 'E-commerce Plus', plano: 'Premium', valor: 297, status: 'pago', metodo: 'Cartão' },
+  { data: '22/12/2024', empresa: 'Marketing Pro', plano: 'Enterprise', valor: 797, status: 'atrasado', metodo: 'Boleto' }
+];
+
+document.getElementById('transacoesTable').innerHTML = transacoes.map(t => `
+  <tr>
+    <td class="text-sm">${t.data}</td>
+    <td class="font-semibold">${t.empresa}</td>
+    <td><span class="badge badge-secondary">${t.plano}</span></td>
+    <td class="font-semibold text-green-600">R$ ${t.valor.toFixed(2)}</td>
+    <td><span class="badge badge-${t.status === 'pago' ? 'success' : t.status === 'pendente' ? 'warning' : 'error'}">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+    <td class="text-sm">${t.metodo}</td>
+  </tr>
+`).join('');
+
+// Gráfico MRR
+const ctx = document.getElementById('chartMRR');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+    datasets: [{
+      label: 'MRR',
+      borderColor: '#10B981',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      data: [28500, 30200, 32100, 34500, 36200, 38100, 39800, 40200, 41500, 42180, null, null],
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+
+</body>
+</html>

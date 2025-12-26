@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prospecção - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Prospecção - Visão Global</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Prospecções</p>
+        <h3 class="text-2xl font-bold text-purple-600">156</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Ativas</p>
+        <h3 class="text-2xl font-bold text-green-600">98</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Contatos Alcançados</p>
+        <h3 class="text-2xl font-bold text-blue-600">8.234</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Resposta</p>
+        <h3 class="text-2xl font-bold text-green-600">24.5%</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Leads Gerados</p>
+        <h3 class="text-2xl font-bold text-yellow-600">1.234</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Campanha</th>
+            <th>Empresa</th>
+            <th>Contatos</th>
+            <th>Alcançados</th>
+            <th>Leads Gerados</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Captação B2B</td>
+            <td>Tech Solutions</td>
+            <td>2.345</td>
+            <td>1.892</td>
+            <td class="text-green-600 font-semibold">456</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Lançamento Produto</td>
+            <td>E-commerce Plus</td>
+            <td>1.567</td>
+            <td>1.234</td>
+            <td class="text-green-600 font-semibold">342</td>
+            <td><span class="badge badge-success">Ativa</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Black Friday</td>
+            <td>Varejo Premium</td>
+            <td>3.456</td>
+            <td>2.789</td>
+            <td class="text-green-600 font-semibold">678</td>
+            <td><span class="badge badge-warning">Agendada</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('prospeccao');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('prospeccao');
+</script>
+
+</body>
+</html>

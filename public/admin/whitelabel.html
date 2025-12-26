@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>White Label - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">White Label - Configurações por Empresa</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Empresas com White Label</p>
+        <h3 class="text-2xl font-bold text-purple-600">15</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Domínios Personalizados</p>
+        <h3 class="text-2xl font-bold text-blue-600">12</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Logos Customizadas</p>
+        <h3 class="text-2xl font-bold text-green-600">15</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Cores Personalizadas</p>
+        <h3 class="text-2xl font-bold text-yellow-600">14</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Domínio</th>
+            <th>Logo</th>
+            <th>Cor Primária</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Tech Solutions</td>
+            <td class="text-sm">app.techsolutions.com</td>
+            <td><span class="badge badge-success">Configurada</span></td>
+            <td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded" style="background: #FF6B6B"></div> #FF6B6B</div></td>
+            <td><span class="badge badge-success">Ativo</span></td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Editar')">Editar</button></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Marketing Pro</td>
+            <td class="text-sm">crm.marketingpro.com</td>
+            <td><span class="badge badge-success">Configurada</span></td>
+            <td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded" style="background: #4ECDC4"></div> #4ECDC4</div></td>
+            <td><span class="badge badge-success">Ativo</span></td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Editar')">Editar</button></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">SaaS Inovador</td>
+            <td class="text-sm">whats.saasinovador.com</td>
+            <td><span class="badge badge-warning">Pendente</span></td>
+            <td><div class="flex items-center gap-2"><div class="w-6 h-6 rounded" style="background: #95E1D3"></div> #95E1D3</div></td>
+            <td><span class="badge badge-warning">Configurando</span></td>
+            <td><button class="btn-sm btn-outline" onclick="Toast.info('Editar')">Editar</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('whitelabel');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('whitelabel');
+</script>
+
+</body>
+</html>
