@@ -102,9 +102,7 @@ CREATE TABLE IF NOT EXISTS whitelabel_dominios (
   principal BOOLEAN DEFAULT false, -- apenas um pode ser principal por empresa
 
   criado_em TIMESTAMP DEFAULT NOW(),
-  atualizado_em TIMESTAMP DEFAULT NOW(),
-
-  UNIQUE(empresa_id, principal) WHERE principal = true
+  atualizado_em TIMESTAMP DEFAULT NOW()
 );
 
 -- Tabela de páginas customizadas
@@ -240,6 +238,10 @@ CREATE INDEX IF NOT EXISTS idx_whitelabel_dominios_empresa ON whitelabel_dominio
 CREATE INDEX IF NOT EXISTS idx_whitelabel_dominios_dominio ON whitelabel_dominios(dominio);
 CREATE INDEX IF NOT EXISTS idx_whitelabel_dominios_verificado ON whitelabel_dominios(verificado);
 CREATE INDEX IF NOT EXISTS idx_whitelabel_dominios_ativo ON whitelabel_dominios(ativo);
+
+-- Garantir apenas um domínio principal por empresa (índice único parcial)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_whitelabel_dominio_principal_unico
+  ON whitelabel_dominios(empresa_id) WHERE principal = true;
 CREATE INDEX IF NOT EXISTS idx_whitelabel_paginas_empresa ON whitelabel_paginas(empresa_id);
 CREATE INDEX IF NOT EXISTS idx_whitelabel_paginas_slug ON whitelabel_paginas(slug);
 CREATE INDEX IF NOT EXISTS idx_whitelabel_scripts_empresa ON whitelabel_scripts(empresa_id);
