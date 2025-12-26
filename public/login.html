@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900">
+
+  <!-- Container Principal -->
+  <div class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Card de Login -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8">
+
+      <!-- Logo e Título -->
+      <div class="text-center mb-8">
+        <div class="inline-block p-3 bg-purple-100 dark:bg-purple-900 rounded-2xl mb-4">
+          <svg class="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">WhatsBenemax</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Entre na sua conta</p>
+      </div>
+
+      <!-- Formulário -->
+      <form id="loginForm" class="space-y-6">
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="seu@email.com"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
+          >
+        </div>
+
+        <!-- Senha -->
+        <div>
+          <label for="password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Senha
+          </label>
+          <div class="relative">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              placeholder="••••••••"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
+            >
+            <button
+              type="button"
+              onclick="togglePassword()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lembrar-me e Esqueci a senha -->
+        <div class="flex items-center justify-between">
+          <label class="flex items-center">
+            <input
+              type="checkbox"
+              id="remember"
+              name="remember"
+              class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+            >
+            <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Lembrar-me</span>
+          </label>
+          <a href="/recuperar-senha.html" class="text-sm text-purple-600 hover:text-purple-700 font-semibold">
+            Esqueci minha senha
+          </a>
+        </div>
+
+        <!-- Botão Entrar -->
+        <button
+          type="submit"
+          id="submitBtn"
+          class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+        >
+          <span id="btnText">Entrar</span>
+          <div id="btnSpinner" class="hidden spinner"></div>
+        </button>
+
+      </form>
+
+      <!-- Separador -->
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-4 bg-white dark:bg-gray-800 text-gray-500">ou</span>
+        </div>
+      </div>
+
+      <!-- Link Criar Conta -->
+      <div class="text-center">
+        <p class="text-gray-600 dark:text-gray-400">
+          Não tem uma conta?
+          <a href="/cadastro.html" class="text-purple-600 hover:text-purple-700 font-semibold">
+            Criar conta gratuita
+          </a>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/utils.js"></script>
+  <script>
+    // Toggle mostrar/ocultar senha
+    function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+        `;
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        `;
+      }
+    }
+
+    // Handler do formulário
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('remember').checked;
+
+      // Validações
+      if (!Validate.email(email)) {
+        Toast.error('Email inválido');
+        return;
+      }
+
+      if (!Validate.required(password)) {
+        Toast.error('Senha é obrigatória');
+        return;
+      }
+
+      // Loading
+      submitBtn.disabled = true;
+      btnText.textContent = 'Entrando...';
+      btnSpinner.classList.remove('hidden');
+
+      try {
+        const response = await API.post('/api/auth/login', {
+          email,
+          senha: password,
+        });
+
+        // Salvar token e dados do usuário
+        Auth.setToken(response.token);
+        Auth.setUser(response.usuario);
+
+        Toast.success('Login realizado com sucesso!');
+
+        // Redirecionar baseado no tipo de usuário
+        setTimeout(() => {
+          const user = response.usuario;
+
+          if (user.funcao === 'administrador') {
+            window.location.href = '/admin/dashboard.html';
+          } else if (user.funcao === 'afiliado') {
+            window.location.href = '/afiliado/dashboard.html';
+          } else {
+            window.location.href = '/dashboard.html';
+          }
+        }, 500);
+
+      } catch (error) {
+        Toast.error(error.message || 'Erro ao fazer login');
+        submitBtn.disabled = false;
+        btnText.textContent = 'Entrar';
+        btnSpinner.classList.add('hidden');
+      }
+    });
+
+    // Verificar se já está logado
+    if (Auth.isAuthenticated()) {
+      const user = Auth.getUser();
+      if (user) {
+        if (user.funcao === 'administrador') {
+          window.location.href = '/admin/dashboard.html';
+        } else if (user.funcao === 'afiliado') {
+          window.location.href = '/afiliado/dashboard.html';
+        } else {
+          window.location.href = '/dashboard.html';
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
