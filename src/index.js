@@ -127,6 +127,11 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Landing Page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
 // Páginas HTML
 app.get('/manager', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/manager.html'));
@@ -145,8 +150,8 @@ app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
-  const publicPaths = ['/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
-  if (publicPaths.some(p => req.path.startsWith(p))) {
+  const publicPaths = ['/', '/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
+  if (publicPaths.some(p => req.path === p || req.path.startsWith(p))) {
     return next();
   }
   authMiddleware(req, res, next);
