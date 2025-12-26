@@ -14,25 +14,64 @@
   <div id="headerContainer"></div>
 
   <main class="app-main">
-    <h1 class="page-title mb-6">Integrações - Visão Global</h1>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Integrações</h1>
+        <p class="page-subtitle">Gerencie integrações com serviços externos</p>
+      </div>
+      <button class="btn btn-primary" onclick="Integrations.openCreateModal()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nova Integração
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Tipo</label>
+          <select id="tipoFilter" class="input" onchange="Integrations.applyFilters()">
+            <option value="">Todos os tipos</option>
+            <option value="crm">CRM</option>
+            <option value="ecommerce">E-commerce</option>
+            <option value="email">Email Marketing</option>
+            <option value="webhook">Webhook</option>
+            <option value="api">API</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Status</label>
+          <select id="statusFilter" class="input" onchange="Integrations.applyFilters()">
+            <option value="">Todos</option>
+            <option value="true">Ativa</option>
+            <option value="false">Inativa</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button class="btn btn-outline w-full" onclick="Integrations.clearFilters()">Limpar Filtros</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Estatísticas -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Total Integrações</p>
-        <h3 class="text-2xl font-bold text-purple-600">342</h3>
+        <h3 class="text-2xl font-bold text-purple-600" id="statTotal">-</h3>
       </div>
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Ativas</p>
-        <h3 class="text-2xl font-bold text-green-600">298</h3>
+        <h3 class="text-2xl font-bold text-green-600" id="statAtivas">-</h3>
       </div>
       <div class="card">
         <p class="text-sm text-gray-500 mb-1">Com Erro</p>
-        <h3 class="text-2xl font-bold text-red-600">12</h3>
+        <h3 class="text-2xl font-bold text-red-600" id="statErros">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Sincronizações Hoje</p>
-        <h3 class="text-2xl font-bold text-blue-600">8.234</h3>
+        <p class="text-sm text-gray-500 mb-1">Disparos Hoje</p>
+        <h3 class="text-2xl font-bold text-blue-600" id="statDisparos">-</h3>
       </div>
     </div>
 
@@ -41,53 +80,21 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Empresa</th>
-            <th>Serviço</th>
+            <th>Nome</th>
             <th>Tipo</th>
-            <th>Sincronizações</th>
-            <th>Última Sinc.</th>
+            <th>Última Execução</th>
+            <th>Total Disparos</th>
+            <th>Taxa Sucesso</th>
             <th>Status</th>
+            <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="integrationsTable">
           <tr>
-            <td class="font-semibold">Tech Solutions</td>
-            <td>
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-bold">H</div>
-                HubSpot
-              </div>
+            <td colspan="7" class="text-center text-gray-500 py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p class="mt-2">Carregando integrações...</p>
             </td>
-            <td><span class="badge badge-secondary">CRM</span></td>
-            <td>1.234</td>
-            <td class="text-sm">5 min atrás</td>
-            <td><span class="badge badge-success">Ativa</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">E-commerce Plus</td>
-            <td>
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center text-green-600 font-bold">S</div>
-                Shopify
-              </div>
-            </td>
-            <td><span class="badge badge-secondary">E-commerce</span></td>
-            <td>892</td>
-            <td class="text-sm">2 min atrás</td>
-            <td><span class="badge badge-success">Ativa</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Marketing Pro</td>
-            <td>
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center text-orange-600 font-bold">M</div>
-                Mailchimp
-              </div>
-            </td>
-            <td><span class="badge badge-secondary">Email Marketing</span></td>
-            <td>567</td>
-            <td class="text-sm">10 min atrás</td>
-            <td><span class="badge badge-error">Erro</span></td>
           </tr>
         </tbody>
       </table>
@@ -97,10 +104,414 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('integracoes');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('integracoes');
+
+const Integrations = {
+  allIntegrations: [],
+  filteredIntegrations: [],
+
+  async init() {
+    await this.loadIntegrations();
+  },
+
+  async loadIntegrations() {
+    try {
+      const response = await API.get('/api/integracoes');
+      this.allIntegrations = response.integracoes || response || [];
+      this.filteredIntegrations = [...this.allIntegrations];
+
+      this.renderTable();
+      this.updateStats();
+    } catch (error) {
+      console.error('[Integrations] Erro ao carregar:', error);
+      Toast.error('Erro ao carregar integrações');
+      document.getElementById('integrationsTable').innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-red-500 py-8">
+            Erro ao carregar integrações. Tente novamente.
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  applyFilters() {
+    const tipo = document.getElementById('tipoFilter').value;
+    const ativo = document.getElementById('statusFilter').value;
+
+    this.filteredIntegrations = this.allIntegrations.filter(int => {
+      const matchTipo = !tipo || int.tipo === tipo;
+      const matchStatus = !ativo ||
+        (ativo === 'true' && int.ativo) ||
+        (ativo === 'false' && !int.ativo);
+
+      return matchTipo && matchStatus;
+    });
+
+    this.renderTable();
+  },
+
+  clearFilters() {
+    document.getElementById('tipoFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    this.applyFilters();
+  },
+
+  renderTable() {
+    const tbody = document.getElementById('integrationsTable');
+
+    if (this.filteredIntegrations.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-gray-500 py-8">
+            Nenhuma integração encontrada. Crie sua primeira integração!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.filteredIntegrations.map(int => `
+      <tr>
+        <td class="font-semibold">${int.nome || '-'}</td>
+        <td><span class="badge badge-secondary">${this.getTipoLabel(int.tipo)}</span></td>
+        <td class="text-sm">${this.formatDate(int.ultima_execucao)}</td>
+        <td class="text-sm">${int.total_disparos || 0}</td>
+        <td class="text-sm">
+          <span class="text-green-600 font-semibold">${int.taxa_sucesso || '95'}%</span>
+        </td>
+        <td>
+          <span class="badge ${int.ativo ? 'badge-success' : 'badge-error'}">
+            ${int.ativo ? 'Ativa' : 'Inativa'}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-primary" onclick="Integrations.testIntegration(${int.id})" title="Testar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="Integrations.viewLogs(${int.id})" title="Ver Logs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="Integrations.openEditModal(${int.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm ${int.ativo ? 'btn-warning' : 'btn-success'}"
+              onclick="Integrations.toggleStatus(${int.id}, ${int.ativo})"
+              title="${int.ativo ? 'Desativar' : 'Ativar'}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${int.ativo ? `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                ` : `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                `}
+              </svg>
+            </button>
+            <button class="btn-sm btn-danger" onclick="Integrations.deleteIntegration(${int.id})" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  updateStats() {
+    document.getElementById('statTotal').textContent = this.allIntegrations.length;
+    document.getElementById('statAtivas').textContent = this.allIntegrations.filter(i => i.ativo).length;
+    document.getElementById('statErros').textContent = this.allIntegrations.filter(i => i.status_erro).length || 0;
+
+    const totalDisparos = this.allIntegrations.reduce((sum, i) => sum + (i.total_disparos || 0), 0);
+    document.getElementById('statDisparos').textContent = totalDisparos;
+  },
+
+  getTipoLabel(tipo) {
+    const labels = {
+      'crm': 'CRM',
+      'ecommerce': 'E-commerce',
+      'email': 'Email Marketing',
+      'webhook': 'Webhook',
+      'api': 'API',
+      'zapier': 'Zapier',
+      'n8n': 'n8n'
+    };
+    return labels[tipo] || tipo || 'Outro';
+  },
+
+  formatDate(dateString) {
+    if (!dateString) return 'Nunca';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / (1000 * 60));
+
+    if (minutes < 1) return 'Agora';
+    if (minutes < 60) return `${minutes} min atrás`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h atrás`;
+
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  },
+
+  openCreateModal() {
+    Modal.form({
+      id: 'modal-create-integration',
+      title: 'Nova Integração',
+      size: 'lg',
+      fields: [
+        { name: 'nome', label: 'Nome da Integração', type: 'text', required: true, placeholder: 'Ex: HubSpot CRM' },
+        {
+          name: 'tipo',
+          label: 'Tipo',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'crm', label: 'CRM' },
+            { value: 'ecommerce', label: 'E-commerce' },
+            { value: 'email', label: 'Email Marketing' },
+            { value: 'webhook', label: 'Webhook' },
+            { value: 'api', label: 'API Customizada' }
+          ]
+        },
+        { name: 'url', label: 'URL/Endpoint', type: 'text', placeholder: 'https://api.exemplo.com/webhook' },
+        { name: 'api_key', label: 'API Key', type: 'text', placeholder: 'Chave de API (opcional)' },
+        { name: 'config', label: 'Configuração JSON', type: 'textarea', placeholder: '{"campo": "valor"}', help: 'Configuração adicional em formato JSON' },
+        { name: 'ativo', label: 'Integração ativa', type: 'checkbox', defaultValue: true }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando integração...');
+
+          // Parse config JSON
+          if (data.config) {
+            try {
+              data.config = JSON.parse(data.config);
+            } catch (e) {
+              Modal.closeLoading();
+              Toast.error('Configuração JSON inválida');
+              return false;
+            }
+          }
+
+          await API.post('/api/integracoes', data);
+
+          Modal.closeLoading();
+          Toast.success('Integração criada com sucesso!');
+          await this.loadIntegrations();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar integração');
+          return false;
+        }
+      }
+    });
+  },
+
+  async openEditModal(integrationId) {
+    try {
+      Modal.loading('Carregando integração...');
+
+      const response = await API.get(`/api/integracoes/${integrationId}`);
+      const integration = response.integracao || response;
+
+      // Convert config to JSON string
+      if (integration.config && typeof integration.config === 'object') {
+        integration.config = JSON.stringify(integration.config, null, 2);
+      }
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-integration',
+        title: 'Editar Integração',
+        size: 'lg',
+        data: integration,
+        fields: [
+          { name: 'nome', label: 'Nome da Integração', type: 'text', required: true },
+          {
+            name: 'tipo',
+            label: 'Tipo',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'crm', label: 'CRM' },
+              { value: 'ecommerce', label: 'E-commerce' },
+              { value: 'email', label: 'Email Marketing' },
+              { value: 'webhook', label: 'Webhook' },
+              { value: 'api', label: 'API Customizada' }
+            ]
+          },
+          { name: 'url', label: 'URL/Endpoint', type: 'text' },
+          { name: 'api_key', label: 'API Key', type: 'text' },
+          { name: 'config', label: 'Configuração JSON', type: 'textarea' },
+          { name: 'ativo', label: 'Integração ativa', type: 'checkbox' }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando integração...');
+
+            // Parse config JSON
+            if (data.config) {
+              try {
+                data.config = JSON.parse(data.config);
+              } catch (e) {
+                Modal.closeLoading();
+                Toast.error('Configuração JSON inválida');
+                return false;
+              }
+            }
+
+            await API.put(`/api/integracoes/${integrationId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Integração atualizada com sucesso!');
+            await this.loadIntegrations();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar integração');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar integração');
+    }
+  },
+
+  async testIntegration(integrationId) {
+    Modal.confirm({
+      title: 'Testar Integração',
+      message: 'Deseja enviar um teste para esta integração?',
+      confirmText: 'Enviar Teste',
+      onConfirm: async () => {
+        try {
+          Modal.loading('Testando integração...');
+
+          const response = await API.post(`/api/integracoes/${integrationId}/testar`);
+
+          Modal.closeLoading();
+
+          if (response.sucesso) {
+            Toast.success('Teste executado com sucesso!');
+          } else {
+            Toast.error('Teste falhou: ' + (response.erro || 'Erro desconhecido'));
+          }
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error('Erro ao testar integração');
+        }
+      }
+    });
+  },
+
+  async viewLogs(integrationId) {
+    try {
+      Modal.loading('Carregando logs...');
+
+      const response = await API.get(`/api/integracoes/${integrationId}/logs?limite=50`);
+      const logs = response.logs || [];
+
+      Modal.closeLoading();
+
+      const logsHTML = logs.length > 0
+        ? logs.map(log => `
+            <div class="border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="badge ${log.status === 'sucesso' ? 'badge-success' : 'badge-error'}">
+                  ${log.status}
+                </span>
+                <span class="text-xs text-gray-500">${this.formatDate(log.criado_em)}</span>
+              </div>
+              <p class="text-sm text-gray-700 dark:text-gray-300">${log.mensagem || '-'}</p>
+              ${log.erro ? `<p class="text-xs text-red-500 mt-1">${log.erro}</p>` : ''}
+            </div>
+          `).join('')
+        : '<p class="text-center text-gray-500 py-4">Nenhum log encontrado</p>';
+
+      Modal.render({
+        id: 'modal-view-logs',
+        title: 'Logs da Integração',
+        size: 'lg',
+        content: `<div class="max-h-96 overflow-y-auto">${logsHTML}</div>`,
+        buttons: [{
+          text: 'Fechar',
+          class: 'btn btn-primary',
+          onClick: () => {
+            Modal.close('modal-view-logs');
+            Modal.destroy('modal-view-logs');
+          }
+        }]
+      });
+
+      Modal.open('modal-view-logs');
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar logs');
+    }
+  },
+
+  async toggleStatus(integrationId, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+    const endpoint = isActive ? 'desativar' : 'ativar';
+
+    Modal.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Integração`,
+      message: `Deseja realmente ${action} esta integração?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      danger: isActive,
+      onConfirm: async () => {
+        try {
+          await API.post(`/api/integracoes/${integrationId}/${endpoint}`);
+          Toast.success(`Integração ${action}da com sucesso!`);
+          await this.loadIntegrations();
+        } catch (error) {
+          Toast.error(`Erro ao ${action} integração`);
+        }
+      }
+    });
+  },
+
+  async deleteIntegration(integrationId) {
+    Modal.confirm({
+      title: 'Excluir Integração',
+      message: 'Tem certeza que deseja excluir esta integração? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/api/integracoes/${integrationId}`);
+          Toast.success('Integração excluída com sucesso!');
+          await this.loadIntegrations();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao excluir integração');
+        }
+      }
+    });
+  }
+};
+
+// Inicializar
+Integrations.init();
 </script>
 
 </body>
