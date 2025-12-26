@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Admin Dashboard - WhatsBenemax</title><link rel="stylesheet" href="/css/app.css"><script src="https://cdn.tailwindcss.com"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
+<body>
+<div class="app-container">
+<aside class="app-sidebar" id="sidebar"><div class="sidebar-logo"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg><span>WhatsBenemax Admin</span></div><nav class="sidebar-menu" id="sidebarMenu"></nav></aside>
+<header class="app-header"><button onclick="Sidebar.toggle()" class="header-btn"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="header-actions"><button class="header-btn" onclick="DarkMode.toggle()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button><div class="user-menu"><img src="https://ui-avatars.com/api/?name=Admin&background=DC2626&color=fff" class="user-avatar" id="userAvatar"><div class="user-info hidden md:block"><div class="user-name" id="userName">Administrador</div></div></div></div></header>
+<main class="app-main">
+<div class="mb-6"><h1 class="page-title">Painel Administrativo</h1><p class="page-subtitle">Visão geral da plataforma</p></div>
+
+<!-- KPIs Globais -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Total Empresas</p><h3 class="text-2xl font-bold">142</h3><p class="text-xs text-green-600 mt-1">↑ 12 este mês</p></div><div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Usuários Ativos</p><h3 class="text-2xl font-bold">1.238</h3><p class="text-xs text-green-600 mt-1">↑ 8% vs mês anterior</p></div><div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">MRR Total</p><h3 class="text-2xl font-bold text-green-600">R$ 42.180</h3><p class="text-xs text-green-600 mt-1">↑ 15% vs mês anterior</p></div><div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Msgs Enviadas</p><h3 class="text-2xl font-bold">458.230</h3><p class="text-xs text-gray-500 mt-1">Este mês</p></div><div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg></div></div></div>
+<div class="card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500 mb-1">Taxa Retenção</p><h3 class="text-2xl font-bold">94.3%</h3><p class="text-xs text-green-600 mt-1">↑ 2.1% vs mês anterior</p></div><div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center"><svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div></div></div>
+</div>
+
+<!-- Gráficos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<div class="card"><h3 class="font-bold mb-4">Receita Recorrente (MRR)</h3><canvas id="chartMRR" height="250"></canvas></div>
+<div class="card"><h3 class="font-bold mb-4">Novos Cadastros por Dia</h3><canvas id="chartCadastros" height="250"></canvas></div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<div class="card"><h3 class="font-bold mb-4">Distribuição por Plano</h3><canvas id="chartPlanos" height="250"></canvas></div>
+<div class="card"><h3 class="font-bold mb-4">Churn Rate Mensal</h3><canvas id="chartChurn" height="250"></canvas></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs mb-6"><button class="tab active" onclick="showTab('empresas')">🏢 Empresas</button><button class="tab" onclick="showTab('usuarios')">👥 Usuários</button><button class="tab" onclick="showTab('financeiro')">💰 Financeiro</button><button class="tab" onclick="showTab('afiliados')">🤝 Afiliados</button><button class="tab" onclick="showTab('sistema')">⚙️ Sistema</button></div>
+
+<!-- Empresas Tab -->
+<div id="tab-empresas">
+<div class="mb-4"><button class="btn btn-primary">➕ Nova Empresa</button></div>
+<div class="card">
+<table class="table"><thead><tr><th>Empresa</th><th>Plano</th><th>Usuários</th><th>Instâncias</th><th>Mensagens/mês</th><th>Status</th><th>Ações</th></tr></thead><tbody id="empresasTable"></tbody></table>
+</div>
+</div>
+
+<!-- Usuários Tab -->
+<div id="tab-usuarios" class="hidden">
+<div class="card">
+<table class="table"><thead><tr><th>Nome</th><th>Email</th><th>Empresa</th><th>Função</th><th>Último Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="usuariosTable"></tbody></table>
+</div>
+</div>
+
+<!-- Financeiro Tab -->
+<div id="tab-financeiro" class="hidden">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+<div class="card"><p class="text-sm text-gray-500 mb-1">Receita Este Mês</p><h3 class="text-2xl font-bold text-green-600">R$ 42.180,00</h3></div>
+<div class="card"><p class="text-sm text-gray-500 mb-1">Receita Prevista</p><h3 class="text-2xl font-bold text-blue-600">R$ 48.500,00</h3></div>
+<div class="card"><p class="text-sm text-gray-500 mb-1">Inadimplência</p><h3 class="text-2xl font-bold text-red-600">R$ 2.340,00</h3></div>
+</div>
+<div class="card">
+<table class="table"><thead><tr><th>Empresa</th><th>Plano</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody id="financeiroTable"></tbody></table>
+</div>
+</div>
+
+<!-- Afiliados Tab -->
+<div id="tab-afiliados" class="hidden">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+<div class="card"><p class="text-sm text-gray-500 mb-1">Total Afiliados</p><h3 class="text-2xl font-bold">45</h3></div>
+<div class="card"><p class="text-sm text-gray-500 mb-1">Afiliados Ativos</p><h3 class="text-2xl font-bold">32</h3></div>
+<div class="card"><p class="text-sm text-gray-500 mb-1">Comissões Pagas</p><h3 class="text-2xl font-bold text-green-600">R$ 12.450</h3></div>
+<div class="card"><p class="text-sm text-gray-500 mb-1">A Pagar</p><h3 class="text-2xl font-bold text-yellow-600">R$ 3.280</h3></div>
+</div>
+<div class="card">
+<table class="table"><thead><tr><th>Afiliado</th><th>Email</th><th>Indicações</th><th>Assinantes Ativos</th><th>Comissão Total</th><th>Status</th></tr></thead><tbody id="afiliadosTable"></tbody></table>
+</div>
+</div>
+
+<!-- Sistema Tab -->
+<div id="tab-sistema" class="hidden">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+<div class="card"><h3 class="font-bold mb-3">Status do Servidor</h3><div class="space-y-2"><div class="flex justify-between"><span class="text-sm">CPU</span><span class="font-semibold">45%</span></div><div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-green-600 h-2 rounded-full" style="width: 45%"></div></div><div class="flex justify-between mt-2"><span class="text-sm">Memória</span><span class="font-semibold">62%</span></div><div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-yellow-600 h-2 rounded-full" style="width: 62%"></div></div><div class="flex justify-between mt-2"><span class="text-sm">Disco</span><span class="font-semibold">38%</span></div><div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-green-600 h-2 rounded-full" style="width: 38%"></div></div></div></div>
+<div class="card"><h3 class="font-bold mb-3">Serviços</h3><div class="space-y-2"><div class="flex items-center justify-between"><span class="text-sm">API Principal</span><span class="badge badge-success">Online</span></div><div class="flex items-center justify-between"><span class="text-sm">Redis Cache</span><span class="badge badge-success">Online</span></div><div class="flex items-center justify-between"><span class="text-sm">PostgreSQL</span><span class="badge badge-success">Online</span></div><div class="flex items-center justify-between"><span class="text-sm">Socket.io</span><span class="badge badge-success">Online</span></div><div class="flex items-center justify-between"><span class="text-sm">Bull Queue</span><span class="badge badge-success">Online</span></div></div></div>
+<div class="card"><h3 class="font-bold mb-3">Estatísticas 24h</h3><div class="space-y-2"><div class="flex justify-between"><span class="text-sm">Requisições</span><span class="font-semibold">1.2M</span></div><div class="flex justify-between"><span class="text-sm">Tempo Médio</span><span class="font-semibold">120ms</span></div><div class="flex justify-between"><span class="text-sm">Taxa de Erro</span><span class="font-semibold text-green-600">0.02%</span></div><div class="flex justify-between"><span class="text-sm">Uptime</span><span class="font-semibold text-green-600">99.98%</span></div></div></div>
+</div>
+</div>
+</main>
+</div>
+<script src="/js/utils.js"></script>
+<script>Auth.checkAuth();const user=Auth.getUser();if(user){document.getElementById('userName').textContent=user.nome;loadMenu();}function loadMenu(){const m=[{label:'Dashboard',href:'/admin/dashboard.html',active:true},{label:'Empresas',href:'/admin/empresas.html'},{label:'Usuários',href:'/admin/usuarios.html'},{label:'Financeiro',href:'/admin/financeiro.html'}];document.getElementById('sidebarMenu').innerHTML=m.map(i=>`<a href="${i.href}" class="menu-item ${i.active?'active':''}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>${i.label}</span></a>`).join('');}function renderChartMRR(){const ctx=document.getElementById('chartMRR');new Chart(ctx,{type:'line',data:{labels:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],datasets:[{label:'MRR',borderColor:'#5B21B6',backgroundColor:'rgba(91,33,182,0.1)',data:[28500,30200,32100,34500,36200,38100,39800,40200,41500,42180,null,null],tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}function renderChartCadastros(){const ctx=document.getElementById('chartCadastros');new Chart(ctx,{type:'bar',data:{labels:['1','5','10','15','20','25','30'],datasets:[{label:'Cadastros',backgroundColor:'#5B21B6',data:[8,12,15,10,18,14,12]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}function renderChartPlanos(){const ctx=document.getElementById('chartPlanos');new Chart(ctx,{type:'doughnut',data:{labels:['Básico','Premium','Enterprise'],datasets:[{data:[45,82,15],backgroundColor:['#A78BFA','#5B21B6','#7C3AED']}]},options:{responsive:true,maintainAspectRatio:false}});}function renderChartChurn(){const ctx=document.getElementById('chartChurn');new Chart(ctx,{type:'line',data:{labels:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],datasets:[{label:'Churn %',borderColor:'#DC2626',backgroundColor:'rgba(220,38,38,0.1)',data:[8.2,7.5,6.8,5.9,5.2,4.8,5.1,5.7,6.2,5.7,null,null],tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}function loadEmpresas(){const empresas=[{nome:'Tech Solutions LTDA',plano:'Enterprise',usuarios:20,instancias:10,mensagens:45200,status:'ativa'},{nome:'Varejo Premium',plano:'Premium',usuarios:5,instancias:3,mensagens:8500,status:'ativa'},{nome:'Startup XYZ',plano:'Básico',usuarios:2,instancias:1,mensagens:2800,status:'trial'}];document.getElementById('empresasTable').innerHTML=empresas.map(e=>`<tr><td class="font-semibold">${e.nome}</td><td><span class="badge badge-secondary">${e.plano}</span></td><td>${e.usuarios}</td><td>${e.instancias}</td><td>${e.mensagens.toLocaleString('pt-BR')}</td><td><span class="badge badge-${e.status==='ativa'?'success':e.status==='trial'?'warning':'error'}">${e.status.charAt(0).toUpperCase()+e.status.slice(1)}</span></td><td><button class="btn-sm btn-outline">Ver</button></td></tr>`).join('');}function loadUsuarios(){const usuarios=[{nome:'João Silva',email:'joao@techsolutions.com',empresa:'Tech Solutions LTDA',funcao:'Administrador',ultimoAcesso:'Agora',status:'ativo'},{nome:'Maria Santos',email:'maria@varejo.com',empresa:'Varejo Premium',funcao:'Vendedor',ultimoAcesso:'5 min atrás',status:'ativo'}];document.getElementById('usuariosTable').innerHTML=usuarios.map(u=>`<tr><td class="font-semibold">${u.nome}</td><td class="text-sm">${u.email}</td><td>${u.empresa}</td><td><span class="badge badge-secondary">${u.funcao}</span></td><td class="text-sm">${u.ultimoAcesso}</td><td><span class="badge badge-success">${u.status.charAt(0).toUpperCase()+u.status.slice(1)}</span></td><td><button class="btn-sm btn-outline">Ver</button></td></tr>`).join('');}function loadFinanceiro(){const financeiro=[{empresa:'Tech Solutions LTDA',plano:'Enterprise',valor:797.00,vencimento:'10/01/2025',status:'ativa'},{empresa:'Varejo Premium',plano:'Premium',valor:297.00,vencimento:'15/01/2025',status:'ativa'},{empresa:'Startup ABC',plano:'Básico',valor:97.00,vencimento:'20/12/2024',status:'atrasada'}];document.getElementById('financeiroTable').innerHTML=financeiro.map(f=>`<tr><td class="font-semibold">${f.empresa}</td><td><span class="badge badge-secondary">${f.plano}</span></td><td class="font-bold">R$ ${f.valor.toFixed(2)}</td><td class="text-sm">${f.vencimento}</td><td><span class="badge badge-${f.status==='ativa'?'success':'error'}">${f.status.charAt(0).toUpperCase()+f.status.slice(1)}</span></td><td><button class="btn-sm btn-outline">Ver</button></td></tr>`).join('');}function loadAfiliados(){const afiliados=[{nome:'Carlos Souza',email:'carlos@afiliado.com',indicacoes:23,assinantes:18,comissao:3450.00,status:'ativo'},{nome:'Ana Lima',email:'ana@afiliado.com',indicacoes:15,assinantes:12,comissao:2180.00,status:'ativo'}];document.getElementById('afiliadosTable').innerHTML=afiliados.map(a=>`<tr><td class="font-semibold">${a.nome}</td><td class="text-sm">${a.email}</td><td>${a.indicacoes}</td><td>${a.assinantes}</td><td class="font-bold text-green-600">R$ ${a.comissao.toFixed(2)}</td><td><span class="badge badge-success">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td></tr>`).join('');}function showTab(name){document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'));document.getElementById(`tab-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');if(name==='usuarios')loadUsuarios();if(name==='financeiro')loadFinanceiro();if(name==='afiliados')loadAfiliados();}renderChartMRR();renderChartCadastros();renderChartPlanos();renderChartChurn();loadEmpresas();</script>
+</body>
+</html>
