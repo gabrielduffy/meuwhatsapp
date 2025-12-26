@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuários - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Usuários</h1>
+        <p class="page-subtitle">Gerencie todos os usuários da plataforma</p>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Buscar</label>
+          <input type="text" id="searchInput" placeholder="Nome ou email..." class="input">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Função</label>
+          <select id="funcaoFilter" class="input">
+            <option value="">Todos</option>
+            <option value="administrador">Administrador</option>
+            <option value="empresa">Empresa (Dono)</option>
+            <option value="usuario">Usuário</option>
+            <option value="afiliado">Afiliado</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Status</label>
+          <select id="statusFilter" class="input">
+            <option value="">Todos</option>
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button class="btn btn-outline w-full">Limpar Filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Usuários</p>
+        <h3 class="text-2xl font-bold text-purple-600">1.238</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Usuários Ativos</p>
+        <h3 class="text-2xl font-bold text-green-600">1.185</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Administradores</p>
+        <h3 class="text-2xl font-bold text-blue-600">5</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Afiliados</p>
+        <h3 class="text-2xl font-bold text-yellow-600">45</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Empresa</th>
+            <th>Função</th>
+            <th>Último Acesso</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="usuariosTable"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('usuarios');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('usuarios');
+
+const usuarios = [
+  { nome: 'João Silva', email: 'joao@techsolutions.com', empresa: 'Tech Solutions LTDA', funcao: 'empresa', ultimo: '2 min atrás', status: 'ativo' },
+  { nome: 'Maria Santos', email: 'maria@varejo.com', empresa: 'Varejo Premium', funcao: 'usuario', ultimo: '5 min atrás', status: 'ativo' },
+  { nome: 'Carlos Souza', email: 'carlos@startup.com', empresa: 'Startup XYZ', funcao: 'empresa', ultimo: '1 hora atrás', status: 'ativo' },
+  { nome: 'Ana Lima', email: 'ana@ecommerce.com', empresa: 'E-commerce Plus', funcao: 'usuario', ultimo: '3 horas atrás', status: 'ativo' },
+  { nome: 'Pedro Costa', email: 'pedro@marketing.com', empresa: 'Marketing Digital Pro', funcao: 'administrador', ultimo: '10 min atrás', status: 'ativo' },
+  { nome: 'Julia Mendes', email: 'julia@consultoria.com', empresa: 'Consultoria ABC', funcao: 'usuario', ultimo: '2 dias atrás', status: 'inativo' }
+];
+
+document.getElementById('usuariosTable').innerHTML = usuarios.map(u => `
+  <tr>
+    <td class="font-semibold">${u.nome}</td>
+    <td class="text-sm">${u.email}</td>
+    <td>${u.empresa}</td>
+    <td><span class="badge badge-secondary">${u.funcao.charAt(0).toUpperCase() + u.funcao.slice(1)}</span></td>
+    <td class="text-sm">${u.ultimo}</td>
+    <td><span class="badge badge-${u.status === 'ativo' ? 'success' : 'error'}">${u.status.charAt(0).toUpperCase() + u.status.slice(1)}</span></td>
+    <td>
+      <button class="btn-sm btn-outline" onclick="Toast.info('Visualizar usuário')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </button>
+    </td>
+  </tr>
+`).join('');
+</script>
+
+</body>
+</html>

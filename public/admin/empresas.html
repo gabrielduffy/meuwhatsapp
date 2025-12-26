@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Empresas - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Empresas</h1>
+        <p class="page-subtitle">Gerencie todas as empresas da plataforma</p>
+      </div>
+      <button class="btn btn-primary" onclick="novaEmpresa()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nova Empresa
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Buscar</label>
+          <input type="text" id="searchInput" placeholder="Nome ou email..." class="input" onkeyup="filtrar()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Status</label>
+          <select id="statusFilter" class="input" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="ativo">Ativo</option>
+            <option value="trial">Trial</option>
+            <option value="inativo">Inativo</option>
+            <option value="bloqueado">Bloqueado</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Plano</label>
+          <select id="planoFilter" class="input" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="Básico">Básico</option>
+            <option value="Premium">Premium</option>
+            <option value="Enterprise">Enterprise</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button class="btn btn-outline w-full" onclick="limparFiltros()">Limpar Filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Empresas</p>
+        <h3 class="text-2xl font-bold text-purple-600" id="totalEmpresas">142</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Empresas Ativas</p>
+        <h3 class="text-2xl font-bold text-green-600" id="empresasAtivas">128</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Em Trial</p>
+        <h3 class="text-2xl font-bold text-yellow-600" id="empresasTrial">8</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Bloqueadas</p>
+        <h3 class="text-2xl font-bold text-red-600" id="empresasBloqueadas">6</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Email</th>
+            <th>Plano</th>
+            <th>Usuários</th>
+            <th>Instâncias</th>
+            <th>MRR</th>
+            <th>Status</th>
+            <th>Criado em</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="empresasTable">
+          <tr>
+            <td colspan="9" class="text-center py-8 text-gray-500">Carregando...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginação -->
+    <div class="flex items-center justify-between mt-6">
+      <div class="text-sm text-gray-600">
+        Mostrando <span id="showing">1-50</span> de <span id="total">142</span> empresas
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-outline btn-sm" onclick="previousPage()">Anterior</button>
+        <button class="btn btn-outline btn-sm">1</button>
+        <button class="btn btn-outline btn-sm">2</button>
+        <button class="btn btn-outline btn-sm">3</button>
+        <button class="btn btn-outline btn-sm" onclick="nextPage()">Próximo</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+// Renderizar template
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('empresas');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('empresas');
+
+// Dados Mock
+const empresasMock = [
+  { id: 1, nome: 'Tech Solutions LTDA', email: 'contato@techsolutions.com', plano: 'Enterprise', usuarios: 20, instancias: 10, mrr: 797, status: 'ativo', criado: '15/01/2024' },
+  { id: 2, nome: 'Varejo Premium', email: 'admin@varejopremium.com', plano: 'Premium', usuarios: 5, instancias: 3, mrr: 297, status: 'ativo', criado: '20/01/2024' },
+  { id: 3, nome: 'Startup XYZ', email: 'contato@startupxyz.com', plano: 'Básico', usuarios: 2, instancias: 1, mrr: 97, status: 'trial', criado: '25/01/2024' },
+  { id: 4, nome: 'E-commerce Plus', email: 'suporte@ecommerceplus.com', plano: 'Premium', usuarios: 8, instancias: 5, mrr: 297, status: 'ativo', criado: '10/02/2024' },
+  { id: 5, nome: 'Marketing Digital Pro', email: 'contato@mdpro.com', plano: 'Enterprise', usuarios: 15, instancias: 8, mrr: 797, status: 'ativo', criado: '01/02/2024' },
+  { id: 6, nome: 'Consultoria ABC', email: 'admin@consultoriaabc.com', plano: 'Básico', usuarios: 3, instancias: 2, mrr: 97, status: 'ativo', criado: '12/02/2024' },
+  { id: 7, nome: 'Loja Virtual 123', email: 'contato@loja123.com', plano: 'Premium', usuarios: 6, instancias: 4, mrr: 297, status: 'trial', criado: '18/02/2024' },
+  { id: 8, nome: 'Agência Criativa', email: 'hello@agenciacriativa.com', plano: 'Básico', usuarios: 2, instancias: 1, mrr: 97, status: 'inativo', criado: '05/01/2024' },
+  { id: 9, nome: 'SaaS Inovador', email: 'contato@saasinovador.com', plano: 'Enterprise', usuarios: 25, instancias: 12, mrr: 797, status: 'ativo', criado: '08/02/2024' },
+  { id: 10, nome: 'Delivery Express', email: 'admin@deliveryexpress.com', plano: 'Premium', usuarios: 10, instancias: 6, mrr: 297, status: 'bloqueado', criado: '22/01/2024' }
+];
+
+let empresasFiltradas = [...empresasMock];
+
+function renderEmpresas() {
+  const tbody = document.getElementById('empresasTable');
+
+  if (empresasFiltradas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-500">Nenhuma empresa encontrada</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = empresasFiltradas.map(e => `
+    <tr>
+      <td class="font-semibold">${e.nome}</td>
+      <td class="text-sm">${e.email}</td>
+      <td><span class="badge badge-secondary">${e.plano}</span></td>
+      <td>${e.usuarios}</td>
+      <td>${e.instancias}</td>
+      <td class="font-semibold text-green-600">R$ ${e.mrr.toFixed(2)}</td>
+      <td><span class="badge badge-${getBadgeColor(e.status)}">${capitalizeFirst(e.status)}</span></td>
+      <td class="text-sm">${e.criado}</td>
+      <td>
+        <div class="flex gap-2">
+          <button class="btn-sm btn-outline" onclick="verEmpresa(${e.id})" title="Ver detalhes">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+          </button>
+          <button class="btn-sm btn-outline" onclick="editarEmpresa(${e.id})" title="Editar">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('total').textContent = empresasFiltradas.length;
+  document.getElementById('showing').textContent = `1-${Math.min(50, empresasFiltradas.length)}`;
+}
+
+function filtrar() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const plano = document.getElementById('planoFilter').value;
+
+  empresasFiltradas = empresasMock.filter(e => {
+    const matchSearch = !search || e.nome.toLowerCase().includes(search) || e.email.toLowerCase().includes(search);
+    const matchStatus = !status || e.status === status;
+    const matchPlano = !plano || e.plano === plano;
+    return matchSearch && matchStatus && matchPlano;
+  });
+
+  renderEmpresas();
+}
+
+function limparFiltros() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('planoFilter').value = '';
+  empresasFiltradas = [...empresasMock];
+  renderEmpresas();
+}
+
+function getBadgeColor(status) {
+  const colors = {
+    'ativo': 'success',
+    'trial': 'warning',
+    'inativo': 'secondary',
+    'bloqueado': 'error'
+  };
+  return colors[status] || 'secondary';
+}
+
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function novaEmpresa() {
+  Toast.info('Modal de criar empresa em desenvolvimento');
+}
+
+function verEmpresa(id) {
+  Toast.info(`Visualizando empresa #${id}`);
+}
+
+function editarEmpresa(id) {
+  Toast.info(`Editando empresa #${id}`);
+}
+
+function previousPage() {
+  Toast.info('Página anterior');
+}
+
+function nextPage() {
+  Toast.info('Próxima página');
+}
+
+// Inicializar
+renderEmpresas();
+</script>
+
+</body>
+</html>

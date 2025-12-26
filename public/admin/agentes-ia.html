@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentes IA - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main">
+    <h1 class="page-title mb-6">Agentes IA - Visão Global</h1>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Agentes</p>
+        <h3 class="text-2xl font-bold text-purple-600">234</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Ativos</p>
+        <h3 class="text-2xl font-bold text-green-600">198</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Conversas Hoje</p>
+        <h3 class="text-2xl font-bold text-blue-600">5.234</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Resolução</p>
+        <h3 class="text-2xl font-bold text-green-600">82.5%</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Satisfação Média</p>
+        <h3 class="text-2xl font-bold text-yellow-600">4.6/5</h3>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Agente</th>
+            <th>Empresa</th>
+            <th>Tipo</th>
+            <th>Conversas Hoje</th>
+            <th>Taxa Resolução</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">Atendente Virtual</td>
+            <td>Tech Solutions</td>
+            <td><span class="badge badge-secondary">Atendimento</span></td>
+            <td>456</td>
+            <td class="text-green-600 font-semibold">85%</td>
+            <td><span class="badge badge-success">Ativo</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Vendedor Bot</td>
+            <td>Varejo Premium</td>
+            <td><span class="badge badge-secondary">Vendas</span></td>
+            <td>324</td>
+            <td class="text-green-600 font-semibold">78%</td>
+            <td><span class="badge badge-success">Ativo</span></td>
+          </tr>
+          <tr>
+            <td class="font-semibold">Suporte IA</td>
+            <td>E-commerce Plus</td>
+            <td><span class="badge badge-secondary">Suporte</span></td>
+            <td>289</td>
+            <td class="text-green-600 font-semibold">88%</td>
+            <td><span class="badge badge-success">Ativo</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('agentes-ia');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('agentes-ia');
+</script>
+
+</body>
+</html>
