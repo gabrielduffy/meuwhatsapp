@@ -50,7 +50,7 @@ function verificarFuncionalidade(funcionalidade) {
 /**
  * Verificar limites do plano
  */
-async function verificarLimite(tipo) {
+function verificarLimite(tipo) {
   return async (req, res, next) => {
     const empresa = req.empresa;
 

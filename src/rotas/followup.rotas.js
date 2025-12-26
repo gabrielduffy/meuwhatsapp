@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const followupRepo = require('../repositorios/followup.repositorio');
 const followupServico = require('../servicos/followup.servico');
-const { autenticar } = require('../middlewares/autenticacao.middleware');
+const { autenticarMiddleware } = require('../middlewares/autenticacao');
 
 // Aplicar autenticação em todas as rotas
-router.use(autenticar);
+router.use(autenticarMiddleware);
 
 // ==================== SEQUÊNCIAS ====================
 
