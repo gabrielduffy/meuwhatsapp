@@ -60,7 +60,7 @@ body.dark {
   width: 80px;
 }
 
-.app-sidebar.sidebar-collapsed .app-header {
+.app-sidebar.sidebar-collapsed ~ .app-header {
   left: 80px;
 }
 
@@ -82,7 +82,8 @@ body.dark {
   white-space: nowrap;
 }
 
-.app-sidebar.collapsed .sidebar-logo span {
+.app-sidebar.collapsed .sidebar-logo span,
+.app-sidebar.sidebar-collapsed .sidebar-logo span {
   display: none;
 }
 
@@ -123,11 +124,13 @@ body.dark {
   flex-shrink: 0;
 }
 
-.app-sidebar.collapsed .menu-item span {
+.app-sidebar.collapsed .menu-item span,
+.app-sidebar.sidebar-collapsed .menu-item span {
   display: none;
 }
 
-.app-sidebar.collapsed .menu-item {
+.app-sidebar.collapsed .menu-item,
+.app-sidebar.sidebar-collapsed .menu-item {
   justify-content: center;
 }
 

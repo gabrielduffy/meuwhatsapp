@@ -6,8 +6,21 @@
   <title>Minha Empresa - Admin WhatsBenemax</title>
   <link rel="stylesheet" href="/css/app.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Aplicar dark mode ANTES de renderizar para evitar flash
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
 </head>
 <body>
+<script>
+  // Transferir classe dark de html para body
+  if (document.documentElement.classList.contains('dark')) {
+    document.body.classList.add('dark');
+    document.documentElement.classList.remove('dark');
+  }
+</script>
 
 <div class="app-container">
   <div id="sidebarContainer"></div>
@@ -27,6 +40,16 @@
       </button>
     </div>
 
+    <!-- Tabs -->
+    <div class="tabs mb-6">
+      <button class="tab active" onclick="Empresa.showTab('overview')">Visão Geral</button>
+      <button class="tab" onclick="Empresa.showTab('uso')">Uso & Limites</button>
+      <button class="tab" onclick="Empresa.showTab('creditos')">Créditos</button>
+      <button class="tab" onclick="Empresa.showTab('whitelabel')" id="whitelabelTab" style="display: none;">White-label</button>
+    </div>
+
+    <!-- Tab: Overview -->
+    <div class="tab-content" id="tab-overview">
     <!-- Informações da Empresa -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <div class="card lg:col-span-2">
@@ -49,17 +72,21 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <!-- Uso e Limites -->
-    <div class="card mb-6">
+    <!-- Tab: Uso e Limites -->
+    <div class="tab-content hidden" id="tab-uso">
+    <div class="card">
       <h3 class="font-bold mb-4">Uso e Limites</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="usageStats">
         <div class="text-center text-gray-500">Carregando...</div>
       </div>
     </div>
+    </div>
 
-    <!-- Créditos -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Tab: Créditos -->
+    <div class="tab-content hidden" id="tab-creditos">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="card">
         <h3 class="font-bold mb-4">Créditos</h3>
         <div id="creditsInfo">
@@ -74,9 +101,11 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <!-- White-label (se disponível) -->
-    <div class="card" id="whitelabelSection" style="display: none;">
+    <!-- Tab: White-label -->
+    <div class="tab-content hidden" id="tab-whitelabel">
+    <div class="card" id="whitelabelSection">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-bold">Configurações White-label</h3>
         <button class="btn btn-outline" onclick="Empresa.openWhitelabelModal()">
@@ -90,6 +119,8 @@
         <div class="text-center text-gray-500 py-4">Carregando...</div>
       </div>
     </div>
+    </div>
+
   </main>
 </div>
 
@@ -135,9 +166,9 @@ const Empresa = {
       this.plan = response.plano_atual || response;
       this.renderPlanInfo();
 
-      // Mostrar seção white-label se disponível
+      // Mostrar tab white-label se disponível
       if (this.company?.whitelabel_ativo) {
-        document.getElementById('whitelabelSection').style.display = 'block';
+        document.getElementById('whitelabelTab').style.display = 'flex';
         this.renderWhitelabelInfo();
       }
     } catch (error) {
@@ -447,6 +478,16 @@ const Empresa = {
       bloqueado: 'Bloqueado'
     };
     return labels[status] || status;
+  },
+
+  showTab(tab) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+    // Show selected tab
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    event.target.classList.add('active');
   }
 };
 
