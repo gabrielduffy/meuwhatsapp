@@ -49,6 +49,7 @@ const crmRoutes = require('./routes/crm');
 const followupRoutes = require('./routes/followup');
 const whitelabelRoutes = require('./routes/whitelabel');
 const notificacoesRoutes = require('./routes/notifications');
+const relatoriosRoutes = require('./routes/relatorios');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -193,6 +194,7 @@ app.use('/api/crm', crmRoutes);
 app.use('/api/followup', followupRoutes);
 app.use('/api/whitelabel', whitelabelRoutes);
 app.use('/api/notificacoes', notificacoesRoutes);
+app.use('/api/relatorios', relatoriosRoutes);
 
 // Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
 // Serve o index.html do React para todas as rotas não-API
