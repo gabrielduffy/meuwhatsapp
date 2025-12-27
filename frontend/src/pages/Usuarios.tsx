@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Users as UsersIcon, UserCheck, Shield, DollarSign, Edit, Power, Key, Trash2 } from 'lucide-react';
 import { Card, Button, Input, Table, Badge, Modal } from '../components/ui';
-import api from '../lib/api';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface Usuario {

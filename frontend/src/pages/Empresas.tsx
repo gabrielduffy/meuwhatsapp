@@ -12,7 +12,7 @@ import {
   Target,
 } from 'lucide-react';
 import { Card, Button, Input, Modal, Badge, Tabs } from '../components/ui';
-import api from '../lib/api';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface Empresa {

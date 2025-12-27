@@ -21,7 +21,7 @@ import {
   Settings,
   Filter,
 } from 'lucide-react';
-import api from '../lib/api';
+import api from '../services/api';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
