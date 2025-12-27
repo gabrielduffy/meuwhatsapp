@@ -9,6 +9,7 @@ import CRM from './pages/CRM';
 import AgentesIA from './pages/AgentesIA';
 import Integracoes from './pages/Integracoes';
 import Followup from './pages/Followup';
+import Configuracoes from './pages/Configuracoes';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
           <Route path="/agentes-ia" element={<AgentesIA />} />
           <Route path="/integracoes" element={<Integracoes />} />
           <Route path="/followup" element={<Followup />} />
+          <Route path="/config" element={<Configuracoes />} />
         </Routes>
       </Layout>
     </BrowserRouter>
