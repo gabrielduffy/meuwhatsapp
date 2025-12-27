@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS instances (
   session_data JSONB -- Para armazenar dados da sessão Baileys
 );
 
-CREATE INDEX idx_instances_name ON instances(instance_name);
-CREATE INDEX idx_instances_status ON instances(status);
-CREATE INDEX idx_instances_phone ON instances(phone_number);
+CREATE INDEX IF NOT EXISTS idx_instances_name ON instances(instance_name);
+CREATE INDEX IF NOT EXISTS idx_instances_status ON instances(status);
+CREATE INDEX IF NOT EXISTS idx_instances_phone ON instances(phone_number);
 
 -- ========== TABELA: metrics ==========
 -- Armazena métricas de uso das instâncias
@@ -35,10 +35,10 @@ CREATE TABLE IF NOT EXISTS metrics (
   period_end TIMESTAMP
 );
 
-CREATE INDEX idx_metrics_instance ON metrics(instance_name);
-CREATE INDEX idx_metrics_type ON metrics(metric_type);
-CREATE INDEX idx_metrics_created ON metrics(created_at);
-CREATE INDEX idx_metrics_period ON metrics(period_start, period_end);
+CREATE INDEX IF NOT EXISTS idx_metrics_instance ON metrics(instance_name);
+CREATE INDEX IF NOT EXISTS idx_metrics_type ON metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_metrics_created ON metrics(created_at);
+CREATE INDEX IF NOT EXISTS idx_metrics_period ON metrics(period_start, period_end);
 
 -- ========== TABELA: scheduled_messages ==========
 -- Armazena mensagens agendadas
@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
   FOREIGN KEY (instance_name) REFERENCES instances(instance_name) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_scheduled_instance ON scheduled_messages(instance_name);
-CREATE INDEX idx_scheduled_status ON scheduled_messages(status);
-CREATE INDEX idx_scheduled_time ON scheduled_messages(scheduled_time);
+CREATE INDEX IF NOT EXISTS idx_scheduled_instance ON scheduled_messages(instance_name);
+CREATE INDEX IF NOT EXISTS idx_scheduled_status ON scheduled_messages(status);
+CREATE INDEX IF NOT EXISTS idx_scheduled_time ON scheduled_messages(scheduled_time);
 
 -- ========== TABELA: broadcast_campaigns ==========
 -- Armazena campanhas de broadcast
@@ -83,9 +83,9 @@ CREATE TABLE IF NOT EXISTS broadcast_campaigns (
   FOREIGN KEY (instance_name) REFERENCES instances(instance_name) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_broadcast_instance ON broadcast_campaigns(instance_name);
-CREATE INDEX idx_broadcast_status ON broadcast_campaigns(status);
-CREATE INDEX idx_broadcast_created ON broadcast_campaigns(created_at);
+CREATE INDEX IF NOT EXISTS idx_broadcast_instance ON broadcast_campaigns(instance_name);
+CREATE INDEX IF NOT EXISTS idx_broadcast_status ON broadcast_campaigns(status);
+CREATE INDEX IF NOT EXISTS idx_broadcast_created ON broadcast_campaigns(created_at);
 
 -- ========== TABELA: autoresponder_configs ==========
 -- Configurações de auto-resposta com IA
@@ -106,8 +106,8 @@ CREATE TABLE IF NOT EXISTS autoresponder_configs (
   UNIQUE(instance_name)
 );
 
-CREATE INDEX idx_autoresponder_instance ON autoresponder_configs(instance_name);
-CREATE INDEX idx_autoresponder_enabled ON autoresponder_configs(enabled);
+CREATE INDEX IF NOT EXISTS idx_autoresponder_instance ON autoresponder_configs(instance_name);
+CREATE INDEX IF NOT EXISTS idx_autoresponder_enabled ON autoresponder_configs(enabled);
 
 -- ========== TABELA: autoresponder_history ==========
 -- Histórico de interações da IA
@@ -124,9 +124,9 @@ CREATE TABLE IF NOT EXISTS autoresponder_history (
   FOREIGN KEY (instance_name) REFERENCES instances(instance_name) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_autoresponder_history_instance ON autoresponder_history(instance_name);
-CREATE INDEX idx_autoresponder_history_chat ON autoresponder_history(chat_id);
-CREATE INDEX idx_autoresponder_history_created ON autoresponder_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_autoresponder_history_instance ON autoresponder_history(instance_name);
+CREATE INDEX IF NOT EXISTS idx_autoresponder_history_chat ON autoresponder_history(chat_id);
+CREATE INDEX IF NOT EXISTS idx_autoresponder_history_created ON autoresponder_history(created_at);
 
 -- ========== TABELA: webhook_configs ==========
 -- Configurações avançadas de webhooks
@@ -147,8 +147,8 @@ CREATE TABLE IF NOT EXISTS webhook_configs (
   UNIQUE(instance_name)
 );
 
-CREATE INDEX idx_webhook_configs_instance ON webhook_configs(instance_name);
-CREATE INDEX idx_webhook_configs_enabled ON webhook_configs(enabled);
+CREATE INDEX IF NOT EXISTS idx_webhook_configs_instance ON webhook_configs(instance_name);
+CREATE INDEX IF NOT EXISTS idx_webhook_configs_enabled ON webhook_configs(enabled);
 
 -- ========== TABELA: webhook_logs ==========
 -- Logs de envio de webhooks
@@ -168,10 +168,10 @@ CREATE TABLE IF NOT EXISTS webhook_logs (
   FOREIGN KEY (instance_name) REFERENCES instances(instance_name) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_webhook_logs_instance ON webhook_logs(instance_name);
-CREATE INDEX idx_webhook_logs_status ON webhook_logs(status);
-CREATE INDEX idx_webhook_logs_event ON webhook_logs(event_type);
-CREATE INDEX idx_webhook_logs_created ON webhook_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_instance ON webhook_logs(instance_name);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_status ON webhook_logs(status);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_event ON webhook_logs(event_type);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_created ON webhook_logs(created_at);
 
 -- ========== TABELA: contacts ==========
 -- Gerenciamento de contatos
@@ -192,10 +192,10 @@ CREATE TABLE IF NOT EXISTS contacts (
   UNIQUE(instance_name, phone_number)
 );
 
-CREATE INDEX idx_contacts_instance ON contacts(instance_name);
-CREATE INDEX idx_contacts_phone ON contacts(phone_number);
-CREATE INDEX idx_contacts_tags ON contacts USING GIN(tags);
-CREATE INDEX idx_contacts_blocked ON contacts(is_blocked);
+CREATE INDEX IF NOT EXISTS idx_contacts_instance ON contacts(instance_name);
+CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone_number);
+CREATE INDEX IF NOT EXISTS idx_contacts_tags ON contacts USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_contacts_blocked ON contacts(is_blocked);
 
 -- ========== TABELA: warming_configs ==========
 -- Configurações de aquecimento de números
@@ -213,8 +213,8 @@ CREATE TABLE IF NOT EXISTS warming_configs (
   UNIQUE(instance_name)
 );
 
-CREATE INDEX idx_warming_configs_instance ON warming_configs(instance_name);
-CREATE INDEX idx_warming_configs_enabled ON warming_configs(enabled);
+CREATE INDEX IF NOT EXISTS idx_warming_configs_instance ON warming_configs(instance_name);
+CREATE INDEX IF NOT EXISTS idx_warming_configs_enabled ON warming_configs(enabled);
 
 -- ========== TABELA: warming_stats ==========
 -- Estatísticas de aquecimento
@@ -229,8 +229,8 @@ CREATE TABLE IF NOT EXISTS warming_stats (
   UNIQUE(instance_name, stat_date)
 );
 
-CREATE INDEX idx_warming_stats_instance ON warming_stats(instance_name);
-CREATE INDEX idx_warming_stats_date ON warming_stats(stat_date);
+CREATE INDEX IF NOT EXISTS idx_warming_stats_instance ON warming_stats(instance_name);
+CREATE INDEX IF NOT EXISTS idx_warming_stats_date ON warming_stats(stat_date);
 
 -- ========== FUNÇÕES AUXILIARES ==========
 
