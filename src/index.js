@@ -22,8 +22,8 @@ require('./jobs/statusChecker');
 const { iniciarTarefaFollowup } = require('./tarefas/followup.tarefa');
 const { iniciarTarefaWhiteLabel } = require('./tarefas/whitelabel.tarefa');
 
-// Importar rotas existentes
-const autenticacaoRoutes = require('./rotas/autenticacao.rotas');
+// Importar rotas consolidadas
+const autenticacaoRoutes = require('./routes/auth');
 const instanceRoutes = require('./routes/instance');
 const messageRoutes = require('./routes/message');
 const groupRoutes = require('./routes/group');
@@ -37,19 +37,17 @@ const contactsRoutes = require('./routes/contacts');
 const broadcastRoutes = require('./routes/broadcast');
 const autoresponderRoutes = require('./routes/autoresponder');
 const statusRoutes = require('./routes/status');
-
-// Importar novas rotas SaaS
-const usuarioRoutes = require('./rotas/usuario.rotas');
-const empresaRoutes = require('./rotas/empresa.rotas');
-const planoRoutes = require('./rotas/plano.rotas');
-const contatoRoutes = require('./rotas/contato.rotas');
-const agenteIARoutes = require('./rotas/agente-ia.rotas');
-const prospeccaoRoutes = require('./rotas/prospeccao.rotas');
-const chatInternoRoutes = require('./rotas/chat.rotas');
-const integracaoRoutes = require('./rotas/integracao.rotas');
-const crmRoutes = require('./rotas/crm.rotas');
-const followupRoutes = require('./rotas/followup.rotas');
-const whitelabelRoutes = require('./rotas/whitelabel.rotas');
+const usuarioRoutes = require('./routes/users');
+const empresaRoutes = require('./routes/companies');
+const planoRoutes = require('./routes/plans');
+const contatoRoutes = require('./routes/contact');
+const agenteIARoutes = require('./routes/ai-agents');
+const prospeccaoRoutes = require('./routes/prospecting');
+const chatInternoRoutes = require('./routes/chat-interno');
+const integracaoRoutes = require('./routes/integrations');
+const crmRoutes = require('./routes/crm');
+const followupRoutes = require('./routes/followup');
+const whitelabelRoutes = require('./routes/whitelabel');
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
