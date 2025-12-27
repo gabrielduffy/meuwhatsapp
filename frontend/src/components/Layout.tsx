@@ -15,19 +15,21 @@ import {
   Settings,
   LogOut,
   Contact,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Instâncias', path: '/instancias', icon: Smartphone },
   { label: 'Conversas', path: '/conversas', icon: MessageCircle },
   { label: 'Contatos', path: '/contatos', icon: Contact },
+  { label: 'CRM', path: '/crm', icon: GitBranch },
+  { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },
+  { label: 'Follow-up', path: '/followup', icon: Clock },
+  { label: 'Integrações', path: '/integracoes', icon: Workflow },
   { label: 'Usuários', path: '/usuarios', icon: Users },
   { label: 'Empresas', path: '/empresas', icon: Building2 },
-  { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },
-  { label: 'CRM', path: '/crm', icon: GitBranch },
-  { label: 'Integrações', path: '/integracoes', icon: Workflow },
-  { label: 'Follow-up', path: '/followup', icon: Clock },
   { label: 'Configurações', path: '/config', icon: Settings },
 ];
 
