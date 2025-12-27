@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import Login from './pages/Login';
+import Cadastrar from './pages/Cadastrar';
 import Dashboard from './pages/Dashboard';
 import Conversas from './pages/Conversas';
 import Usuarios from './pages/Usuarios';
@@ -14,42 +18,135 @@ import Configuracoes from './pages/Configuracoes';
 function App() {
   return (
     <BrowserRouter>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: '#1F2937',
-            color: '#fff',
-            border: '1px solid #374151',
-          },
-          success: {
-            iconTheme: {
-              primary: '#22c55e',
-              secondary: '#fff',
+      <AuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#1F2937',
+              color: '#fff',
+              border: '1px solid #374151',
             },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+            success: {
+              iconTheme: {
+                primary: '#22c55e',
+                secondary: '#fff',
+              },
             },
-          },
-        }}
-      />
-      <Layout>
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/conversas" element={<Conversas />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/empresas" element={<Empresas />} />
-          <Route path="/crm" element={<CRM />} />
-          <Route path="/agentes-ia" element={<AgentesIA />} />
-          <Route path="/integracoes" element={<Integracoes />} />
-          <Route path="/followup" element={<Followup />} />
-          <Route path="/config" element={<Configuracoes />} />
+          {/* Rotas Públicas */}
+          <Route path="/entrar" element={<Login />} />
+          <Route path="/cadastrar" element={<Cadastrar />} />
+
+          {/* Rotas Protegidas */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/conversas"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Conversas />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Usuarios />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/empresas"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Empresas />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/crm"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CRM />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agentes-ia"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AgentesIA />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/integracoes"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Integracoes />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/followup"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Followup />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/config"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Configuracoes />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </Layout>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
