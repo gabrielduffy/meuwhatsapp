@@ -6,6 +6,7 @@ import Conversas from './pages/Conversas';
 import Usuarios from './pages/Usuarios';
 import Empresas from './pages/Empresas';
 import CRM from './pages/CRM';
+import AgentesIA from './pages/AgentesIA';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/empresas" element={<Empresas />} />
           <Route path="/crm" element={<CRM />} />
+          <Route path="/agentes-ia" element={<AgentesIA />} />
         </Routes>
       </Layout>
     </BrowserRouter>
