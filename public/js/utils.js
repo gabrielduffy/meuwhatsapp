@@ -10,6 +10,25 @@
 const API = {
   baseURL: window.location.origin,
 
+  /**
+   * Converte objeto para query string
+   * @param {Object} params - Parâmetros
+   * @returns {string} Query string
+   */
+  buildQueryString(params) {
+    if (!params || Object.keys(params).length === 0) return '';
+
+    const searchParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        searchParams.append(key, params[key]);
+      }
+    });
+
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : '';
+  },
+
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('auth_token');
 
@@ -27,7 +46,7 @@ const API = {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.mensagem || 'Erro na requisição');
+        throw new Error(data.erro || data.mensagem || 'Erro na requisição');
       }
 
       return data;
@@ -37,8 +56,9 @@ const API = {
     }
   },
 
-  get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+  get(endpoint, params = {}, options = {}) {
+    const queryString = this.buildQueryString(params);
+    return this.request(endpoint + queryString, { ...options, method: 'GET' });
   },
 
   post(endpoint, body, options = {}) {
@@ -59,6 +79,14 @@ const API = {
 
   delete(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: 'DELETE' });
+  },
+
+  patch(endpoint, body, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
   },
 };
 
@@ -175,33 +203,11 @@ const Toast = {
 };
 
 // ================================================
-// MODAL HELPERS
+// MODAL SYSTEM
 // ================================================
-
-const Modal = {
-  open(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-  },
-
-  close(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-  },
-
-  closeAll() {
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-      modal.classList.add('hidden');
-    });
-    document.body.style.overflow = 'auto';
-  },
-};
+// NOTA: O sistema completo de modais está em /js/modal.js
+// Este arquivo não define Modal para evitar conflitos.
+// Sempre inclua modal.js após utils.js nas páginas.
 
 // ================================================
 // DARK MODE
