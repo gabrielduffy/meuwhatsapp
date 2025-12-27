@@ -9,8 +9,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build": "cd frontend && npm install && npm run build",
-    "postinstall": "cd frontend && npm install"
+    "build": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.16",
