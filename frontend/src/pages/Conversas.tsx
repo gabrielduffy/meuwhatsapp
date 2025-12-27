@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send } from 'lucide-react';
+import { Search, Send, MessageCircle } from 'lucide-react';
 import api from '../lib/api';
 
 interface Chat {

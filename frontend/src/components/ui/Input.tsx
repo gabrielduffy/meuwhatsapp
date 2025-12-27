@@ -1,4 +1,5 @@
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { forwardRef } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import { motion } from 'framer-motion';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -42,7 +43,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               ${error ? 'border-red-400/50 focus:border-red-400/50 focus:shadow-[0_0_20px_rgba(248,113,113,0.3)]' : ''}
               ${className}
             `}
-            {...props}
+            {...(props as any)}
           />
         </div>
 

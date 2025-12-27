@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -17,6 +16,8 @@ import {
   Moon,
   Sun
 } from 'lucide-react';
+import { useUIStore } from '../store/useUIStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -31,13 +32,9 @@ const menuItems = [
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const location = useLocation();
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const { sidebarOpen, darkMode, setSidebarOpen, toggleDarkMode } = useUIStore();
+  const { user, logout } = useAuthStore();
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 overflow-hidden">
@@ -103,7 +100,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             <span className="font-medium">{darkMode ? 'Modo Claro' : 'Modo Escuro'}</span>
           </button>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 w-full">
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 w-full"
+          >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Sair</span>
           </button>
@@ -134,7 +134,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex-1" />
           <div className="flex items-center gap-4">
             <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-cyan-600/20 border border-white/10">
-              <span className="text-sm font-medium text-white">Admin</span>
+              <span className="text-sm font-medium text-white">{user?.nome || 'Admin'}</span>
             </div>
           </div>
         </header>
