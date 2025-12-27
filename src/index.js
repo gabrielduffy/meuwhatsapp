@@ -7,6 +7,12 @@ const fs = require('fs');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 
+// Importar configurações (DEVE SER PRIMEIRO para validar env vars)
+const config = require('./config/env');
+const logger = require('./config/logger');
+const { corsOptions } = require('./config/cors');
+const { swaggerUi, swaggerDocs, swaggerUiOptions } = require('./config/swagger');
+
 // Importar configurações de banco de dados
 const { query: dbQuery } = require('./config/database');
 const { redis, cache } = require('./config/redis');
@@ -49,6 +55,7 @@ const whitelabelRoutes = require('./rotas/whitelabel.rotas');
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
 const { rateLimiter } = require('./middlewares/rateLimit');
 const { whitelabelMiddleware } = require('./middlewares/whitelabel.middleware');
+const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler');
 
 // Importar serviços
 const { loadExistingSessions } = require('./services/whatsapp');
@@ -62,12 +69,9 @@ const chatServico = require('./servicos/chat.servico');
 const app = express();
 const httpServer = createServer(app);
 
-// Configurar Socket.io
+// Configurar Socket.io com CORS seguro
 const io = new Server(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
 // Configurar Socket.io no serviço de chat
@@ -75,41 +79,45 @@ chatServico.configurarSocketIO(io);
 
 // Socket.io - Autenticação e gerenciamento de salas
 io.on('connection', (socket) => {
-  console.log('[Socket.io] Cliente conectado:', socket.id);
+  logger.info('Cliente Socket.io conectado', { socketId: socket.id });
 
   // Entrar em sala da empresa
   socket.on('entrar_empresa', (empresaId) => {
     socket.join(`empresa:${empresaId}`);
-    console.log(`[Socket.io] Socket ${socket.id} entrou na empresa ${empresaId}`);
+    logger.debug('Socket entrou em sala da empresa', { socketId: socket.id, empresaId });
   });
 
   // Entrar em sala de conversa
   socket.on('entrar_conversa', (conversaId) => {
     socket.join(`conversa:${conversaId}`);
-    console.log(`[Socket.io] Socket ${socket.id} entrou na conversa ${conversaId}`);
+    logger.debug('Socket entrou em conversa', { socketId: socket.id, conversaId });
   });
 
   // Sair de sala de conversa
   socket.on('sair_conversa', (conversaId) => {
     socket.leave(`conversa:${conversaId}`);
-    console.log(`[Socket.io] Socket ${socket.id} saiu da conversa ${conversaId}`);
+    logger.debug('Socket saiu de conversa', { socketId: socket.id, conversaId });
   });
 
   socket.on('disconnect', () => {
-    console.log('[Socket.io] Cliente desconectado:', socket.id);
+    logger.info('Cliente Socket.io desconectado', { socketId: socket.id });
   });
 });
 
-// Configurações
-const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.API_KEY || 'sua-chave-secreta-aqui';
-
 // Middlewares globais
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(cors(corsOptions)); // CORS com whitelist de origins
 app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Log de todas as requisições (apenas em desenvolvimento)
+if (config.nodeEnv !== 'production') {
+  app.use((req, res, next) => {
+    logger.debug(`${req.method} ${req.url}`);
+    next();
+  });
+}
 
 // Servir arquivos estáticos (CSS, JS, imagens)
 app.use(express.static(path.join(__dirname, '../public')));
@@ -117,13 +125,23 @@ app.use(express.static(path.join(__dirname, '../public')));
 // White Label - detectar domínio customizado
 app.use(whitelabelMiddleware);
 
+// Swagger Documentation (apenas em desenvolvimento ou se habilitado)
+if (config.enableSwagger) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+  logger.info('Swagger documentation disponível em /api-docs');
+}
+
 // Rotas públicas (sem autenticação)
 app.get('/health', (req, res) => {
   res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '2.1.0',
-    uptime: process.uptime()
+    success: true,
+    data: {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: '2.1.0',
+      uptime: process.uptime(),
+      environment: config.nodeEnv
+    }
   });
 });
 
@@ -187,21 +205,16 @@ app.use('/api/crm', crmRoutes);
 app.use('/api/followup', followupRoutes);
 app.use('/api/whitelabel', whitelabelRoutes);
 
-// Rota de fallback para 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint não encontrado' });
-});
+// Rota de fallback para 404 (DEVE VIR ANTES DO ERROR HANDLER)
+app.use(notFoundHandler);
 
-// Error handler global
-app.use((err, req, res, next) => {
-  console.error('Erro:', err);
-  res.status(500).json({ error: err.message || 'Erro interno do servidor' });
-});
+// Error handler global (DEVE SER O ÚLTIMO MIDDLEWARE)
+app.use(errorHandler);
 
 // ========== INICIALIZAÇÃO DO BANCO DE DADOS ==========
 async function initializeDatabase() {
   try {
-    console.log('🔄 Inicializando banco de dados...');
+    logger.info('Inicializando banco de dados...');
 
     // Verificar se o arquivo de schema existe
     const schemaPath = path.join(__dirname, 'config/schema.sql');
@@ -212,9 +225,9 @@ async function initializeDatabase() {
       // Executar schema (criar tabelas, índices, triggers, etc)
       await dbQuery(schema);
 
-      console.log('✅ Tabelas PostgreSQL criadas/verificadas com sucesso');
+      logger.info('Tabelas PostgreSQL criadas/verificadas com sucesso');
     } else {
-      console.warn('⚠️  Arquivo schema.sql não encontrado, pulando criação de tabelas');
+      logger.warn('Arquivo schema.sql não encontrado, pulando criação de tabelas');
     }
 
     // Executar schema SaaS (multi-tenant, autenticação, etc)
@@ -222,7 +235,7 @@ async function initializeDatabase() {
     if (fs.existsSync(saasSchemaPath)) {
       const saasSchema = fs.readFileSync(saasSchemaPath, 'utf8');
       await dbQuery(saasSchema);
-      console.log('✅ Tabelas SaaS criadas/verificadas com sucesso');
+      logger.info('Tabelas SaaS criadas/verificadas com sucesso');
     }
 
     // Executar schema de status
@@ -230,7 +243,7 @@ async function initializeDatabase() {
     if (fs.existsSync(statusSchemaPath)) {
       const statusSchema = fs.readFileSync(statusSchemaPath, 'utf8');
       await dbQuery(statusSchema);
-      console.log('✅ Tabelas de Status criadas/verificadas com sucesso');
+      logger.info('Tabelas de Status criadas/verificadas com sucesso');
     }
 
     // Executar schema de IA e Prospecção
@@ -238,7 +251,7 @@ async function initializeDatabase() {
     if (fs.existsSync(iaProspeccaoSchemaPath)) {
       const iaProspeccaoSchema = fs.readFileSync(iaProspeccaoSchemaPath, 'utf8');
       await dbQuery(iaProspeccaoSchema);
-      console.log('✅ Tabelas de IA e Prospecção criadas/verificadas com sucesso');
+      logger.info('Tabelas de IA e Prospecção criadas/verificadas com sucesso');
     }
 
     // Executar schema de Chat e Integrações
@@ -246,7 +259,7 @@ async function initializeDatabase() {
     if (fs.existsSync(chatSchemaPath)) {
       const chatSchema = fs.readFileSync(chatSchemaPath, 'utf8');
       await dbQuery(chatSchema);
-      console.log('✅ Tabelas de Chat e Integrações criadas/verificadas com sucesso');
+      logger.info('Tabelas de Chat e Integrações criadas/verificadas com sucesso');
     }
 
     // Executar schema de CRM Kanban
@@ -254,7 +267,7 @@ async function initializeDatabase() {
     if (fs.existsSync(crmSchemaPath)) {
       const crmSchema = fs.readFileSync(crmSchemaPath, 'utf8');
       await dbQuery(crmSchema);
-      console.log('✅ Tabelas de CRM Kanban criadas/verificadas com sucesso');
+      logger.info('Tabelas de CRM Kanban criadas/verificadas com sucesso');
     }
 
     // Executar schema de Follow-up Inteligente
@@ -262,7 +275,7 @@ async function initializeDatabase() {
     if (fs.existsSync(followupSchemaPath)) {
       const followupSchema = fs.readFileSync(followupSchemaPath, 'utf8');
       await dbQuery(followupSchema);
-      console.log('✅ Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
+      logger.info('Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
     }
 
     // Executar schema de White Label
@@ -270,21 +283,21 @@ async function initializeDatabase() {
     if (fs.existsSync(whitelabelSchemaPath)) {
       const whitelabelSchema = fs.readFileSync(whitelabelSchemaPath, 'utf8');
       await dbQuery(whitelabelSchema);
-      console.log('✅ Tabelas de White Label criadas/verificadas com sucesso');
+      logger.info('Tabelas de White Label criadas/verificadas com sucesso');
     }
 
     // Testar Redis
     await redis.ping();
-    console.log('✅ Redis conectado e funcionando');
+    logger.info('Redis conectado e funcionando');
 
   } catch (error) {
-    console.error('❌ Erro ao inicializar banco de dados:', error.message);
-    console.error('⚠️  O sistema continuará, mas funcionalidades de banco podem não funcionar');
+    logger.error('Erro ao inicializar banco de dados', { error: error.message, stack: error.stack });
+    logger.warn('O sistema continuará, mas funcionalidades de banco podem não funcionar');
   }
 }
 
 // Iniciar servidor (usar httpServer para suportar Socket.io)
-httpServer.listen(PORT, '0.0.0.0', async () => {
+httpServer.listen(config.port, '0.0.0.0', async () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
@@ -304,13 +317,15 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
 ║                        API v2.1.0                                ║
 ║              🚀 Métricas | Agendamento | IA                      ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  🌐 Servidor: http://localhost:${PORT}                             ║
-║  📊 Dashboard: http://localhost:${PORT}/dashboard                  ║
-║  🎛️  Manager: http://localhost:${PORT}/manager                     ║
-║  📖 Docs: http://localhost:${PORT}/docs                            ║
-║  🔑 API Key: ${API_KEY.substring(0, 10)}...                                 ║
+║  🌐 Servidor: http://localhost:${config.port}                      ║
+║  📊 Dashboard: http://localhost:${config.port}/dashboard           ║
+║  🎛️  Manager: http://localhost:${config.port}/manager              ║
+║  📖 API Docs: http://localhost:${config.port}/api-docs             ║
+║  🔐 Environment: ${config.nodeEnv}                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
   `);
+
+  logger.info('Servidor HTTP iniciado', { port: config.port, env: config.nodeEnv });
 
   // Inicializar banco de dados PostgreSQL e Redis
   await initializeDatabase();
@@ -339,7 +354,7 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
   // Carregar sessões existentes
   await loadExistingSessions();
 
-  console.log('\n✅ Todos os sistemas inicializados com sucesso!\n');
+  logger.info('Todos os sistemas inicializados com sucesso!');
 });
 
 module.exports = app;
