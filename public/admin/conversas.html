@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversas - Admin WhatsBenemax</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Aplicar dark mode ANTES de renderizar para evitar flash
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+</head>
+<body>
+<script>
+  // Transferir classe dark de html para body
+  if (document.documentElement.classList.contains('dark')) {
+    document.body.classList.add('dark');
+    document.documentElement.classList.remove('dark');
+  }
+</script>
+
+<div class="app-container">
+  <div id="sidebarContainer"></div>
+  <div id="headerContainer"></div>
+
+  <main class="app-main" style="padding: 0;">
+    <div class="flex h-screen">
+      <!-- Lista de Conversas -->
+      <div class="w-full md:w-96 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-900">
+        <!-- Header da Lista -->
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-bold">Conversas</h2>
+            <select id="instanceFilter" class="input input-sm" onchange="Conversas.loadChats()">
+              <option value="">Todas instâncias</option>
+            </select>
+          </div>
+          <div class="relative">
+            <input type="text" id="searchChats" placeholder="Buscar conversas..." class="input pl-10" oninput="Conversas.filterChats()">
+            <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div id="chatsList" class="flex-1 overflow-y-auto">
+          <div class="flex items-center justify-center h-full text-gray-500">
+            <div class="text-center">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p class="mt-2">Carregando conversas...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Área de Mensagens -->
+      <div class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-800">
+        <div id="chatArea" class="flex items-center justify-center h-full text-gray-500">
+          <div class="text-center">
+            <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+            </svg>
+            <p class="text-lg">Selecione uma conversa para começar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('conversas');
+document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
+AdminTemplate.init('conversas');
+
+const Conversas = {
+  chats: [],
+  filteredChats: [],
+  instances: [],
+  currentChat: null,
+  messages: [],
+
+  async init() {
+    await this.loadInstances();
+    await this.loadChats();
+  },
+
+  async loadInstances() {
+    try {
+      const response = await API.get('/api/instancias');
+      this.instances = response.instancias || response || [];
+      this.renderInstanceFilter();
+    } catch (error) {
+      console.error('[Conversas] Erro ao carregar instâncias:', error);
+    }
+  },
+
+  renderInstanceFilter() {
+    const select = document.getElementById('instanceFilter');
+    const options = this.instances.map(inst => `
+      <option value="${inst.instance_name}">${inst.instance_name} - ${inst.phone_number || 'Desconectado'}</option>
+    `).join('');
+    select.innerHTML = '<option value="">Todas instâncias</option>' + options;
+  },
+
+  async loadChats() {
+    try {
+      const instanceName = document.getElementById('instanceFilter').value;
+      const params = instanceName ? { instance: instanceName } : {};
+
+      const response = await API.get('/api/chats', params);
+      this.chats = response.chats || response || [];
+      this.filteredChats = [...this.chats];
+      this.renderChatsList();
+    } catch (error) {
+      console.error('[Conversas] Erro ao carregar chats:', error);
+      Toast.error('Erro ao carregar conversas');
+      document.getElementById('chatsList').innerHTML = `
+        <div class="flex items-center justify-center h-full text-red-500">
+          <div class="text-center p-4">
+            <p>Erro ao carregar conversas</p>
+            <button class="btn btn-sm btn-primary mt-2" onclick="Conversas.loadChats()">Tentar novamente</button>
+          </div>
+        </div>
+      `;
+    }
+  },
+
+  filterChats() {
+    const search = document.getElementById('searchChats').value.toLowerCase();
+    this.filteredChats = this.chats.filter(chat =>
+      chat.name?.toLowerCase().includes(search) ||
+      chat.phone?.toLowerCase().includes(search) ||
+      chat.lastMessage?.toLowerCase().includes(search)
+    );
+    this.renderChatsList();
+  },
+
+  renderChatsList() {
+    const container = document.getElementById('chatsList');
+
+    if (this.filteredChats.length === 0) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-full text-gray-500">
+          <div class="text-center p-4">
+            <svg class="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <p>Nenhuma conversa encontrada</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.filteredChats.map(chat => `
+      <div class="chat-item p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer ${this.currentChat?.id === chat.id ? 'bg-gray-100 dark:bg-gray-800' : ''}"
+        onclick="Conversas.selectChat('${chat.id}')">
+        <div class="flex items-start gap-3">
+          <div class="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+            ${this.getInitials(chat.name || chat.phone)}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-semibold truncate">${chat.name || chat.phone}</h3>
+              <span class="text-xs text-gray-500">${this.formatTime(chat.lastMessageTime)}</span>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 truncate">${chat.lastMessage || 'Sem mensagens'}</p>
+            ${chat.unreadCount ? `<span class="inline-block mt-1 px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">${chat.unreadCount}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  async selectChat(chatId) {
+    this.currentChat = this.chats.find(c => c.id === chatId);
+    if (!this.currentChat) return;
+
+    this.renderChatsList(); // Re-render to highlight selected
+    await this.loadMessages(chatId);
+  },
+
+  async loadMessages(chatId) {
+    try {
+      const response = await API.get(`/api/chats/${chatId}/messages`);
+      this.messages = response.messages || response || [];
+      this.renderChatArea();
+    } catch (error) {
+      console.error('[Conversas] Erro ao carregar mensagens:', error);
+      Toast.error('Erro ao carregar mensagens');
+    }
+  },
+
+  renderChatArea() {
+    if (!this.currentChat) return;
+
+    const chatArea = document.getElementById('chatArea');
+    chatArea.innerHTML = `
+      <!-- Header do Chat -->
+      <div class="border-b border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
+            ${this.getInitials(this.currentChat.name || this.currentChat.phone)}
+          </div>
+          <div>
+            <h3 class="font-bold">${this.currentChat.name || 'Sem nome'}</h3>
+            <p class="text-sm text-gray-500">${this.currentChat.phone}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagens -->
+      <div class="flex-1 overflow-y-auto p-4" id="messagesContainer">
+        ${this.renderMessages()}
+      </div>
+
+      <!-- Input de Mensagem -->
+      <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+        <form onsubmit="Conversas.sendMessage(event)" class="flex gap-2">
+          <input type="text" id="messageInput" placeholder="Digite uma mensagem..." class="input flex-1" required>
+          <button type="submit" class="btn btn-primary">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    `;
+
+    // Auto scroll para última mensagem
+    setTimeout(() => {
+      const container = document.getElementById('messagesContainer');
+      if (container) container.scrollTop = container.scrollHeight;
+    }, 100);
+  },
+
+  renderMessages() {
+    if (this.messages.length === 0) {
+      return `
+        <div class="flex items-center justify-center h-full text-gray-500">
+          <p>Nenhuma mensagem ainda</p>
+        </div>
+      `;
+    }
+
+    return this.messages.map(msg => {
+      const isFromMe = msg.fromMe;
+      return `
+        <div class="mb-4 flex ${isFromMe ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-xs lg:max-w-md">
+            ${!isFromMe ? `<p class="text-xs text-gray-500 mb-1">${msg.sender || 'Cliente'}</p>` : ''}
+            <div class="rounded-lg p-3 ${isFromMe ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-700'}">
+              <p class="break-words">${this.escapeHtml(msg.message)}</p>
+              <p class="text-xs mt-1 ${isFromMe ? 'text-purple-200' : 'text-gray-500'}">${this.formatTime(msg.timestamp)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async sendMessage(event) {
+    event.preventDefault();
+
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    try {
+      await API.post(`/api/chats/${this.currentChat.id}/send`, {
+        message: message
+      });
+
+      input.value = '';
+      await this.loadMessages(this.currentChat.id);
+      Toast.success('Mensagem enviada!');
+    } catch (error) {
+      console.error('[Conversas] Erro ao enviar mensagem:', error);
+      Toast.error('Erro ao enviar mensagem');
+    }
+  },
+
+  getInitials(name) {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  },
+
+  formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    if (diff < 60000) return 'Agora';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
+    if (diff < 86400000) return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('pt-BR');
+  },
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+};
+
+// Inicializar
+Conversas.init();
+
+// Auto-refresh a cada 10 segundos
+setInterval(() => {
+  if (Conversas.currentChat) {
+    Conversas.loadMessages(Conversas.currentChat.id);
+  }
+}, 10000);
+</script>
+
+</body>
+</html>
