@@ -38,14 +38,25 @@ async function criarConversa(dados) {
 }
 
 /**
- * Buscar conversa por ID
+ * Buscar conversa por ID (Optimized with JOINs to avoid N+1)
  */
 async function buscarConversaPorId(id, empresaId = null) {
-  let sql = 'SELECT * FROM conversas_chat WHERE id = $1';
+  let sql = `
+    SELECT c.*,
+           ct.nome as contato_nome,
+           ct.telefone as contato_telefone,
+           ct.email as contato_email,
+           u.nome as atribuido_nome,
+           u.email as atribuido_email
+    FROM conversas_chat c
+    LEFT JOIN contatos ct ON c.contato_id = ct.id
+    LEFT JOIN usuarios u ON c.atribuido_para = u.id
+    WHERE c.id = $1
+  `;
   const params = [id];
 
   if (empresaId) {
-    sql += ' AND empresa_id = $2';
+    sql += ' AND c.empresa_id = $2';
     params.push(empresaId);
   }
 
@@ -54,13 +65,19 @@ async function buscarConversaPorId(id, empresaId = null) {
 }
 
 /**
- * Buscar conversa por contato
+ * Buscar conversa por contato (Optimized with JOINs to avoid N+1)
  */
 async function buscarConversaPorContato(contatoId, empresaId, status = 'aberta') {
   const sql = `
-    SELECT * FROM conversas_chat
-    WHERE contato_id = $1 AND empresa_id = $2 AND status = $3
-    ORDER BY criado_em DESC
+    SELECT c.*,
+           ct.nome as contato_nome,
+           ct.telefone as contato_telefone,
+           u.nome as atribuido_nome
+    FROM conversas_chat c
+    LEFT JOIN contatos ct ON c.contato_id = ct.id
+    LEFT JOIN usuarios u ON c.atribuido_para = u.id
+    WHERE c.contato_id = $1 AND c.empresa_id = $2 AND c.status = $3
+    ORDER BY c.criado_em DESC
     LIMIT 1
   `;
 
