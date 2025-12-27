@@ -275,37 +275,47 @@ export default function Dashboard() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
-          {[
-            { icon: Target, title: 'Nova Campanha', desc: 'Criar campanha de prospecção', color: 'purple' },
-            { icon: MessageCircle, title: 'Enviar Mensagem', desc: 'Broadcast para contatos', color: 'cyan' },
-            { icon: Clock, title: 'Agendar Envio', desc: 'Agendar mensagem futura', color: 'blue' },
-          ].map((action, idx) => (
-            <motion.button
-              key={idx}
-              variants={item}
-              whileHover={{ scale: 1.02, y: -5 }}
-              whileTap={{ scale: 0.98 }}
-              className={`
-                glass rounded-2xl p-6
-                border border-white/10
-                text-left
-                shadow-xl hover:shadow-neon-${action.color}
-                transition-all duration-300
-                group
-              `}
-            >
-              <div className={`
-                p-3 rounded-xl w-fit mb-4
-                bg-${action.color}-500/20
-                group-hover:bg-${action.color}-500/30
-                transition-colors duration-300
-              `}>
-                <action.icon className={`w-6 h-6 text-${action.color}-400`} />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1">{action.title}</h3>
-              <p className="text-sm text-white/60">{action.desc}</p>
-            </motion.button>
-          ))}
+          {/* Nova Campanha */}
+          <motion.button
+            variants={item}
+            whileHover={{ scale: 1.02, y: -5 }}
+            whileTap={{ scale: 0.98 }}
+            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-purple transition-all duration-300 group"
+          >
+            <div className="p-3 rounded-xl w-fit mb-4 bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors duration-300">
+              <Target className="w-6 h-6 text-purple-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Nova Campanha</h3>
+            <p className="text-sm text-white/60">Criar campanha de prospecção</p>
+          </motion.button>
+
+          {/* Enviar Mensagem */}
+          <motion.button
+            variants={item}
+            whileHover={{ scale: 1.02, y: -5 }}
+            whileTap={{ scale: 0.98 }}
+            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-cyan transition-all duration-300 group"
+          >
+            <div className="p-3 rounded-xl w-fit mb-4 bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors duration-300">
+              <MessageCircle className="w-6 h-6 text-cyan-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Enviar Mensagem</h3>
+            <p className="text-sm text-white/60">Broadcast para contatos</p>
+          </motion.button>
+
+          {/* Agendar Envio */}
+          <motion.button
+            variants={item}
+            whileHover={{ scale: 1.02, y: -5 }}
+            whileTap={{ scale: 0.98 }}
+            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-blue transition-all duration-300 group"
+          >
+            <div className="p-3 rounded-xl w-fit mb-4 bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors duration-300">
+              <Clock className="w-6 h-6 text-blue-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Agendar Envio</h3>
+            <p className="text-sm text-white/60">Agendar mensagem futura</p>
+          </motion.button>
         </motion.div>
       </div>
     </div>

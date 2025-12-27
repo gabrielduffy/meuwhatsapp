@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, MessageCircle } from 'lucide-react';
+import { Search, Send, MessageCircle, ArrowLeft } from 'lucide-react';
 import api from '../lib/api';
 
 interface Chat {
@@ -25,6 +25,7 @@ export default function Conversas() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showMessages, setShowMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,6 +59,11 @@ export default function Conversas() {
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
     loadMessages(chat.id);
+    setShowMessages(true); // Mostrar área de mensagens em mobile
+  };
+
+  const handleBackToList = () => {
+    setShowMessages(false); // Voltar para lista em mobile
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -110,7 +116,9 @@ export default function Conversas() {
   return (
     <div className="flex h-full">
       {/* Chat List */}
-      <div className="w-full md:w-96 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+      <div className={`w-full md:w-96 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col ${
+        showMessages ? 'hidden md:flex' : 'flex'
+      }`}>
         {/* Search */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
@@ -168,12 +176,22 @@ export default function Conversas() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 ${
+        !showMessages ? 'hidden md:flex' : 'flex'
+      }`}>
         {selectedChat ? (
           <>
             {/* Chat Header */}
             <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
+                {/* Botão Voltar (Mobile only) */}
+                <button
+                  onClick={handleBackToList}
+                  className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </button>
+
                 <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
                   {getInitials(selectedChat.name || selectedChat.phone)}
                 </div>
