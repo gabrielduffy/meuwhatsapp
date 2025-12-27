@@ -6,8 +6,21 @@
   <title>Minha Empresa - Admin WhatsBenemax</title>
   <link rel="stylesheet" href="/css/app.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Aplicar dark mode ANTES de renderizar para evitar flash
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
 </head>
 <body>
+<script>
+  // Transferir classe dark de html para body
+  if (document.documentElement.classList.contains('dark')) {
+    document.body.classList.add('dark');
+    document.documentElement.classList.remove('dark');
+  }
+</script>
 
 <div class="app-container">
   <div id="sidebarContainer"></div>
