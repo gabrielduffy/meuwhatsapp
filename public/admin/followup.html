@@ -14,29 +14,36 @@
   <div id="headerContainer"></div>
 
   <main class="app-main">
-    <h1 class="page-title mb-6">Follow-up - Visão Global</h1>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">Sequências de Follow-up</h1>
+        <p class="page-subtitle">Gerencie campanhas automatizadas de follow-up</p>
+      </div>
+      <button class="btn btn-primary" onclick="FollowUp.openCreateModal()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nova Sequência
+      </button>
+    </div>
 
     <!-- Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Total Campanhas</p>
-        <h3 class="text-2xl font-bold text-purple-600">89</h3>
+        <p class="text-sm text-gray-500 mb-1">Total Sequências</p>
+        <h3 class="text-2xl font-bold text-purple-600" id="statTotal">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Ativas</p>
-        <h3 class="text-2xl font-bold text-green-600">67</h3>
+        <p class="text-sm text-gray-500 mb-1">Sequências Ativas</p>
+        <h3 class="text-2xl font-bold text-green-600" id="statAtivas">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Mensagens Enviadas Hoje</p>
-        <h3 class="text-2xl font-bold text-blue-600">3.245</h3>
+        <p class="text-sm text-gray-500 mb-1">Total Inscritos</p>
+        <h3 class="text-2xl font-bold text-blue-600" id="statInscricoes">-</h3>
       </div>
       <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Taxa Abertura</p>
-        <h3 class="text-2xl font-bold text-green-600">68.5%</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Taxa Resposta</p>
-        <h3 class="text-2xl font-bold text-yellow-600">32.4%</h3>
+        <p class="text-sm text-gray-500 mb-1">Taxa Conclusão</p>
+        <h3 class="text-2xl font-bold text-yellow-600" id="statTaxa">-</h3>
       </div>
     </div>
 
@@ -45,38 +52,21 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Campanha</th>
-            <th>Empresa</th>
-            <th>Tipo</th>
-            <th>Enviadas</th>
-            <th>Taxa Abertura</th>
+            <th>Nome</th>
+            <th>Gatilho</th>
+            <th>Inscritos</th>
+            <th>Concluídos</th>
+            <th>Taxa Resposta</th>
             <th>Status</th>
+            <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="sequencesTable">
           <tr>
-            <td class="font-semibold">Recuperação Carrinho</td>
-            <td>E-commerce Plus</td>
-            <td><span class="badge badge-secondary">Vendas</span></td>
-            <td>1.234</td>
-            <td class="text-green-600 font-semibold">72%</td>
-            <td><span class="badge badge-success">Ativa</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Pós-Venda</td>
-            <td>Varejo Premium</td>
-            <td><span class="badge badge-secondary">Relacionamento</span></td>
-            <td>892</td>
-            <td class="text-green-600 font-semibold">65%</td>
-            <td><span class="badge badge-success">Ativa</span></td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Reativação Clientes</td>
-            <td>Tech Solutions</td>
-            <td><span class="badge badge-secondary">Vendas</span></td>
-            <td>567</td>
-            <td class="text-green-600 font-semibold">58%</td>
-            <td><span class="badge badge-warning">Pausada</span></td>
+            <td colspan="7" class="text-center text-gray-500 py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <p class="mt-2">Carregando sequências...</p>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -86,10 +76,335 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('followup');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('followup');
+
+const FollowUp = {
+  allSequences: [],
+
+  async init() {
+    await this.loadSequences();
+  },
+
+  async loadSequences() {
+    try {
+      const response = await API.get('/api/followup/sequencias');
+      this.allSequences = response.sequencias || response || [];
+
+      this.renderTable();
+      this.updateStats();
+    } catch (error) {
+      console.error('[FollowUp] Erro ao carregar:', error);
+      Toast.error('Erro ao carregar sequências');
+      document.getElementById('sequencesTable').innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-red-500 py-8">
+            Erro ao carregar sequências. Tente novamente.
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  renderTable() {
+    const tbody = document.getElementById('sequencesTable');
+
+    if (this.allSequences.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-gray-500 py-8">
+            Nenhuma sequência encontrada. Crie sua primeira sequência!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.allSequences.map(seq => {
+      const taxaResposta = this.calcularTaxaResposta(seq);
+      return `
+      <tr>
+        <td class="font-semibold">${seq.nome || '-'}</td>
+        <td><span class="badge badge-secondary">${this.getGatilhoLabel(seq.gatilho_tipo)}</span></td>
+        <td class="text-sm">${seq.total_inscritos || 0}</td>
+        <td class="text-sm">${seq.total_concluidos || 0}</td>
+        <td class="text-sm">
+          <span class="text-green-600 font-semibold">${taxaResposta}%</span>
+        </td>
+        <td>
+          <span class="badge ${seq.ativo ? 'badge-success' : 'badge-error'}">
+            ${seq.ativo ? 'Ativa' : 'Inativa'}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-primary" onclick="FollowUp.viewStats(${seq.id})" title="Estatísticas">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="FollowUp.duplicate(${seq.id})" title="Duplicar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="FollowUp.openEditModal(${seq.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm ${seq.ativo ? 'btn-warning' : 'btn-success'}"
+              onclick="FollowUp.toggleStatus(${seq.id}, ${seq.ativo})"
+              title="${seq.ativo ? 'Desativar' : 'Ativar'}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${seq.ativo ? `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                ` : `
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                `}
+              </svg>
+            </button>
+            <button class="btn-sm btn-danger" onclick="FollowUp.deleteSequence(${seq.id})" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+      `;
+    }).join('');
+  },
+
+  updateStats() {
+    document.getElementById('statTotal').textContent = this.allSequences.length;
+    document.getElementById('statAtivas').textContent = this.allSequences.filter(s => s.ativo).length;
+
+    const totalInscritos = this.allSequences.reduce((sum, s) => sum + (s.total_inscritos || 0), 0);
+    document.getElementById('statInscricoes').textContent = totalInscritos;
+
+    const totalConcluidos = this.allSequences.reduce((sum, s) => sum + (s.total_concluidos || 0), 0);
+    const taxa = totalInscritos > 0 ? ((totalConcluidos / totalInscritos) * 100).toFixed(1) : '0';
+    document.getElementById('statTaxa').textContent = taxa + '%';
+  },
+
+  getGatilhoLabel(tipo) {
+    const labels = {
+      'manual': 'Manual',
+      'novo_contato': 'Novo Contato',
+      'tag_adicionada': 'Tag Adicionada',
+      'webhook': 'Webhook',
+      'api': 'API'
+    };
+    return labels[tipo] || tipo || 'Manual';
+  },
+
+  calcularTaxaResposta(seq) {
+    if (!seq.total_inscritos || seq.total_inscritos === 0) return '0';
+    const taxa = ((seq.total_responderam || 0) / seq.total_inscritos) * 100;
+    return taxa.toFixed(1);
+  },
+
+  openCreateModal() {
+    Modal.form({
+      id: 'modal-create-sequence',
+      title: 'Nova Sequência de Follow-up',
+      size: 'lg',
+      fields: [
+        { name: 'nome', label: 'Nome da Sequência', type: 'text', required: true, placeholder: 'Ex: Boas-vindas Novos Clientes' },
+        { name: 'descricao', label: 'Descrição', type: 'textarea', placeholder: 'Descrição da sequência...' },
+        {
+          name: 'gatilho_tipo',
+          label: 'Gatilho',
+          type: 'select',
+          required: true,
+          defaultValue: 'manual',
+          options: [
+            { value: 'manual', label: 'Manual (inscrever contatos manualmente)' },
+            { value: 'novo_contato', label: 'Novo Contato Adicionado' },
+            { value: 'tag_adicionada', label: 'Tag Adicionada' },
+            { value: 'webhook', label: 'Webhook' }
+          ]
+        },
+        { name: 'usar_agente_ia', label: 'Usar Agente IA nas respostas', type: 'checkbox' },
+        { name: 'ativo', label: 'Sequência ativa', type: 'checkbox', defaultValue: true }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando sequência...');
+
+          await API.post('/api/followup/sequencias', {
+            ...data,
+            etapas: [{
+              ordem: 1,
+              atraso: 0,
+              unidade_atraso: 'minutos',
+              tipo: 'mensagem',
+              config: { mensagem: 'Olá! Seja bem-vindo!' }
+            }]
+          });
+
+          Modal.closeLoading();
+          Toast.success('Sequência criada com sucesso!');
+          await this.loadSequences();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar sequência');
+          return false;
+        }
+      }
+    });
+  },
+
+  async openEditModal(sequenceId) {
+    try {
+      Modal.loading('Carregando sequência...');
+
+      const response = await API.get(`/api/followup/sequencias/${sequenceId}`);
+      const sequence = response.sequencia || response;
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-sequence',
+        title: 'Editar Sequência',
+        size: 'lg',
+        data: sequence,
+        fields: [
+          { name: 'nome', label: 'Nome da Sequência', type: 'text', required: true },
+          { name: 'descricao', label: 'Descrição', type: 'textarea' },
+          {
+            name: 'gatilho_tipo',
+            label: 'Gatilho',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'manual', label: 'Manual' },
+              { value: 'novo_contato', label: 'Novo Contato' },
+              { value: 'tag_adicionada', label: 'Tag Adicionada' },
+              { value: 'webhook', label: 'Webhook' }
+            ]
+          },
+          { name: 'usar_agente_ia', label: 'Usar Agente IA', type: 'checkbox' },
+          { name: 'ativo', label: 'Sequência ativa', type: 'checkbox' }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando sequência...');
+
+            await API.put(`/api/followup/sequencias/${sequenceId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Sequência atualizada com sucesso!');
+            await this.loadSequences();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar sequência');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar sequência');
+    }
+  },
+
+  async viewStats(sequenceId) {
+    try {
+      Modal.loading('Carregando estatísticas...');
+
+      const response = await API.get(`/api/followup/sequencias/${sequenceId}/estatisticas`);
+
+      Modal.closeLoading();
+
+      Modal.view({
+        title: 'Estatísticas da Sequência',
+        size: 'md',
+        data: {
+          'Total de Inscritos': response.total_inscritos || 0,
+          'Concluídos': response.total_concluidos || 0,
+          'Responderam': response.total_responderam || 0,
+          'Ativos': response.ativos || 0,
+          'Cancelados': response.cancelados || 0,
+          'Taxa de Conclusão': response.taxa_conclusao || '0%',
+          'Taxa de Resposta': response.taxa_resposta || '0%'
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar estatísticas');
+    }
+  },
+
+  async duplicate(sequenceId) {
+    Modal.confirm({
+      title: 'Duplicar Sequência',
+      message: 'Deseja criar uma cópia desta sequência?',
+      confirmText: 'Duplicar',
+      onConfirm: async () => {
+        try {
+          Modal.loading('Duplicando sequência...');
+
+          await API.post(`/api/followup/sequencias/${sequenceId}/duplicar`);
+
+          Modal.closeLoading();
+          Toast.success('Sequência duplicada com sucesso!');
+          await this.loadSequences();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error('Erro ao duplicar sequência');
+        }
+      }
+    });
+  },
+
+  async toggleStatus(sequenceId, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+
+    Modal.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Sequência`,
+      message: `Deseja realmente ${action} esta sequência?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      danger: isActive,
+      onConfirm: async () => {
+        try {
+          await API.patch(`/api/followup/sequencias/${sequenceId}/status`, {
+            ativo: !isActive
+          });
+          Toast.success(`Sequência ${action}da com sucesso!`);
+          await this.loadSequences();
+        } catch (error) {
+          Toast.error(`Erro ao ${action} sequência`);
+        }
+      }
+    });
+  },
+
+  async deleteSequence(sequenceId) {
+    Modal.confirm({
+      title: 'Excluir Sequência',
+      message: 'Tem certeza que deseja excluir esta sequência? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/api/followup/sequencias/${sequenceId}`);
+          Toast.success('Sequência excluída com sucesso!');
+          await this.loadSequences();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao excluir sequência');
+        }
+      }
+    });
+  }
+};
+
+// Inicializar
+FollowUp.init();
 </script>
 
 </body>

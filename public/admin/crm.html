@@ -14,83 +14,826 @@
   <div id="headerContainer"></div>
 
   <main class="app-main">
-    <h1 class="page-title mb-6">CRM - Visão Global</h1>
-
-    <!-- Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Total Leads</p>
-        <h3 class="text-2xl font-bold text-purple-600">12.453</h3>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">CRM - Gestão de Vendas</h1>
+        <p class="page-subtitle">Gerencie funis, negociações e tarefas</p>
       </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Novos (30d)</p>
-        <h3 class="text-2xl font-bold text-blue-600">1.234</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Em Atendimento</p>
-        <h3 class="text-2xl font-bold text-yellow-600">892</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Convertidos</p>
-        <h3 class="text-2xl font-bold text-green-600">3.456</h3>
-      </div>
-      <div class="card">
-        <p class="text-sm text-gray-500 mb-1">Taxa Conversão</p>
-        <h3 class="text-2xl font-bold text-green-600">27.7%</h3>
+      <div class="flex gap-2">
+        <button class="btn btn-outline" onclick="CRM.showTab('visao-geral')">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          Visão Geral
+        </button>
+        <button class="btn btn-outline" onclick="CRM.showTab('funis')">Funis</button>
+        <button class="btn btn-outline" onclick="CRM.showTab('negociacoes')">Negociações</button>
+        <button class="btn btn-primary" onclick="CRM.openCreateDealModal()">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Nova Negociação
+        </button>
       </div>
     </div>
 
-    <!-- Tabela -->
-    <div class="card">
-      <h3 class="font-bold mb-4">Leads por Empresa</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Empresa</th>
-            <th>Total Leads</th>
-            <th>Novos (30d)</th>
-            <th>Em Atendimento</th>
-            <th>Convertidos</th>
-            <th>Taxa Conversão</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="font-semibold">Tech Solutions</td>
-            <td>2.345</td>
-            <td>234</td>
-            <td>156</td>
-            <td>678</td>
-            <td class="font-semibold text-green-600">28.9%</td>
-          </tr>
-          <tr>
-            <td class="font-semibold">Varejo Premium</td>
-            <td>1.892</td>
-            <td>189</td>
-            <td>98</td>
-            <td>523</td>
-            <td class="font-semibold text-green-600">27.6%</td>
-          </tr>
-          <tr>
-            <td class="font-semibold">E-commerce Plus</td>
-            <td>1.567</td>
-            <td>145</td>
-            <td>87</td>
-            <td>412</td>
-            <td class="font-semibold text-green-600">26.3%</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Estatísticas Gerais -->
+    <div id="statsSection" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Total Negociações</p>
+        <h3 class="text-2xl font-bold text-purple-600" id="statTotal">-</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Em Aberto</p>
+        <h3 class="text-2xl font-bold text-blue-600" id="statAbertas">-</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Ganhas</p>
+        <h3 class="text-2xl font-bold text-green-600" id="statGanhas">-</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Valor Total</p>
+        <h3 class="text-2xl font-bold text-yellow-600" id="statValorTotal">R$ 0</h3>
+      </div>
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Taxa Conversão</p>
+        <h3 class="text-2xl font-bold text-green-600" id="statTaxaConversao">0%</h3>
+      </div>
+    </div>
+
+    <!-- Tab: Visão Geral -->
+    <div id="tab-visao-geral" class="tab-content">
+      <div class="card">
+        <h3 class="font-bold mb-4">Negociações Recentes</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Contato</th>
+              <th>Valor</th>
+              <th>Funil/Etapa</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="recentDealsTable">
+            <tr>
+              <td colspan="6" class="text-center text-gray-500 py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <p class="mt-2">Carregando...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Funis -->
+    <div id="tab-funis" class="tab-content hidden">
+      <div class="flex justify-between mb-4">
+        <h3 class="font-bold text-lg">Funis de Vendas</h3>
+        <button class="btn btn-primary" onclick="CRM.openCreateFunnelModal()">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Novo Funil
+        </button>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Etapas</th>
+              <th>Negociações</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="funnelsTable">
+            <tr>
+              <td colspan="5" class="text-center text-gray-500 py-8">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Negociações -->
+    <div id="tab-negociacoes" class="tab-content hidden">
+      <div class="flex justify-between mb-4">
+        <div class="flex gap-2">
+          <select id="filterFunil" class="input" onchange="CRM.loadDeals()">
+            <option value="">Todos os funis</option>
+          </select>
+          <select id="filterStatus" class="input" onchange="CRM.loadDeals()">
+            <option value="">Todos os status</option>
+            <option value="aberta">Aberta</option>
+            <option value="ganha">Ganha</option>
+            <option value="perdida">Perdida</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Contato</th>
+              <th>Valor</th>
+              <th>Funil/Etapa</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="dealsTable">
+            <tr>
+              <td colspan="7" class="text-center text-gray-500 py-8">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 </div>
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('crm');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('crm');
+
+const CRM = {
+  funnels: [],
+  deals: [],
+  stats: {},
+  currentTab: 'visao-geral',
+
+  async init() {
+    await this.loadFunnels();
+    await this.loadDeals();
+    await this.loadStats();
+    this.populateFunnelFilter();
+  },
+
+  showTab(tab) {
+    this.currentTab = tab;
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+  },
+
+  async loadFunnels() {
+    try {
+      const response = await API.get('/api/crm/funis');
+      this.funnels = response.funis || response || [];
+      this.renderFunnelsTable();
+    } catch (error) {
+      console.error('[CRM] Erro ao carregar funis:', error);
+      Toast.error('Erro ao carregar funis');
+    }
+  },
+
+  async loadDeals() {
+    try {
+      const params = {};
+      const funilFilter = document.getElementById('filterFunil')?.value;
+      const statusFilter = document.getElementById('filterStatus')?.value;
+
+      if (funilFilter) params.funil_id = funilFilter;
+      if (statusFilter) params.status = statusFilter;
+
+      const response = await API.get('/api/crm/negociacoes', params);
+      this.deals = response.negociacoes || response || [];
+      this.renderDealsTable();
+      this.renderRecentDealsTable();
+    } catch (error) {
+      console.error('[CRM] Erro ao carregar negociações:', error);
+      Toast.error('Erro ao carregar negociações');
+    }
+  },
+
+  async loadStats() {
+    try {
+      const response = await API.get('/api/crm/estatisticas');
+      this.stats = response;
+      this.updateStats();
+    } catch (error) {
+      console.error('[CRM] Erro ao carregar estatísticas:', error);
+      this.stats = {
+        total_negociacoes: 0,
+        abertas: 0,
+        ganhas: 0,
+        perdidas: 0,
+        valor_total: 0,
+        valor_ganho: 0,
+        taxa_conversao: 0
+      };
+      this.updateStats();
+    }
+  },
+
+  updateStats() {
+    document.getElementById('statTotal').textContent = this.stats.total_negociacoes || 0;
+    document.getElementById('statAbertas').textContent = this.stats.abertas || 0;
+    document.getElementById('statGanhas').textContent = this.stats.ganhas || 0;
+    document.getElementById('statValorTotal').textContent = this.formatCurrency(this.stats.valor_total || 0);
+    document.getElementById('statTaxaConversao').textContent = `${this.stats.taxa_conversao || 0}%`;
+  },
+
+  populateFunnelFilter() {
+    const select = document.getElementById('filterFunil');
+    if (select) {
+      select.innerHTML = '<option value="">Todos os funis</option>' +
+        this.funnels.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    }
+  },
+
+  renderFunnelsTable() {
+    const tbody = document.getElementById('funnelsTable');
+
+    if (this.funnels.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-gray-500 py-8">
+            Nenhum funil encontrado. Crie seu primeiro funil!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.funnels.map(funil => `
+      <tr>
+        <td class="font-semibold">${funil.nome}</td>
+        <td>${funil.total_etapas || 0}</td>
+        <td>${funil.total_negociacoes || 0}</td>
+        <td>
+          <span class="badge ${funil.ativo ? 'badge-success' : 'badge-error'}">
+            ${funil.ativo ? 'Ativo' : 'Inativo'}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-primary" onclick="CRM.viewFunnel(${funil.id})" title="Ver Detalhes">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-outline" onclick="CRM.openEditFunnelModal(${funil.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-sm btn-danger" onclick="CRM.deleteFunnel(${funil.id})" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  renderDealsTable() {
+    const tbody = document.getElementById('dealsTable');
+
+    if (this.deals.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-gray-500 py-8">
+            Nenhuma negociação encontrada.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = this.deals.map(deal => `
+      <tr>
+        <td class="font-semibold">${deal.titulo}</td>
+        <td class="text-sm">${deal.contato_nome || '-'}</td>
+        <td class="font-semibold">${this.formatCurrency(deal.valor)}</td>
+        <td class="text-sm">${deal.funil_nome || '-'} / ${deal.etapa_nome || '-'}</td>
+        <td>
+          <span class="badge ${this.getPriorityClass(deal.prioridade)}">
+            ${this.getPriorityLabel(deal.prioridade)}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${this.getStatusClass(deal.status)}">
+            ${this.getStatusLabel(deal.status)}
+          </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-primary" onclick="CRM.viewDeal(${deal.id})" title="Ver Detalhes">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+            ${deal.status === 'aberta' ? `
+              <button class="btn-sm btn-success" onclick="CRM.winDeal(${deal.id})" title="Ganhar">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </button>
+              <button class="btn-sm btn-danger" onclick="CRM.loseDeal(${deal.id})" title="Perder">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </button>
+            ` : ''}
+            <button class="btn-sm btn-outline" onclick="CRM.openEditDealModal(${deal.id})" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  renderRecentDealsTable() {
+    const tbody = document.getElementById('recentDealsTable');
+    const recentDeals = this.deals.slice(0, 10);
+
+    if (recentDeals.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center text-gray-500 py-8">
+            Nenhuma negociação encontrada.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = recentDeals.map(deal => `
+      <tr>
+        <td class="font-semibold">${deal.titulo}</td>
+        <td class="text-sm">${deal.contato_nome || '-'}</td>
+        <td class="font-semibold">${this.formatCurrency(deal.valor)}</td>
+        <td class="text-sm">${deal.funil_nome || '-'} / ${deal.etapa_nome || '-'}</td>
+        <td>
+          <span class="badge ${this.getStatusClass(deal.status)}">
+            ${this.getStatusLabel(deal.status)}
+          </span>
+        </td>
+        <td>
+          <button class="btn-sm btn-primary" onclick="CRM.viewDeal(${deal.id})">
+            Ver
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  openCreateFunnelModal() {
+    Modal.form({
+      id: 'modal-create-funnel',
+      title: 'Criar Novo Funil',
+      size: 'lg',
+      fields: [
+        { name: 'nome', label: 'Nome do Funil', type: 'text', required: true, placeholder: 'Ex: Vendas Produto X' },
+        { name: 'descricao', label: 'Descrição', type: 'textarea', placeholder: 'Descrição do funil' },
+        { name: 'ativo', label: 'Funil ativo', type: 'checkbox', defaultValue: true }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando funil...');
+
+          // Criar funil com etapas padrão
+          const funilData = {
+            ...data,
+            etapas: [
+              { nome: 'Qualificação', ordem: 1, cor: '#3B82F6' },
+              { nome: 'Proposta', ordem: 2, cor: '#8B5CF6' },
+              { nome: 'Negociação', ordem: 3, cor: '#F59E0B' },
+              { nome: 'Fechamento', ordem: 4, cor: '#10B981' }
+            ]
+          };
+
+          await API.post('/api/crm/funis', funilData);
+
+          Modal.closeLoading();
+          Toast.success('Funil criado com sucesso!');
+          await this.loadFunnels();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar funil');
+          return false;
+        }
+      }
+    });
+  },
+
+  async openEditFunnelModal(funilId) {
+    try {
+      Modal.loading('Carregando funil...');
+
+      const response = await API.get(`/api/crm/funis/${funilId}`);
+      const funil = response.funil || response;
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-funnel',
+        title: 'Editar Funil',
+        size: 'lg',
+        data: funil,
+        fields: [
+          { name: 'nome', label: 'Nome do Funil', type: 'text', required: true },
+          { name: 'descricao', label: 'Descrição', type: 'textarea' },
+          { name: 'ativo', label: 'Funil ativo', type: 'checkbox' }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando funil...');
+
+            await API.put(`/api/crm/funis/${funilId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Funil atualizado com sucesso!');
+            await this.loadFunnels();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar funil');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar funil');
+    }
+  },
+
+  async viewFunnel(funilId) {
+    try {
+      Modal.loading('Carregando detalhes...');
+
+      const response = await API.get(`/api/crm/funis/${funilId}`);
+      const funil = response.funil || response;
+
+      Modal.closeLoading();
+
+      const etapasHTML = funil.etapas && funil.etapas.length > 0
+        ? funil.etapas.map(e => `
+            <div class="border-l-4 pl-3 mb-2" style="border-color: ${e.cor || '#888'}">
+              <strong>${e.nome}</strong> (${e.total_negociacoes || 0} negociações)
+            </div>
+          `).join('')
+        : '<p class="text-gray-500">Nenhuma etapa cadastrada</p>';
+
+      Modal.render({
+        id: 'modal-view-funnel',
+        title: funil.nome,
+        size: 'md',
+        content: `
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-500 mb-1">Descrição</label>
+            <p>${funil.descricao || '-'}</p>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
+            <span class="badge ${funil.ativo ? 'badge-success' : 'badge-error'}">
+              ${funil.ativo ? 'Ativo' : 'Inativo'}
+            </span>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-500 mb-1">Etapas</label>
+            ${etapasHTML}
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Total Negociações</label>
+              <p class="text-2xl font-bold text-purple-600">${funil.total_negociacoes || 0}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Valor Total</label>
+              <p class="text-2xl font-bold text-green-600">${this.formatCurrency(funil.valor_total || 0)}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Taxa Conversão</label>
+              <p class="text-2xl font-bold text-yellow-600">${funil.taxa_conversao || 0}%</p>
+            </div>
+          </div>
+        `,
+        buttons: [
+          { text: 'Fechar', class: 'btn btn-outline', onClick: () => Modal.close('modal-view-funnel') }
+        ]
+      });
+
+      Modal.open('modal-view-funnel');
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar funil');
+    }
+  },
+
+  async deleteFunnel(funilId) {
+    Modal.confirm({
+      title: 'Excluir Funil',
+      message: 'Tem certeza que deseja excluir este funil? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/api/crm/funis/${funilId}`);
+          Toast.success('Funil excluído com sucesso!');
+          await this.loadFunnels();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao excluir funil');
+        }
+      }
+    });
+  },
+
+  openCreateDealModal() {
+    if (this.funnels.length === 0) {
+      Toast.error('Crie um funil antes de adicionar negociações');
+      return;
+    }
+
+    Modal.form({
+      id: 'modal-create-deal',
+      title: 'Criar Nova Negociação',
+      size: 'lg',
+      fields: [
+        { name: 'titulo', label: 'Título', type: 'text', required: true, placeholder: 'Ex: Venda Produto X para Cliente Y' },
+        { name: 'descricao', label: 'Descrição', type: 'textarea', placeholder: 'Detalhes da negociação' },
+        {
+          name: 'funil_id',
+          label: 'Funil',
+          type: 'select',
+          required: true,
+          options: this.funnels.map(f => ({ value: f.id, label: f.nome }))
+        },
+        { name: 'contato_nome', label: 'Nome do Contato', type: 'text', required: true },
+        { name: 'contato_telefone', label: 'Telefone do Contato', type: 'tel', placeholder: '5511999999999' },
+        { name: 'valor', label: 'Valor (R$)', type: 'number', defaultValue: '0', min: 0, step: '0.01' },
+        {
+          name: 'prioridade',
+          label: 'Prioridade',
+          type: 'select',
+          defaultValue: 'media',
+          options: [
+            { value: 'baixa', label: 'Baixa' },
+            { value: 'media', label: 'Média' },
+            { value: 'alta', label: 'Alta' },
+            { value: 'urgente', label: 'Urgente' }
+          ]
+        }
+      ],
+      onSubmit: async (data) => {
+        try {
+          Modal.loading('Criando negociação...');
+
+          await API.post('/api/crm/negociacoes', data);
+
+          Modal.closeLoading();
+          Toast.success('Negociação criada com sucesso!');
+          await this.loadDeals();
+          await this.loadStats();
+        } catch (error) {
+          Modal.closeLoading();
+          Toast.error(error.message || 'Erro ao criar negociação');
+          return false;
+        }
+      }
+    });
+  },
+
+  async openEditDealModal(dealId) {
+    try {
+      Modal.loading('Carregando negociação...');
+
+      const response = await API.get(`/api/crm/negociacoes/${dealId}`);
+      const deal = response.negociacao || response;
+
+      Modal.closeLoading();
+
+      Modal.form({
+        id: 'modal-edit-deal',
+        title: 'Editar Negociação',
+        size: 'lg',
+        data: deal,
+        fields: [
+          { name: 'titulo', label: 'Título', type: 'text', required: true },
+          { name: 'descricao', label: 'Descrição', type: 'textarea' },
+          { name: 'valor', label: 'Valor (R$)', type: 'number', min: 0, step: '0.01' },
+          {
+            name: 'prioridade',
+            label: 'Prioridade',
+            type: 'select',
+            options: [
+              { value: 'baixa', label: 'Baixa' },
+              { value: 'media', label: 'Média' },
+              { value: 'alta', label: 'Alta' },
+              { value: 'urgente', label: 'Urgente' }
+            ]
+          }
+        ],
+        onSubmit: async (data) => {
+          try {
+            Modal.loading('Atualizando negociação...');
+
+            await API.put(`/api/crm/negociacoes/${dealId}`, data);
+
+            Modal.closeLoading();
+            Toast.success('Negociação atualizada com sucesso!');
+            await this.loadDeals();
+            await this.loadStats();
+          } catch (error) {
+            Modal.closeLoading();
+            Toast.error(error.message || 'Erro ao atualizar negociação');
+            return false;
+          }
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar negociação');
+    }
+  },
+
+  async viewDeal(dealId) {
+    try {
+      Modal.loading('Carregando detalhes...');
+
+      const [dealResponse, historicoResponse] = await Promise.all([
+        API.get(`/api/crm/negociacoes/${dealId}`),
+        API.get(`/api/crm/negociacoes/${dealId}/historico`)
+      ]);
+
+      const deal = dealResponse.negociacao || dealResponse;
+      const historico = historicoResponse.historico || [];
+
+      Modal.closeLoading();
+
+      const historicoHTML = historico.length > 0
+        ? historico.slice(0, 5).map(h => `
+            <div class="border-b pb-2 mb-2">
+              <p class="text-sm font-semibold">${h.acao}</p>
+              <p class="text-xs text-gray-500">${this.formatDate(h.data_hora)}</p>
+            </div>
+          `).join('')
+        : '<p class="text-gray-500 text-sm">Nenhum histórico disponível</p>';
+
+      Modal.render({
+        id: 'modal-view-deal',
+        title: deal.titulo,
+        size: 'lg',
+        content: `
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Contato</label>
+              <p>${deal.contato_nome || '-'}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Valor</label>
+              <p class="text-lg font-bold text-green-600">${this.formatCurrency(deal.valor)}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Funil / Etapa</label>
+              <p>${deal.funil_nome || '-'} / ${deal.etapa_nome || '-'}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
+              <span class="badge ${this.getStatusClass(deal.status)}">
+                ${this.getStatusLabel(deal.status)}
+              </span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-500 mb-1">Descrição</label>
+            <p>${deal.descricao || '-'}</p>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-500 mb-2">Histórico Recente</label>
+            ${historicoHTML}
+          </div>
+        `,
+        buttons: [
+          { text: 'Fechar', class: 'btn btn-outline', onClick: () => Modal.close('modal-view-deal') }
+        ]
+      });
+
+      Modal.open('modal-view-deal');
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar negociação');
+    }
+  },
+
+  async winDeal(dealId) {
+    Modal.confirm({
+      title: 'Marcar como Ganha',
+      message: 'Deseja marcar esta negociação como ganha?',
+      confirmText: 'Sim, Ganhar',
+      onConfirm: async () => {
+        try {
+          await API.post(`/api/crm/negociacoes/${dealId}/ganhar`);
+          Toast.success('Negociação marcada como ganha! 🎉');
+          await this.loadDeals();
+          await this.loadStats();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao atualizar negociação');
+        }
+      }
+    });
+  },
+
+  async loseDeal(dealId) {
+    Modal.form({
+      id: 'modal-lose-deal',
+      title: 'Marcar como Perdida',
+      size: 'sm',
+      fields: [
+        { name: 'motivo', label: 'Motivo da Perda', type: 'textarea', required: true, placeholder: 'Explique o motivo...' }
+      ],
+      submitText: 'Confirmar Perda',
+      onSubmit: async (data) => {
+        try {
+          await API.post(`/api/crm/negociacoes/${dealId}/perder`, data);
+          Toast.success('Negociação marcada como perdida');
+          await this.loadDeals();
+          await this.loadStats();
+        } catch (error) {
+          Toast.error(error.message || 'Erro ao atualizar negociação');
+          return false;
+        }
+      }
+    });
+  },
+
+  formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value || 0);
+  },
+
+  formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  },
+
+  getPriorityClass(priority) {
+    const classes = {
+      baixa: 'badge-secondary',
+      media: 'badge-warning',
+      alta: 'badge-error',
+      urgente: 'badge-error'
+    };
+    return classes[priority] || 'badge-secondary';
+  },
+
+  getPriorityLabel(priority) {
+    const labels = {
+      baixa: 'Baixa',
+      media: 'Média',
+      alta: 'Alta',
+      urgente: 'Urgente'
+    };
+    return labels[priority] || priority;
+  },
+
+  getStatusClass(status) {
+    const classes = {
+      aberta: 'badge-warning',
+      ganha: 'badge-success',
+      perdida: 'badge-error'
+    };
+    return classes[status] || 'badge-secondary';
+  },
+
+  getStatusLabel(status) {
+    const labels = {
+      aberta: 'Aberta',
+      ganha: 'Ganha',
+      perdida: 'Perdida'
+    };
+    return labels[status] || status;
+  }
+};
+
+// Inicializar
+CRM.init();
 </script>
 
 </body>

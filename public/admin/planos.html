@@ -17,159 +17,29 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="page-title">Planos</h1>
-        <p class="page-subtitle">Gerencie os planos de assinatura</p>
+        <p class="page-subtitle">Escolha o plano ideal para sua empresa</p>
       </div>
-      <button class="btn btn-primary" onclick="Toast.info('Criar novo plano')">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Novo Plano
-      </button>
     </div>
 
     <!-- Cards de Planos -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-bold">Básico</h3>
-          <span class="badge badge-success">Ativo</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-3xl font-bold text-purple-600">R$ 97</span>
-          <span class="text-gray-500">/mês</span>
-        </div>
-        <ul class="space-y-2 mb-6 text-sm">
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Até 3 usuários
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            2 instâncias WhatsApp
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            1.000 contatos
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            5.000 mensagens/mês
-          </li>
-        </ul>
-        <div class="flex gap-2">
-          <button class="btn btn-outline flex-1" onclick="Toast.info('Editar plano Básico')">Editar</button>
-          <button class="btn btn-outline text-red-600 flex-1" onclick="Toast.warning('Desativar plano?')">Desativar</button>
-        </div>
-        <div class="mt-4 pt-4 border-t">
-          <p class="text-sm text-gray-500">Assinantes: <span class="font-semibold">45 empresas</span></p>
-        </div>
-      </div>
-
-      <div class="card border-2 border-purple-500">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-bold">Premium</h3>
-          <span class="badge badge-success">Ativo</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-3xl font-bold text-purple-600">R$ 297</span>
-          <span class="text-gray-500">/mês</span>
-        </div>
-        <ul class="space-y-2 mb-6 text-sm">
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Até 10 usuários
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            5 instâncias WhatsApp
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            10.000 contatos
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Mensagens ilimitadas
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            CRM Completo
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Agente IA
-          </li>
-        </ul>
-        <div class="flex gap-2">
-          <button class="btn btn-outline flex-1" onclick="Toast.info('Editar plano Premium')">Editar</button>
-          <button class="btn btn-outline text-red-600 flex-1" onclick="Toast.warning('Desativar plano?')">Desativar</button>
-        </div>
-        <div class="mt-4 pt-4 border-t">
-          <p class="text-sm text-gray-500">Assinantes: <span class="font-semibold">82 empresas</span></p>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-bold">Enterprise</h3>
-          <span class="badge badge-success">Ativo</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-3xl font-bold text-purple-600">R$ 797</span>
-          <span class="text-gray-500">/mês</span>
-        </div>
-        <ul class="space-y-2 mb-6 text-sm">
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Usuários ilimitados
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Instâncias ilimitadas
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Contatos ilimitados
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Todas as funcionalidades
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            White-label
-          </li>
-          <li class="flex items-center">
-            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Suporte prioritário
-          </li>
-        </ul>
-        <div class="flex gap-2">
-          <button class="btn btn-outline flex-1" onclick="Toast.info('Editar plano Enterprise')">Editar</button>
-          <button class="btn btn-outline text-red-600 flex-1" onclick="Toast.warning('Desativar plano?')">Desativar</button>
-        </div>
-        <div class="mt-4 pt-4 border-t">
-          <p class="text-sm text-gray-500">Assinantes: <span class="font-semibold">15 empresas</span></p>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" id="plansGrid">
+      <div class="col-span-3 text-center text-gray-500 py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <p class="mt-2">Carregando planos...</p>
       </div>
     </div>
 
-    <!-- Estatísticas -->
+    <!-- Comparação de Planos -->
     <div class="card">
-      <h3 class="font-bold mb-4">Estatísticas de Conversão</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <p class="text-sm text-gray-500 mb-1">Upgrades este mês</p>
-          <h3 class="text-2xl font-bold text-green-600">12</h3>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500 mb-1">Downgrades este mês</p>
-          <h3 class="text-2xl font-bold text-red-600">3</h3>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500 mb-1">Trial → Pago</p>
-          <h3 class="text-2xl font-bold text-purple-600">68%</h3>
-        </div>
+      <h3 class="font-bold mb-4">Comparação de Planos</h3>
+      <div class="overflow-x-auto">
+        <table class="table" id="comparisonTable">
+          <tbody>
+            <tr>
+              <td colspan="100%" class="text-center text-gray-500 py-8">Carregando...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -177,10 +47,324 @@
 
 <script src="/js/utils.js"></script>
 <script src="/js/admin-template.js"></script>
+<script src="/js/modal.js"></script>
 <script>
 document.getElementById('sidebarContainer').innerHTML = AdminTemplate.renderSidebar('planos');
 document.getElementById('headerContainer').innerHTML = AdminTemplate.renderHeader();
 AdminTemplate.init('planos');
+
+const Planos = {
+  plans: [],
+  comparison: null,
+  currentPlanId: null,
+
+  async init() {
+    await this.loadCurrentPlan();
+    await this.loadPlans();
+    await this.loadComparison();
+  },
+
+  async loadCurrentPlan() {
+    try {
+      const response = await API.get('/api/empresa/plano');
+      this.currentPlanId = response.plano_atual?.id || null;
+    } catch (error) {
+      console.error('[Planos] Erro ao carregar plano atual:', error);
+    }
+  },
+
+  async loadPlans() {
+    try {
+      const response = await API.get('/api/planos');
+      this.plans = response.planos || response || [];
+      this.renderPlansGrid();
+    } catch (error) {
+      console.error('[Planos] Erro ao carregar planos:', error);
+      Toast.error('Erro ao carregar planos');
+      document.getElementById('plansGrid').innerHTML = `
+        <div class="col-span-3 text-center text-red-500 py-8">
+          Erro ao carregar planos. Tente novamente.
+        </div>
+      `;
+    }
+  },
+
+  async loadComparison() {
+    try {
+      const response = await API.get('/api/planos/comparar');
+      this.comparison = response;
+      this.renderComparison();
+    } catch (error) {
+      console.error('[Planos] Erro ao carregar comparação:', error);
+    }
+  },
+
+  renderPlansGrid() {
+    if (this.plans.length === 0) {
+      document.getElementById('plansGrid').innerHTML = `
+        <div class="col-span-3 text-center text-gray-500 py-8">
+          Nenhum plano disponível no momento.
+        </div>
+      `;
+      return;
+    }
+
+    document.getElementById('plansGrid').innerHTML = this.plans.map(plan => {
+      const isCurrentPlan = plan.id === this.currentPlanId;
+      const isMostPopular = plan.nome.toLowerCase().includes('profissional') ||
+                             plan.nome.toLowerCase().includes('pro');
+
+      return `
+        <div class="card relative ${isMostPopular ? 'border-2 border-purple-600' : ''}">
+          ${isMostPopular ? `
+            <div class="absolute top-0 right-0 bg-purple-600 text-white px-3 py-1 rounded-bl text-xs font-semibold">
+              MAIS POPULAR
+            </div>
+          ` : ''}
+          ${isCurrentPlan ? `
+            <div class="absolute top-0 left-0 bg-green-600 text-white px-3 py-1 rounded-br text-xs font-semibold">
+              PLANO ATUAL
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-between mb-4 ${isMostPopular || isCurrentPlan ? 'mt-8' : ''}">
+            <h3 class="text-xl font-bold">${plan.nome}</h3>
+            <span class="badge ${plan.ativo ? 'badge-success' : 'badge-secondary'}">
+              ${plan.ativo ? 'Ativo' : 'Inativo'}
+            </span>
+          </div>
+
+          <div class="mb-4">
+            <span class="text-3xl font-bold text-purple-600">${this.formatCurrency(plan.preco_mensal)}</span>
+            <span class="text-gray-500">/mês</span>
+          </div>
+
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">${plan.descricao || ''}</p>
+
+          <ul class="space-y-2 mb-6 text-sm">
+            <li class="flex items-center">
+              <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Até ${plan.max_usuarios} usuários
+            </li>
+            <li class="flex items-center">
+              <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              ${plan.max_instancias} instância${plan.max_instancias > 1 ? 's' : ''} WhatsApp
+            </li>
+            <li class="flex items-center">
+              <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Até ${this.formatNumber(plan.max_contatos)} contatos
+            </li>
+            ${this.renderFeatures(plan.funcionalidades)}
+          </ul>
+
+          <button class="btn ${isCurrentPlan ? 'btn-outline' : 'btn-primary'} w-full"
+                  onclick="${isCurrentPlan ? `Toast.info('Este já é seu plano atual')` : `Planos.viewPlan(${plan.id})`}"
+                  ${!plan.ativo ? 'disabled' : ''}>
+            ${isCurrentPlan ? 'Plano Atual' : 'Ver Detalhes'}
+          </button>
+        </div>
+      `;
+    }).join('');
+  },
+
+  renderFeatures(funcionalidades) {
+    if (!funcionalidades) return '';
+
+    const features = [];
+
+    if (funcionalidades.agente_ia) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Agentes IA
+        </li>
+      `);
+    }
+
+    if (funcionalidades.prospeccao) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Prospecção
+        </li>
+      `);
+    }
+
+    if (funcionalidades.crm) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          CRM Completo
+        </li>
+      `);
+    }
+
+    if (funcionalidades.integracoes) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Integrações
+        </li>
+      `);
+    }
+
+    if (funcionalidades.whitelabel) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          White-label
+        </li>
+      `);
+    }
+
+    if (funcionalidades.suporte_prioritario) {
+      features.push(`
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Suporte Prioritário
+        </li>
+      `);
+    }
+
+    return features.join('');
+  },
+
+  renderComparison() {
+    if (!this.comparison || !this.comparison.planos || this.comparison.planos.length === 0) {
+      document.getElementById('comparisonTable').innerHTML = `
+        <tr>
+          <td colspan="100%" class="text-center text-gray-500 py-8">
+            Nenhum dado de comparação disponível
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const { caracteristicas, planos } = this.comparison;
+
+    // Header
+    let html = `
+      <thead>
+        <tr>
+          <th class="text-left">Recurso</th>
+          ${planos.map(p => `<th class="text-center">${p.nome}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+    `;
+
+    // Rows for each characteristic
+    caracteristicas.forEach(carac => {
+      html += `<tr>`;
+      html += `<td class="font-medium">${carac.nome}</td>`;
+
+      planos.forEach(plano => {
+        const valor = plano.valores[carac.campo];
+
+        if (carac.tipo === 'boolean') {
+          html += `<td class="text-center">`;
+          if (valor) {
+            html += `<svg class="w-5 h-5 text-green-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>`;
+          } else {
+            html += `<svg class="w-5 h-5 text-red-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>`;
+          }
+          html += `</td>`;
+        } else if (carac.tipo === 'numero') {
+          html += `<td class="text-center font-semibold">${this.formatNumber(valor)}</td>`;
+        } else {
+          html += `<td class="text-center">${valor || '-'}</td>`;
+        }
+      });
+
+      html += `</tr>`;
+    });
+
+    // Price row
+    html += `
+      <tr class="border-t-2">
+        <td class="font-bold">Preço Mensal</td>
+        ${planos.map(p => `
+          <td class="text-center font-bold text-green-600">${this.formatCurrency(p.preco_mensal)}</td>
+        `).join('')}
+      </tr>
+    `;
+
+    html += `</tbody>`;
+
+    document.getElementById('comparisonTable').innerHTML = html;
+  },
+
+  async viewPlan(planId) {
+    try {
+      Modal.loading('Carregando detalhes...');
+
+      const response = await API.get(`/api/planos/${planId}`);
+      const plan = response.plano || response;
+
+      Modal.closeLoading();
+
+      Modal.view({
+        title: plan.nome,
+        size: 'md',
+        data: {
+          'Preço Mensal': this.formatCurrency(plan.preco_mensal),
+          'Descrição': plan.descricao || '-',
+          'Usuários': plan.max_usuarios,
+          'Instâncias WhatsApp': plan.max_instancias,
+          'Contatos': this.formatNumber(plan.max_contatos),
+          'Agente IA': plan.funcionalidades?.agente_ia ? 'Sim' : 'Não',
+          'Prospecção': plan.funcionalidades?.prospeccao ? 'Sim' : 'Não',
+          'CRM': plan.funcionalidades?.crm ? 'Sim' : 'Não',
+          'Integrações': plan.funcionalidades?.integracoes ? 'Sim' : 'Não',
+          'White-label': plan.funcionalidades?.whitelabel ? 'Sim' : 'Não',
+          'Suporte': plan.funcionalidades?.suporte_prioritario ? 'Prioritário' : 'Email'
+        }
+      });
+    } catch (error) {
+      Modal.closeLoading();
+      Toast.error('Erro ao carregar plano');
+    }
+  },
+
+  formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value || 0);
+  },
+
+  formatNumber(value) {
+    if (!value && value !== 0) return '-';
+    if (value === -1 || value === 999999 || value >= 100000) return 'Ilimitado';
+    return new Intl.NumberFormat('pt-BR').format(value);
+  }
+};
+
+// Inicializar
+Planos.init();
 </script>
 
 </body>
