@@ -767,27 +767,102 @@ input:checked + .slider:before {
    RESPONSIVE
    ================================================ */
 
+/* Tables - Scroll horizontal em mobile/tablet */
+.card {
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 700px;
+}
+
+/* Tabs - Scroll horizontal em mobile */
+.tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+  .grid.grid-cols-1.md\:grid-cols-2,
+  .grid.grid-cols-1.md\:grid-cols-3,
+  .grid.grid-cols-1.md\:grid-cols-4,
+  .grid.grid-cols-1.md\:grid-cols-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile (até 768px) */
 @media (max-width: 768px) {
   .app-sidebar {
     transform: translateX(-100%);
+    position: fixed;
+    z-index: 100;
   }
 
   .app-sidebar.open {
     transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   }
 
   .app-header {
     left: 0 !important;
+    padding: 0 16px;
   }
 
   .app-main {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: 20px;
+    padding: 16px;
   }
 
   .user-info {
     display: none !important;
+  }
+
+  /* Forçar grids para 1 coluna em mobile */
+  .grid.grid-cols-1,
+  .grid.grid-cols-2,
+  .grid.grid-cols-3,
+  .grid.grid-cols-4,
+  .grid.grid-cols-5,
+  .grid[class*="grid-cols"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats cards em mobile */
+  .grid.grid-cols-1.md\:grid-cols-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Esconder colunas menos importantes em tabelas mobile */
+  .table th:nth-child(n+4):not(:last-child),
+  .table td:nth-child(n+4):not(:last-child) {
+    display: none;
+  }
+
+  /* Page title e subtítulo menores */
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.875rem;
+  }
+
+  /* Botões de ação menores */
+  .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  /* Cards com padding menor */
+  .card {
+    padding: 16px;
   }
 }
 

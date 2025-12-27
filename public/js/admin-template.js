@@ -193,7 +193,24 @@ const AdminTemplate = {
    */
   toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('sidebar-collapsed');
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      const isOpen = sidebar.classList.toggle('open');
+
+      // Criar/remover overlay
+      if (isOpen) {
+        const overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;';
+        overlay.onclick = () => this.toggleSidebar();
+        document.body.appendChild(overlay);
+      } else {
+        document.getElementById('sidebar-overlay')?.remove();
+      }
+    } else {
+      sidebar.classList.toggle('sidebar-collapsed');
+    }
   },
 
   /**
