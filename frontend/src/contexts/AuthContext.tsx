@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, Usuario, Empresa, LoginCredentials, RegisterData } from '../services/api';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { authService } from '../services/api';
+import type { Usuario, Empresa, LoginCredentials, RegisterData } from '../services/api';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
