@@ -18,16 +18,21 @@ import {
   DollarSign,
   Users,
   BarChart3,
+  Settings,
+  Filter,
 } from 'lucide-react';
-import api from '../lib/api';
+import api from '../services/api';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 import KanbanColumn from '../components/crm/KanbanColumn';
 import DealCard from '../components/crm/DealCard';
 import CreateDealModal from '../components/crm/CreateDealModal';
 import DealDetailsModal from '../components/crm/DealDetailsModal';
 
+// Interfaces
 interface Funil {
   id: string;
   nome: string;
@@ -74,26 +79,42 @@ interface Stats {
 }
 
 export default function CRM() {
+  // Estados principais
   const [funis, setFunis] = useState<Funil[]>([]);
   const [funilSelecionado, setFunilSelecionado] = useState<string | null>(null);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Estados de drag and drop
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  // Estados de modais
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [manageFunnelsModalOpen, setManageFunnelsModalOpen] = useState(false);
   const [selectedNegociacao, setSelectedNegociacao] = useState<Negociacao | null>(null);
 
+  // Estados do modal de gerenciar funis
+  const [newFunnelName, setNewFunnelName] = useState('');
+  const [newFunnelDescription, setNewFunnelDescription] = useState('');
+  const [creatingFunnel, setCreatingFunnel] = useState(false);
+
+  // Configuração de sensores para drag and drop
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
+  // Efeitos
   useEffect(() => {
-    carregarFunis();
-    carregarEstatisticas();
+    carregarDadosIniciais();
   }, []);
 
   useEffect(() => {
@@ -101,6 +122,14 @@ export default function CRM() {
       carregarFunil(funilSelecionado);
     }
   }, [funilSelecionado]);
+
+  // Funções de carregamento
+  const carregarDadosIniciais = async () => {
+    await Promise.all([
+      carregarFunis(),
+      carregarEstatisticas(),
+    ]);
+  };
 
   const carregarFunis = async () => {
     try {
@@ -140,6 +169,7 @@ export default function CRM() {
     }
   };
 
+  // Handlers de drag and drop
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
   };
@@ -153,7 +183,7 @@ export default function CRM() {
     const negociacaoId = active.id as string;
     const novaEtapaId = over.id as string;
 
-    // Encontrar a negociação
+    // Encontrar a negociação e etapa antiga
     let negociacao: Negociacao | undefined;
     let etapaAntigaId: string | undefined;
 
@@ -192,7 +222,7 @@ export default function CRM() {
       await api.put(`/crm/negociacoes/${negociacaoId}/mover`, {
         etapa_id: novaEtapaId,
       });
-      toast.success('Negociação movida com sucesso');
+      toast.success('Negociação movida com sucesso!');
       await carregarEstatisticas();
     } catch (error: any) {
       console.error('Erro ao mover negociação:', error);
@@ -204,6 +234,7 @@ export default function CRM() {
     }
   };
 
+  // Handlers de modais
   const handleCreateDeal = () => {
     setSelectedNegociacao(null);
     setCreateModalOpen(true);
@@ -230,6 +261,41 @@ export default function CRM() {
     setDetailsModalOpen(false);
   };
 
+  const handleCreateFunnel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingFunnel(true);
+
+    try {
+      await api.post('/crm/funis', {
+        nome: newFunnelName,
+        descricao: newFunnelDescription,
+      });
+
+      toast.success('Funil criado com sucesso!');
+      setNewFunnelName('');
+      setNewFunnelDescription('');
+      setManageFunnelsModalOpen(false);
+      await carregarFunis();
+    } catch (error: any) {
+      console.error('Erro ao criar funil:', error);
+      toast.error(error.response?.data?.erro || 'Erro ao criar funil');
+    } finally {
+      setCreatingFunnel(false);
+    }
+  };
+
+  const handleToggleFunnelStatus = async (funilId: string, ativo: boolean) => {
+    try {
+      await api.put(`/crm/funis/${funilId}`, { ativo: !ativo });
+      toast.success(`Funil ${!ativo ? 'ativado' : 'desativado'} com sucesso!`);
+      await carregarFunis();
+    } catch (error: any) {
+      console.error('Erro ao atualizar funil:', error);
+      toast.error(error.response?.data?.erro || 'Erro ao atualizar funil');
+    }
+  };
+
+  // Negociação ativa sendo arrastada
   const activeDragNegociacao = activeDragId
     ? etapas.flatMap(e => e.negociacoes).find(n => n.id === activeDragId)
     : null;
@@ -237,7 +303,7 @@ export default function CRM() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             CRM Kanban
@@ -245,29 +311,47 @@ export default function CRM() {
           <p className="text-white/60 mt-1">Gerencie suas negociações visualmente</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <select
-            value={funilSelecionado || ''}
-            onChange={(e) => setFunilSelecionado(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-400/50"
-          >
-            {funis.map((funil) => (
-              <option key={funil.id} value={funil.id}>
-                {funil.nome}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Seletor de Funil */}
+          {funis.length > 0 && (
+            <select
+              value={funilSelecionado || ''}
+              onChange={(e) => setFunilSelecionado(e.target.value)}
+              className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-400/50 transition-colors"
+            >
+              <option value="">Selecione um funil...</option>
+              {funis.map((funil) => (
+                <option key={funil.id} value={funil.id}>
+                  {funil.nome}
+                </option>
+              ))}
+            </select>
+          )}
 
-          <Button variant="neon" onClick={handleCreateDeal}>
+          {/* Botão Gerenciar Funis */}
+          <Button
+            variant="glass"
+            onClick={() => setManageFunnelsModalOpen(true)}
+          >
+            <Settings className="w-5 h-5" />
+            Gerenciar Funis
+          </Button>
+
+          {/* Botão Nova Negociação */}
+          <Button
+            variant="neon"
+            onClick={handleCreateDeal}
+            disabled={!funilSelecionado || etapas.length === 0}
+          >
             <Plus className="w-5 h-5" />
             Nova Negociação
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Estatísticas */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card variant="glass" hover={false}>
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-gradient-to-r from-purple-600/30 to-purple-600/10">
@@ -288,7 +372,7 @@ export default function CRM() {
               <div>
                 <p className="text-white/60 text-sm">Valor em Aberto</p>
                 <p className="text-2xl font-bold text-white">
-                  R$ {stats.valores.aberto.toLocaleString('pt-BR')}
+                  R$ {stats.valores.aberto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -314,7 +398,7 @@ export default function CRM() {
               <div>
                 <p className="text-white/60 text-sm">Total Ganho</p>
                 <p className="text-2xl font-bold text-white">
-                  R$ {stats.valores.ganho.toLocaleString('pt-BR')}
+                  R$ {stats.valores.ganho.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -322,12 +406,49 @@ export default function CRM() {
         </div>
       )}
 
+      {/* Mensagem de seleção de funil */}
+      {!funilSelecionado && funis.length > 0 && (
+        <Card variant="glass" hover={false}>
+          <div className="text-center py-12">
+            <Filter className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Selecione um funil para começar
+            </h3>
+            <p className="text-white/60">
+              Escolha um funil no menu acima para visualizar as negociações
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Mensagem de nenhum funil */}
+      {funis.length === 0 && !loading && (
+        <Card variant="glass" hover={false}>
+          <div className="text-center py-12">
+            <Settings className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Nenhum funil encontrado
+            </h3>
+            <p className="text-white/60 mb-4">
+              Crie seu primeiro funil de vendas para começar
+            </p>
+            <Button
+              variant="neon"
+              onClick={() => setManageFunnelsModalOpen(true)}
+            >
+              <Plus className="w-5 h-5" />
+              Criar Funil
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Kanban Board */}
-      {loading ? (
+      {loading && funilSelecionado ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
         </div>
-      ) : (
+      ) : funilSelecionado && etapas.length > 0 ? (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -346,15 +467,27 @@ export default function CRM() {
 
           <DragOverlay>
             {activeDragNegociacao && (
-              <div className="opacity-50">
+              <div className="opacity-50 cursor-grabbing">
                 <DealCard negociacao={activeDragNegociacao} onClick={() => {}} />
               </div>
             )}
           </DragOverlay>
         </DndContext>
-      )}
+      ) : funilSelecionado && etapas.length === 0 ? (
+        <Card variant="glass" hover={false}>
+          <div className="text-center py-12">
+            <BarChart3 className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Este funil ainda não tem etapas
+            </h3>
+            <p className="text-white/60">
+              Configure as etapas do funil para começar a gerenciar negociações
+            </p>
+          </div>
+        </Card>
+      ) : null}
 
-      {/* Modals */}
+      {/* Modal: Nova Negociação */}
       {createModalOpen && (
         <CreateDealModal
           isOpen={createModalOpen}
@@ -365,6 +498,7 @@ export default function CRM() {
         />
       )}
 
+      {/* Modal: Detalhes da Negociação */}
       {detailsModalOpen && selectedNegociacao && (
         <DealDetailsModal
           isOpen={detailsModalOpen}
@@ -373,6 +507,94 @@ export default function CRM() {
           negociacaoId={selectedNegociacao.id}
         />
       )}
+
+      {/* Modal: Gerenciar Funis */}
+      <Modal
+        isOpen={manageFunnelsModalOpen}
+        onClose={() => setManageFunnelsModalOpen(false)}
+        title="Gerenciar Funis"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Formulário de novo funil */}
+          <form onSubmit={handleCreateFunnel} className="space-y-4 p-4 bg-white/5 rounded-lg border border-white/10">
+            <h4 className="font-semibold text-white">Criar Novo Funil</h4>
+
+            <Input
+              label="Nome do Funil"
+              value={newFunnelName}
+              onChange={(e) => setNewFunnelName(e.target.value)}
+              placeholder="Ex: Vendas B2B"
+              required
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">
+                Descrição
+              </label>
+              <textarea
+                value={newFunnelDescription}
+                onChange={(e) => setNewFunnelDescription(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-white/5 border-2 border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-400/50 transition-colors"
+                placeholder="Descreva o propósito deste funil..."
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="neon"
+              loading={creatingFunnel}
+              className="w-full"
+            >
+              <Plus className="w-5 h-5" />
+              Criar Funil
+            </Button>
+          </form>
+
+          {/* Lista de funis existentes */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-white">Funis Existentes</h4>
+
+            {funis.length === 0 ? (
+              <p className="text-white/60 text-sm text-center py-8">
+                Nenhum funil criado ainda
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {funis.map((funil) => (
+                  <Card key={funil.id} variant="glass" hover={false}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h5 className="font-semibold text-white">{funil.nome}</h5>
+                        {funil.descricao && (
+                          <p className="text-sm text-white/60 mt-1">{funil.descricao}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          funil.ativo
+                            ? 'bg-green-500/20 text-green-300'
+                            : 'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {funil.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                        <Button
+                          variant="glass"
+                          size="sm"
+                          onClick={() => handleToggleFunnelStatus(funil.id, funil.ativo)}
+                        >
+                          {funil.ativo ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
