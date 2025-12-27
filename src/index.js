@@ -146,33 +146,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Landing Page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Páginas HTML
-app.get('/manager', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/manager.html'));
-});
-
-app.get('/docs', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/docs.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
-});
-
 // Rate limiting
 app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
   const publicPaths = [
-    '/', '/health', '/manager', '/docs', '/dashboard', '/public', '/status',
-    '/entrar', '/cadastrar', '/esqueci-senha', // Rotas React públicas
-    '/assets', '/vite.svg' // Assets do React
+    '/health', '/public', '/status',
+    '/entrar', '/cadastrar', '/esqueci-senha', '/recuperar-senha', // Rotas React públicas
+    '/assets', '/vite.svg', '/' // Assets do React e landing page
   ];
   if (publicPaths.some(p => req.path === p || req.path.startsWith(p))) {
     return next();
