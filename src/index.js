@@ -119,11 +119,12 @@ if (config.nodeEnv !== 'production') {
   });
 }
 
-// Servir arquivos estáticos (CSS, JS, imagens) - Sistema antigo HTML
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Servir build do React (SPA moderno)
+// Servir build do React (SPA moderno) - DEVE VIR PRIMEIRO
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Servir arquivos estáticos do sistema antigo HTML (apenas para compatibilidade)
+// COMENTADO: O React app substitui completamente os HTMLs antigos
+// app.use(express.static(path.join(__dirname, '../public')));
 
 // White Label - detectar domínio customizado
 app.use(whitelabelMiddleware);
