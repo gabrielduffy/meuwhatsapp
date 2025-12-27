@@ -11,3 +11,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .glass {
+    @apply bg-white/10 backdrop-blur-xl;
+  }
+
+  .glass-dark {
+    @apply bg-gray-900/50 backdrop-blur-xl;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent;
+  }
+
+  .btn-neon {
+    @apply relative overflow-hidden rounded-lg px-6 py-3 font-semibold text-white;
+    @apply bg-gradient-to-r from-purple-600 to-cyan-600;
+    @apply shadow-neon-purple hover:shadow-neon-cyan;
+    @apply transition-all duration-300;
+    @apply transform hover:scale-105;
+  }
+
+  .card-neon {
+    @apply rounded-2xl p-6 border border-white/10;
+    @apply bg-gradient-to-br from-purple-600/10 to-cyan-600/10;
+    @apply shadow-xl hover:shadow-neon-purple;
+    @apply transition-all duration-300;
+  }
+}
