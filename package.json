@@ -8,7 +8,9 @@
     "dev": "node --watch src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build": "cd frontend && npm install && npm run build",
+    "postinstall": "cd frontend && npm install"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.16",

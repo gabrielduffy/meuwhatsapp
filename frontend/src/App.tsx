@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Cadastrar from './pages/Cadastrar';
+import RecuperarSenha from './pages/RecuperarSenha';
 import Dashboard from './pages/Dashboard';
 import Conversas from './pages/Conversas';
 import Usuarios from './pages/Usuarios';
@@ -14,6 +15,14 @@ import AgentesIA from './pages/AgentesIA';
 import Integracoes from './pages/Integracoes';
 import Followup from './pages/Followup';
 import Configuracoes from './pages/Configuracoes';
+import Instancias from './pages/Instancias';
+import Whitelabel from './pages/Whitelabel';
+import Contatos from './pages/Contatos';
+import Prospeccao from './pages/Prospeccao';
+import Relatorios from './pages/Relatorios';
+import Assinatura from './pages/Assinatura';
+import Notificacoes from './pages/Notificacoes';
+import Manager from './pages/Manager';
 
 function App() {
   return (
@@ -45,6 +54,8 @@ function App() {
           {/* Rotas Públicas */}
           <Route path="/entrar" element={<Login />} />
           <Route path="/cadastrar" element={<Cadastrar />} />
+          <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/esqueci-senha" element={<RecuperarSenha />} />
 
           {/* Rotas Protegidas */}
           <Route
@@ -141,6 +152,86 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Configuracoes />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/instancias"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Instancias />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/whitelabel"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Whitelabel />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contatos"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Contatos />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/prospeccao"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Prospeccao />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/relatorios"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Relatorios />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assinatura"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Assinatura />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notificacoes"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Notificacoes />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manager"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Manager />
                 </Layout>
               </ProtectedRoute>
             }
