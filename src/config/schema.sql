@@ -244,18 +244,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers para atualizar updated_at
+DROP TRIGGER IF EXISTS update_instances_updated_at ON instances;
 CREATE TRIGGER update_instances_updated_at BEFORE UPDATE ON instances
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_autoresponder_configs_updated_at ON autoresponder_configs;
 CREATE TRIGGER update_autoresponder_configs_updated_at BEFORE UPDATE ON autoresponder_configs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_webhook_configs_updated_at ON webhook_configs;
 CREATE TRIGGER update_webhook_configs_updated_at BEFORE UPDATE ON webhook_configs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_contacts_updated_at ON contacts;
 CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_warming_configs_updated_at ON warming_configs;
 CREATE TRIGGER update_warming_configs_updated_at BEFORE UPDATE ON warming_configs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
