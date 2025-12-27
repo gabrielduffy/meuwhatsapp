@@ -117,8 +117,11 @@ if (config.nodeEnv !== 'production') {
   });
 }
 
-// Servir arquivos estáticos (CSS, JS, imagens)
+// Servir arquivos estáticos (CSS, JS, imagens) - Sistema antigo HTML
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Servir build do React (SPA moderno)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // White Label - detectar domínio customizado
 app.use(whitelabelMiddleware);
@@ -166,7 +169,11 @@ app.use(rateLimiter);
 
 // Autenticação global
 app.use((req, res, next) => {
-  const publicPaths = ['/', '/health', '/manager', '/docs', '/dashboard', '/public', '/status'];
+  const publicPaths = [
+    '/', '/health', '/manager', '/docs', '/dashboard', '/public', '/status',
+    '/entrar', '/cadastrar', '/esqueci-senha', // Rotas React públicas
+    '/assets', '/vite.svg' // Assets do React
+  ];
   if (publicPaths.some(p => req.path === p || req.path.startsWith(p))) {
     return next();
   }
@@ -202,6 +209,37 @@ app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
 app.use('/api/crm', crmRoutes);
 app.use('/api/followup', followupRoutes);
 app.use('/api/whitelabel', whitelabelRoutes);
+
+// Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
+// Serve o index.html do React para todas as rotas não-API
+app.get('*', (req, res, next) => {
+  // Se for rota de API ou arquivo estático, pular
+  if (req.path.startsWith('/api') ||
+      req.path.startsWith('/status') ||
+      req.path.startsWith('/instance') ||
+      req.path.startsWith('/message') ||
+      req.path.startsWith('/group') ||
+      req.path.startsWith('/chat') ||
+      req.path.startsWith('/misc') ||
+      req.path.startsWith('/webhook') ||
+      req.path.startsWith('/warming') ||
+      req.path.startsWith('/metrics') ||
+      req.path.startsWith('/scheduler') ||
+      req.path.startsWith('/contacts') ||
+      req.path.startsWith('/broadcast') ||
+      req.path.startsWith('/autoresponder')) {
+    return next();
+  }
+
+  // Tentar servir o index.html do React
+  const reactIndexPath = path.join(__dirname, '../frontend/dist/index.html');
+  if (fs.existsSync(reactIndexPath)) {
+    return res.sendFile(reactIndexPath);
+  }
+
+  // Se React build não existir, continuar para 404
+  next();
+});
 
 // Rota de fallback para 404 (DEVE VIR ANTES DO ERROR HANDLER)
 app.use(notFoundHandler);

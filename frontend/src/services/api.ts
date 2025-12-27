@@ -14,7 +14,7 @@ const api = axios.create({
 // Interceptor para adicionar token nas requisições
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,7 +31,7 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Token expirado - tentar renovar
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = localStorage.getItem('refresh_token');
 
       if (refreshToken) {
         try {
@@ -39,23 +39,25 @@ api.interceptors.response.use(
             tokenAtualizacao: refreshToken,
           });
 
-          localStorage.setItem('token', data.token);
+          localStorage.setItem('auth_token', data.token);
 
           // Repetir requisição original
           error.config.headers.Authorization = `Bearer ${data.token}`;
           return api.request(error.config);
         } catch (refreshError) {
           // Falhou ao renovar - fazer logout
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('usuario');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user_data');
+          localStorage.removeItem('empresa_data');
           window.location.href = '/entrar';
         }
       } else {
         // Sem refresh token - fazer logout
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('usuario');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('empresa_data');
         window.location.href = '/entrar';
       }
     }
@@ -112,11 +114,11 @@ export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { data } = await api.post('/api/autenticacao/entrar', credentials);
 
-    // Salvar tokens e usuário no localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('refreshToken', data.tokenAtualizacao);
-    localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    localStorage.setItem('empresa', JSON.stringify(data.empresa));
+    // Salvar tokens e usuário no localStorage (compatível com sistema antigo)
+    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem('refresh_token', data.tokenAtualizacao);
+    localStorage.setItem('user_data', JSON.stringify(data.usuario));
+    localStorage.setItem('empresa_data', JSON.stringify(data.empresa));
 
     return data;
   },
@@ -124,17 +126,17 @@ export const authService = {
   async register(registerData: RegisterData): Promise<AuthResponse> {
     const { data } = await api.post('/api/autenticacao/cadastrar', registerData);
 
-    // Salvar tokens e usuário no localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('refreshToken', data.tokenAtualizacao);
-    localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    localStorage.setItem('empresa', JSON.stringify(data.empresa));
+    // Salvar tokens e usuário no localStorage (compatível com sistema antigo)
+    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem('refresh_token', data.tokenAtualizacao);
+    localStorage.setItem('user_data', JSON.stringify(data.usuario));
+    localStorage.setItem('empresa_data', JSON.stringify(data.empresa));
 
     return data;
   },
 
   async logout(): Promise<void> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = localStorage.getItem('refresh_token');
 
     try {
       if (refreshToken) {
@@ -143,10 +145,10 @@ export const authService = {
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('usuario');
-      localStorage.removeItem('empresa');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('empresa_data');
     }
   },
 
@@ -154,8 +156,8 @@ export const authService = {
     const { data } = await api.get('/api/autenticacao/eu');
 
     // Atualizar dados no localStorage
-    localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    localStorage.setItem('empresa', JSON.stringify(data.empresa));
+    localStorage.setItem('user_data', JSON.stringify(data.usuario));
+    localStorage.setItem('empresa_data', JSON.stringify(data.empresa));
 
     return data;
   },
@@ -176,16 +178,16 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem('auth_token');
   },
 
   getStoredUser(): Usuario | null {
-    const userStr = localStorage.getItem('usuario');
+    const userStr = localStorage.getItem('user_data');
     return userStr ? JSON.parse(userStr) : null;
   },
 
   getStoredEmpresa(): Empresa | null {
-    const empresaStr = localStorage.getItem('empresa');
+    const empresaStr = localStorage.getItem('empresa_data');
     return empresaStr ? JSON.parse(empresaStr) : null;
   },
 };
