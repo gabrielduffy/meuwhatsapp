@@ -123,11 +123,18 @@ CREATE TABLE IF NOT EXISTS usuarios (
   atualizado_em TIMESTAMP DEFAULT NOW()
 );
 
--- Criar constraint para afiliados
-ALTER TABLE afiliados
-  ADD CONSTRAINT fk_afiliado_usuario
-  FOREIGN KEY (usuario_id)
-  REFERENCES usuarios(id) ON DELETE CASCADE;
+-- Criar constraint para afiliados (idempotente)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_afiliado_usuario'
+  ) THEN
+    ALTER TABLE afiliados
+      ADD CONSTRAINT fk_afiliado_usuario
+      FOREIGN KEY (usuario_id)
+      REFERENCES usuarios(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- =====================================================
 -- SESSÕES (Refresh Tokens)
