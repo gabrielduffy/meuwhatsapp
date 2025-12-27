@@ -14,12 +14,14 @@ import {
   Clock,
   Settings,
   LogOut,
+  Contact,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Conversas', path: '/conversas', icon: MessageCircle },
+  { label: 'Contatos', path: '/contatos', icon: Contact },
   { label: 'Usuários', path: '/usuarios', icon: Users },
   { label: 'Empresas', path: '/empresas', icon: Building2 },
   { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },

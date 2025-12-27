@@ -1,32 +1,49 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
+  CheckCircle,
   MessageCircle,
   Users,
-  Building2,
-  TrendingUp,
-  Activity,
+  DollarSign,
+  Smartphone,
+  Wifi,
+  WifiOff,
   Zap,
-  Target,
-  Clock,
+  ArrowRight,
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import api from '../services/api';
+import { Link } from 'react-router-dom';
 
-// Mock data
-const messageData = [
-  { name: 'Seg', enviadas: 120, recebidas: 80 },
-  { name: 'Ter', enviadas: 150, recebidas: 100 },
-  { name: 'Qua', enviadas: 180, recebidas: 120 },
-  { name: 'Qui', enviadas: 200, recebidas: 140 },
-  { name: 'Sex', enviadas: 170, recebidas: 110 },
-  { name: 'Sáb', enviadas: 90, recebidas: 60 },
-  { name: 'Dom', enviadas: 70, recebidas: 50 },
-];
+// ==================== INTERFACES ====================
 
-const instanceData = [
-  { name: 'Ativas', value: 45 },
-  { name: 'Inativas', value: 12 },
-  { name: 'Conectando', value: 3 },
-];
+interface DashboardKPIs {
+  instanciasConectadas: number;
+  mensagensHoje: number;
+  contatosAtivos: number;
+  creditosRestantes: number;
+}
+
+interface MensagemGrafico {
+  data: string;
+  enviadas: number;
+  recebidas: number;
+}
+
+interface InstanciaStatus {
+  id?: number;
+  instance_name: string;
+  phone_number?: string;
+  status: 'connected' | 'disconnected' | 'qr' | 'connecting';
+}
+
+interface AtividadeRecente {
+  id?: number;
+  descricao: string;
+  criado_em: string | Date;
+}
+
+// ==================== ANIMAÇÕES ====================
 
 const container = {
   hidden: { opacity: 0 },
@@ -43,15 +60,17 @@ const item = {
   show: { y: 0, opacity: 1 },
 };
 
-interface StatCardProps {
+// ==================== COMPONENTE KPI CARD ====================
+
+interface KPICardProps {
   title: string;
-  value: string;
-  change: string;
+  value: string | number;
   icon: React.ReactNode;
   gradient: string;
+  iconBg: string;
 }
 
-function StatCard({ title, value, change, icon, gradient }: StatCardProps) {
+function KPICard({ title, value, icon, gradient, iconBg }: KPICardProps) {
   return (
     <motion.div
       variants={item}
@@ -62,262 +81,346 @@ function StatCard({ title, value, change, icon, gradient }: StatCardProps) {
         bg-gradient-to-br ${gradient}
         border border-white/10
         shadow-xl
-        hover:shadow-neon-purple
         transition-all duration-300
       `}
     >
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
-
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
-            {icon}
-          </div>
-          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-            change.startsWith('+') ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-          }`}>
-            {change}
-          </span>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-white/70 mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-white">{value}</h3>
         </div>
-
-        <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
-        <p className="text-sm text-white/60">{title}</p>
-      </div>
-
-      {/* Neon border on hover */}
-      <div className="absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <div className="absolute inset-0 rounded-2xl border-2 border-purple-500 blur-sm" />
+        <div className={`p-3 ${iconBg} rounded-full`}>
+          {icon}
+        </div>
       </div>
     </motion.div>
   );
 }
 
+// ==================== COMPONENTE PRINCIPAL ====================
+
 export default function Dashboard() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 relative overflow-hidden">
-      {/* Animated background orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 100, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          className="absolute -top-40 -left-40 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            x: [0, -100, 0],
-            y: [0, 50, 0],
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-          className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-600/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-3xl"
-        />
+  // ==================== STATES ====================
+
+  const [kpis, setKpis] = useState<DashboardKPIs>({
+    instanciasConectadas: 0,
+    mensagensHoje: 0,
+    contatosAtivos: 0,
+    creditosRestantes: 0,
+  });
+
+  const [mensagensGrafico, setMensagensGrafico] = useState<MensagemGrafico[]>([]);
+  const [instancias, setInstancias] = useState<InstanciaStatus[]>([]);
+  const [atividades, setAtividades] = useState<AtividadeRecente[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ==================== USEEFFECT ====================
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // ==================== FUNÇÕES ====================
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadKPIs(),
+        loadMensagensGrafico(),
+        loadInstancias(),
+        loadAtividades(),
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadKPIs = async () => {
+    try {
+      // Tentar carregar da API
+      const { data } = await api.get('/api/dashboard/kpis');
+      setKpis(data);
+    } catch (error) {
+      console.log('API não disponível, usando mock data para KPIs');
+      // Mock data como fallback
+      setKpis({
+        instanciasConectadas: 2,
+        mensagensHoje: 145,
+        contatosAtivos: 38,
+        creditosRestantes: 8500,
+      });
+    }
+  };
+
+  const loadMensagensGrafico = async () => {
+    try {
+      // Tentar carregar da API
+      const { data } = await api.get('/api/dashboard/mensagens-grafico');
+      setMensagensGrafico(data);
+    } catch (error) {
+      console.log('API não disponível, usando mock data para gráfico');
+      // Mock data como fallback
+      setMensagensGrafico([
+        { data: 'Seg', enviadas: 45, recebidas: 38 },
+        { data: 'Ter', enviadas: 52, recebidas: 43 },
+        { data: 'Qua', enviadas: 48, recebidas: 41 },
+        { data: 'Qui', enviadas: 61, recebidas: 55 },
+        { data: 'Sex', enviadas: 58, recebidas: 49 },
+        { data: 'Sáb', enviadas: 42, recebidas: 35 },
+        { data: 'Dom', enviadas: 39, recebidas: 32 },
+      ]);
+    }
+  };
+
+  const loadInstancias = async () => {
+    try {
+      // Tentar carregar da API
+      const { data } = await api.get('/instance/list');
+      setInstancias(data.slice(0, 3)); // Mostrar apenas 3 primeiras
+    } catch (error) {
+      console.log('API não disponível, usando mock data para instâncias');
+      // Mock data como fallback
+      setInstancias([
+        { instance_name: 'Comercial', phone_number: '(11) 99999-9999', status: 'connected' },
+        { instance_name: 'Suporte', phone_number: '(11) 98888-8888', status: 'connected' },
+      ]);
+    }
+  };
+
+  const loadAtividades = async () => {
+    try {
+      // Tentar carregar da API
+      const { data } = await api.get('/api/dashboard/atividades');
+      setAtividades(data);
+    } catch (error) {
+      console.log('API não disponível, usando mock data para atividades');
+      // Mock data como fallback
+      setAtividades([
+        { descricao: 'Nova mensagem recebida de João Silva', criado_em: new Date(Date.now() - 5 * 60000) },
+        { descricao: 'Negociação movida para "Proposta" no CRM', criado_em: new Date(Date.now() - 15 * 60000) },
+        { descricao: 'Follow-up enviado automaticamente', criado_em: new Date(Date.now() - 30 * 60000) },
+        { descricao: 'Novo contato adicionado: Maria Santos', criado_em: new Date(Date.now() - 45 * 60000) },
+      ]);
+    }
+  };
+
+  const formatTime = (timestamp: string | Date): string => {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+
+    if (diff < 60000) return 'Agora mesmo';
+    if (diff < 3600000) return `Há ${Math.floor(diff / 60000)} minutos`;
+    if (diff < 86400000) return `Há ${Math.floor(diff / 3600000)} horas`;
+    if (diff < 604800000) return `Há ${Math.floor(diff / 86400000)} dias`;
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">Conectado</span>;
+      case 'connecting':
+        return <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">Conectando</span>;
+      case 'qr':
+        return <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">Aguardando QR</span>;
+      default:
+        return <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">Desconectado</span>;
+    }
+  };
+
+  // ==================== RENDER ====================
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-white/60">Carregando dashboard...</div>
       </div>
+    );
+  }
 
-      <div className="relative z-10 p-8">
-        {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-white/60">Bem-vindo ao WhatsBenemax Admin</p>
-        </motion.div>
+  return (
+    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950">
+      {/* ==================== HEADER ==================== */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="mb-8"
+      >
+        <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+        <p className="text-white/60">Bem-vindo de volta! Aqui está um resumo da sua conta.</p>
+      </motion.div>
 
-        {/* Stats Grid */}
+      {/* ==================== KPIs ==================== */}
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6"
+      >
+        <KPICard
+          title="Instâncias Conectadas"
+          value={kpis.instanciasConectadas}
+          icon={<CheckCircle className="w-8 h-8 text-green-600" />}
+          gradient="from-green-600/20 to-green-900/20"
+          iconBg="bg-green-100 dark:bg-green-900"
+        />
+
+        <KPICard
+          title="Mensagens Hoje"
+          value={kpis.mensagensHoje.toLocaleString('pt-BR')}
+          icon={<MessageCircle className="w-8 h-8 text-blue-600" />}
+          gradient="from-blue-600/20 to-blue-900/20"
+          iconBg="bg-blue-100 dark:bg-blue-900"
+        />
+
+        <KPICard
+          title="Contatos Ativos"
+          value={kpis.contatosAtivos.toLocaleString('pt-BR')}
+          icon={<Users className="w-8 h-8 text-purple-600" />}
+          gradient="from-purple-600/20 to-purple-900/20"
+          iconBg="bg-purple-100 dark:bg-purple-900"
+        />
+
+        <KPICard
+          title="Créditos Restantes"
+          value={kpis.creditosRestantes.toLocaleString('pt-BR')}
+          icon={<DollarSign className="w-8 h-8 text-yellow-600" />}
+          gradient="from-yellow-600/20 to-yellow-900/20"
+          iconBg="bg-yellow-100 dark:bg-yellow-900"
+        />
+      </motion.div>
+
+      {/* ==================== CHARTS ROW ==================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Gráfico de Mensagens */}
         <motion.div
-          variants={container}
+          variants={item}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          className="bg-gray-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 shadow-xl"
         >
-          <StatCard
-            title="Mensagens Enviadas"
-            value="12.5K"
-            change="+23.5%"
-            gradient="from-purple-600/20 to-purple-900/20"
-            icon={<MessageCircle className="w-6 h-6 text-purple-300" />}
-          />
-          <StatCard
-            title="Usuários Ativos"
-            value="847"
-            change="+12.3%"
-            gradient="from-cyan-600/20 to-cyan-900/20"
-            icon={<Users className="w-6 h-6 text-cyan-300" />}
-          />
-          <StatCard
-            title="Empresas"
-            value="156"
-            change="+8.1%"
-            gradient="from-blue-600/20 to-blue-900/20"
-            icon={<Building2 className="w-6 h-6 text-blue-300" />}
-          />
-          <StatCard
-            title="Taxa de Resposta"
-            value="94.2%"
-            change="+5.7%"
-            gradient="from-green-600/20 to-green-900/20"
-            icon={<TrendingUp className="w-6 h-6 text-green-300" />}
-          />
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-white">Mensagens (Últimos 7 dias)</h3>
+          </div>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={mensagensGrafico}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="data" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1F2937',
+                  border: '1px solid #374151',
+                  borderRadius: '8px',
+                  color: '#fff',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="enviadas"
+                stroke="#5B21B6"
+                strokeWidth={3}
+                dot={{ fill: '#5B21B6', r: 4 }}
+                name="Enviadas"
+              />
+              <Line
+                type="monotone"
+                dataKey="recebidas"
+                stroke="#10B981"
+                strokeWidth={3}
+                dot={{ fill: '#10B981', r: 4 }}
+                name="Recebidas"
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </motion.div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Messages Chart */}
-          <motion.div
-            variants={item}
-            initial="hidden"
-            animate="show"
-            className="
-              glass rounded-2xl p-6
-              border border-white/10
-              shadow-xl hover:shadow-neon-cyan
-              transition-all duration-300
-            "
-          >
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-cyan-400" />
-              Mensagens (7 dias)
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={messageData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1F2937',
-                    border: '1px solid #374151',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="enviadas"
-                  stroke="#a855f7"
-                  strokeWidth={3}
-                  dot={{ fill: '#a855f7', r: 4 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="recebidas"
-                  stroke="#06b6d4"
-                  strokeWidth={3}
-                  dot={{ fill: '#06b6d4', r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
+        {/* Status das Instâncias */}
+        <motion.div
+          variants={item}
+          initial="hidden"
+          animate="show"
+          className="bg-gray-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 shadow-xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-white">Status das Instâncias</h3>
+            <Link
+              to="/instancias"
+              className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+            >
+              Ver todas
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-          {/* Instances Chart */}
-          <motion.div
-            variants={item}
-            initial="hidden"
-            animate="show"
-            className="
-              glass rounded-2xl p-6
-              border border-white/10
-              shadow-xl hover:shadow-neon-purple
-              transition-all duration-300
-            "
-          >
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-400" />
-              Status Instâncias
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={instanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1F2937',
-                    border: '1px solid #374151',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar
-                  dataKey="value"
-                  fill="url(#colorGradient)"
-                  radius={[8, 8, 0, 0]}
-                />
-                <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.8} />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
+          <div className="space-y-3">
+            {instancias.length > 0 ? (
+              instancias.map((inst, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-600/20 rounded-full flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">{inst.instance_name}</p>
+                      <p className="text-xs text-white/60">{inst.phone_number || 'Não conectado'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {inst.status === 'connected' ? (
+                      <Wifi className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <WifiOff className="w-4 h-4 text-red-400" />
+                    )}
+                    {getStatusBadge(inst.status)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-white/60 text-center py-8">Nenhuma instância cadastrada</p>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ==================== ATIVIDADES RECENTES ==================== */}
+      <motion.div
+        variants={item}
+        initial="hidden"
+        animate="show"
+        className="bg-gray-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 shadow-xl"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-white">Atividades Recentes</h3>
         </div>
 
-        {/* Quick Actions */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {/* Nova Campanha */}
-          <motion.button
-            variants={item}
-            whileHover={{ scale: 1.02, y: -5 }}
-            whileTap={{ scale: 0.98 }}
-            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-purple transition-all duration-300 group"
-          >
-            <div className="p-3 rounded-xl w-fit mb-4 bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors duration-300">
-              <Target className="w-6 h-6 text-purple-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Nova Campanha</h3>
-            <p className="text-sm text-white/60">Criar campanha de prospecção</p>
-          </motion.button>
-
-          {/* Enviar Mensagem */}
-          <motion.button
-            variants={item}
-            whileHover={{ scale: 1.02, y: -5 }}
-            whileTap={{ scale: 0.98 }}
-            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-cyan transition-all duration-300 group"
-          >
-            <div className="p-3 rounded-xl w-fit mb-4 bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors duration-300">
-              <MessageCircle className="w-6 h-6 text-cyan-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Enviar Mensagem</h3>
-            <p className="text-sm text-white/60">Broadcast para contatos</p>
-          </motion.button>
-
-          {/* Agendar Envio */}
-          <motion.button
-            variants={item}
-            whileHover={{ scale: 1.02, y: -5 }}
-            whileTap={{ scale: 0.98 }}
-            className="glass rounded-2xl p-6 border border-white/10 text-left shadow-xl hover:shadow-neon-blue transition-all duration-300 group"
-          >
-            <div className="p-3 rounded-xl w-fit mb-4 bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors duration-300">
-              <Clock className="w-6 h-6 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Agendar Envio</h3>
-            <p className="text-sm text-white/60">Agendar mensagem futura</p>
-          </motion.button>
-        </motion.div>
-      </div>
+        <div className="space-y-4">
+          {atividades.length > 0 ? (
+            atividades.map((ativ, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-purple-600/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <Zap className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-white">{ativ.descricao}</p>
+                  <p className="text-xs text-white/60 mt-1">{formatTime(ativ.criado_em)}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-white/60 text-center py-8">Nenhuma atividade recente</p>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
