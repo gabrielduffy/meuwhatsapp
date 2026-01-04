@@ -118,7 +118,27 @@ const publicPaths = [
 ];
 
 // Servir build do React (SPA moderno) - DEVE VIR ANTES DA AUTENTICAÇÃO GLOBAL
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// Diagnostic route
+app.get('/api/debug-frontend', (req, res) => {
+  const exists = fs.existsSync(frontendDistPath);
+  let files = [];
+  if (exists) {
+    files = fs.readdirSync(frontendDistPath);
+    if (files.includes('assets')) {
+      files = [...files, ...fs.readdirSync(path.join(frontendDistPath, 'assets')).map(f => `assets/${f}`)];
+    }
+  }
+  res.json({
+    path: frontendDistPath,
+    exists,
+    files,
+    cwd: process.cwd(),
+    dirname: __dirname
+  });
+});
 
 // Log de todas as requisições (apenas em desenvolvimento)
 if (config.nodeEnv !== 'production') {
@@ -129,7 +149,13 @@ if (config.nodeEnv !== 'production') {
 }
 
 // White Label - detectar domínio customizado
-app.use(whitelabelMiddleware);
+// Skip for assets and static files
+app.use((req, res, next) => {
+  if (req.path.startsWith('/assets/') || req.path.includes('.')) {
+    return next();
+  }
+  whitelabelMiddleware(req, res, next);
+});
 
 // Rate limiting
 app.use(rateLimiter);
@@ -233,7 +259,9 @@ app.get('*', (req, res, next) => {
     req.path.startsWith('/scheduler') ||
     req.path.startsWith('/contacts') ||
     req.path.startsWith('/broadcast') ||
-    req.path.startsWith('/autoresponder')) {
+    req.path.startsWith('/autoresponder') ||
+    req.path.startsWith('/assets/') ||
+    req.path.includes('.')) {
     return next();
   }
 
