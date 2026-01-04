@@ -31,6 +31,7 @@ const webhookAdvanced = require('../services/webhook-advanced');
 router.post('/create', instanceLimiter, async (req, res) => {
   try {
     const { instanceName, proxy, token, markOnline, browser, webhookUrl, webhookConfig } = req.body;
+    console.log(`[API] Criando instância: ${instanceName} (Webhook: ${webhookUrl || 'Nenhum'})`);
 
     if (!instanceName) {
       return res.status(400).json({ error: 'instanceName é obrigatório' });
