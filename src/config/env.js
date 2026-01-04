@@ -66,7 +66,7 @@ const config = {
   logDir: process.env.LOG_DIR || './logs',
 
   // Feature Flags
-  enableSwagger: process.env.ENABLE_SWAGGER === 'true' || process.env.NODE_ENV === 'development',
+  enableSwagger: process.env.ENABLE_SWAGGER !== 'false', // Habilitado por padrão exceto se explicitamente desativado
   enableMetrics: process.env.ENABLE_METRICS === 'true',
 };
 

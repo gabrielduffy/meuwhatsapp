@@ -305,26 +305,31 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_planos_atualizado ON planos;
 CREATE TRIGGER trigger_planos_atualizado
   BEFORE UPDATE ON planos
   FOR EACH ROW
   EXECUTE FUNCTION atualizar_timestamp();
 
+DROP TRIGGER IF EXISTS trigger_empresas_atualizado ON empresas;
 CREATE TRIGGER trigger_empresas_atualizado
   BEFORE UPDATE ON empresas
   FOR EACH ROW
   EXECUTE FUNCTION atualizar_timestamp();
 
+DROP TRIGGER IF EXISTS trigger_usuarios_atualizado ON usuarios;
 CREATE TRIGGER trigger_usuarios_atualizado
   BEFORE UPDATE ON usuarios
   FOR EACH ROW
   EXECUTE FUNCTION atualizar_timestamp();
 
+DROP TRIGGER IF EXISTS trigger_pagamentos_atualizado ON pagamentos;
 CREATE TRIGGER trigger_pagamentos_atualizado
   BEFORE UPDATE ON pagamentos
   FOR EACH ROW
   EXECUTE FUNCTION atualizar_timestamp();
 
+DROP TRIGGER IF EXISTS trigger_afiliados_atualizado ON afiliados;
 CREATE TRIGGER trigger_afiliados_atualizado
   BEFORE UPDATE ON afiliados
   FOR EACH ROW

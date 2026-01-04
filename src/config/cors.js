@@ -5,17 +5,18 @@
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
-      'https://app.whatsbenemax.com',
-      'https://whatsbenemax.com',
-      'https://www.whatsbenemax.com'
-    ]
+    'https://app.whatsbenemax.com',
+    'https://whatsbenemax.com',
+    'https://www.whatsbenemax.com',
+    'https://meuwhatsapp-meuwhatsapp.ax5glv.easypanel.host'
+  ]
   : [
-      'http://localhost:3000',
-      'http://localhost:5173', // React dev server
-      'http://127.0.0.1:5173',
-      'http://localhost:5174', // Backup port
-      'http://127.0.0.1:3000'
-    ];
+    'http://localhost:3000',
+    'http://localhost:5173', // React dev server
+    'http://127.0.0.1:5173',
+    'http://localhost:5174', // Backup port
+    'http://127.0.0.1:3000'
+  ];
 
 const corsOptions = {
   origin: (origin, callback) => {

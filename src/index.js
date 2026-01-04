@@ -111,17 +111,14 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Pre-auth public routes and assets
+const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
+
 const publicPaths = [
   '/health', '/status', '/api-docs',
   '/assets', '/vite.svg', '/favicon.ico', '/logo.png'
 ];
 
-// Servir build do React (SPA moderno) - DEVE VIR ANTES DA AUTENTICAÇÃO GLOBAL
-const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
-app.use(express.static(frontendDistPath));
-
-// Diagnostic route
+// Diagnostic route - DEVE VIR NO TOPO
 app.get('/api/debug-frontend', (req, res) => {
   const exists = fs.existsSync(frontendDistPath);
   let files = [];
@@ -136,9 +133,16 @@ app.get('/api/debug-frontend', (req, res) => {
     exists,
     files,
     cwd: process.cwd(),
-    dirname: __dirname
+    dirname: __dirname,
+    publicPaths,
+    nodeEnv: config.nodeEnv,
+    enableSwagger: config.enableSwagger
   });
 });
+
+// Servir build do React (SPA moderno) - DEVE VIR ANTES DA AUTENTICAÇÃO GLOBAL
+logger.info(`Configurando express.static para: ${frontendDistPath}`);
+app.use(express.static(frontendDistPath));
 
 // Log de todas as requisições (apenas em desenvolvimento)
 if (config.nodeEnv !== 'production') {
@@ -250,6 +254,7 @@ app.get('*', (req, res, next) => {
   // Se for rota de API, arquivo estático (com ponto) ou caminhos legados, pular
   if (pathPart.includes('.') ||
     pathPart.startsWith('/api/') ||
+    pathPart.startsWith('/api-docs') ||
     pathPart.startsWith('/status/') ||
     pathPart.startsWith('/instance/') ||
     pathPart.startsWith('/message/') ||
