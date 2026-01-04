@@ -28,7 +28,7 @@ const webhookAdvanced = require('../services/webhook-advanced');
  *       200:
  *         description: Instância criada ou inicializada
  */
-router.post('/create', instanceLimiter, async (req, res) => {
+router.post('/create', async (req, res) => {
   try {
     const { instanceName, proxy, token, markOnline, browser, webhookUrl, webhookConfig } = req.body;
     console.log(`[API] Criando instância: ${instanceName} (Webhook: ${webhookUrl || 'Nenhum'})`);
