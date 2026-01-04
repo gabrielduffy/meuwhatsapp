@@ -141,7 +141,10 @@ export default function Login() {
           <div className="mb-6">
             <button
               type="button"
-              onClick={loginDemo}
+              onClick={async () => {
+                await loginDemo();
+                navigate('/dashboard');
+              }}
               disabled={isLoading}
               className="w-full py-3 bg-gray-100 border border-purple-200 text-purple-700 font-semibold rounded-lg hover:bg-purple-50 transition-all flex items-center justify-center gap-2"
             >
