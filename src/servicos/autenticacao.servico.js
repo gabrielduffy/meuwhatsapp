@@ -88,20 +88,40 @@ const autenticacaoServico = {
       token_verificacao_email: tokenVerificacao
     });
 
-    // Enviar email de verificação
-    await enviarEmailVerificacao(usuario, tokenVerificacao);
+    // Gerar tokens para login automático
+    const tokenAcesso = gerarTokenAcesso(usuario, empresa);
+    const tokenAtualizacao = gerarTokenAtualizacao(usuario.id);
 
-    // Enviar email de boas-vindas
-    await enviarEmailBoasVindas(usuario, empresa);
+    // Salvar sessão inicial
+    await sessaoRepositorio.criar({
+      usuario_id: usuario.id,
+      token_atualizacao: tokenAtualizacao,
+      info_dispositivo: dados.infoDispositivo || {},
+      endereco_ip: null,
+      expira_em: calcularExpiracao('7d')
+    });
+
+    // Enviar email de verificação (em background para não travar o cadastro)
+    enviarEmailVerificacao(usuario, tokenVerificacao).catch(err => {
+      console.error('Erro ao enviar email de verificação:', err.message);
+    });
+
+    // Enviar email de boas-vindas (em background)
+    enviarEmailBoasVindas(usuario, empresa).catch(err => {
+      console.error('Erro ao enviar email de boas-vindas:', err.message);
+    });
 
     return {
+      token: tokenAcesso, // Nome esperado pelo frontend
+      tokenAcesso,
+      tokenAtualizacao,
       usuario: this._sanitizarUsuario(usuario),
       empresa: {
         id: empresa.id,
         nome: empresa.nome,
         slug: empresa.slug
       },
-      mensagem: 'Cadastro realizado! Verifique seu email para ativar sua conta.'
+      mensagem: 'Cadastro realizado com sucesso!'
     };
   },
 
@@ -156,6 +176,7 @@ const autenticacaoServico = {
     await usuarioRepositorio.atualizarUltimoLogin(usuario.id);
 
     return {
+      token: tokenAcesso, // Nome esperado pelo frontend
       tokenAcesso,
       tokenAtualizacao,
       usuario: this._sanitizarUsuario(usuario),

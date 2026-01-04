@@ -17,7 +17,7 @@ const URL_APP = process.env.URL_APP || 'http://localhost:3000';
  * Criar transporter do Nodemailer
  */
 function criarTransporter() {
-  return nodemailer.createTransporter(SMTP_CONFIG);
+  return nodemailer.createTransport(SMTP_CONFIG);
 }
 
 /**

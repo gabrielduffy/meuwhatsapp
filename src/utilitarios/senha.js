@@ -34,12 +34,8 @@ function validarForcaSenha(senha) {
     erros.push('Senha deve ter no mínimo 8 caracteres');
   }
 
-  if (!/[A-Z]/.test(senha)) {
-    erros.push('Senha deve conter pelo menos uma letra maiúscula');
-  }
-
-  if (!/[a-z]/.test(senha)) {
-    erros.push('Senha deve conter pelo menos uma letra minúscula');
+  if (!/[a-z]/i.test(senha)) {
+    erros.push('Senha deve conter pelo menos uma letra');
   }
 
   if (!/[0-9]/.test(senha)) {
