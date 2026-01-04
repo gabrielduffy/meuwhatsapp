@@ -59,10 +59,13 @@ async function createInstance(instanceName, options = {}) {
     console.log(`[${instanceName}] Usando proxy: ${host}:${port}`);
   }
 
+  // Logger personalizado para debug
+  const socketLogger = logger.child({ instance: instanceName });
+
   const socketConfig = {
     version,
-    logger,
-    printQRInTerminal: false,
+    logger: socketLogger,
+    printQRInTerminal: true, // Habilitar para ver logs no container
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, logger)
@@ -70,16 +73,21 @@ async function createInstance(instanceName, options = {}) {
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: options.browser || ['WhatsApp API Pro', 'Chrome', '120.0.0'],
+    browser: options.browser || ['WhatsApp API', 'Chrome', '10.0.0'], // Browser mais genérico
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000,
+    keepAliveIntervalMs: 10000,
+    retryRequestDelayMs: 250
   };
 
   if (agent) {
     socketConfig.agent = agent;
   }
 
+  console.log(`[${instanceName}] Inicializando socket do Baileys...`);
   const socket = makeWASocket(socketConfig);
 
-  // Gerar token único para a instância
+  // Gerar token único para a instância se não existir
   const instanceToken = options.token || uuidv4();
 
   // Inicializar objeto da instância
@@ -100,8 +108,7 @@ async function createInstance(instanceName, options = {}) {
   instanceTokens[instanceName] = instanceToken;
   saveInstanceTokens();
 
-  // Criar métricas da instância
-  // Criar métricas da instância (soft fail)
+  // Inicializar métricas (soft fail)
   try {
     createInstanceMetrics(instanceName);
   } catch (err) {
@@ -112,13 +119,18 @@ async function createInstance(instanceName, options = {}) {
   socket.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
+    // Log detalhado de atualização
+    // console.log(`[${instanceName}] Connection update:`, JSON.stringify(update, null, 2));
+
     if (qr) {
-      console.log(`[${instanceName}] QR Code gerado`);
+      console.log(`[${instanceName}] QR Code recebido do Baileys!`);
       instances[instanceName].qrCode = qr;
+      instances[instanceName].status = 'qr'; // Estado explícito
 
       try {
         const qrBase64 = await QRCode.toDataURL(qr);
         instances[instanceName].qrCodeBase64 = qrBase64;
+        console.log(`[${instanceName}] QR Code convertido para Base64 com sucesso.`);
       } catch (err) {
         console.error(`[${instanceName}] Erro ao gerar QR base64:`, err);
       }
@@ -130,9 +142,15 @@ async function createInstance(instanceName, options = {}) {
       });
     }
 
+    if (connection === 'connecting') {
+      console.log(`[${instanceName}] Conectando...`);
+      instances[instanceName].status = 'connecting';
+    }
+
     if (connection === 'open') {
-      console.log(`[${instanceName}] ✓ Conectado!`);
+      console.log(`[${instanceName}] ✓ CONEXÃO ESTABELECIDA!`);
       instances[instanceName].isConnected = true;
+      instances[instanceName].status = 'connected';
       instances[instanceName].qrCode = null;
       instances[instanceName].qrCodeBase64 = null;
       instances[instanceName].pairingCode = null;
@@ -152,10 +170,12 @@ async function createInstance(instanceName, options = {}) {
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+      const errorMsg = lastDisconnect?.error?.message || 'Erro desconhecido';
 
-      console.log(`[${instanceName}] Conexão fechada. Status: ${statusCode}. Reconectar: ${shouldReconnect}`);
+      console.error(`[${instanceName}] ❌ Conexão fechada. Status: ${statusCode}. Erro: ${errorMsg}. Reconectar: ${shouldReconnect}`);
 
       instances[instanceName].isConnected = false;
+      instances[instanceName].status = 'disconnected';
 
       // Atualizar métricas de conexão
       updateConnectionStatus(instanceName, 'disconnected');
@@ -168,15 +188,20 @@ async function createInstance(instanceName, options = {}) {
       });
 
       if (shouldReconnect) {
+        const reconnectDelay = 5000;
+        console.log(`[${instanceName}] Agendando reconexão em ${reconnectDelay}ms...`);
         setTimeout(() => {
-          console.log(`[${instanceName}] Tentando reconectar...`);
+          console.log(`[${instanceName}] Tentando reconectar agora...`);
           createInstance(instanceName, options);
-        }, 5000);
+        }, reconnectDelay);
       } else {
+        console.warn(`[${instanceName}] Desconectado permanentemente (Logout). Limpando sessão.`);
         sendWebhook(instanceName, {
           event: 'connection',
           status: 'logged_out'
         });
+        // Opcional: Auto-delete session?
+        // deleteInstance(instanceName); 
       }
     }
   });
