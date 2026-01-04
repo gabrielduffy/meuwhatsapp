@@ -43,44 +43,21 @@ router.post('/create', instanceLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Instância já existe' });
     }
 
+    // Simplified creation process
     const result = await whatsapp.createInstance(instanceName, {
-      proxy,
-      token,
-      markOnline,
-      browser
+      markOnline: true,
+      browser: 'Chrome'
     });
 
-    // Configurar webhook se fornecido (opcional)
-    if (webhookUrl) {
-      try {
-        // Configurar webhook básico
-        whatsapp.setWebhook(instanceName, webhookUrl, webhookConfig?.eventTypes || ['all']);
+    res.json({
+      instance: {
+        instanceName,
+        status: 'created'
+      },
+      qrcode: null,
+      message: "Instância criada. Aguarde o QR Code."
+    });
 
-        // Se webhookConfig foi fornecido, configurar webhook avançado
-        if (webhookConfig) {
-          const advancedConfig = {
-            url: webhookUrl,
-            enabled: true,
-            maxRetries: webhookConfig.maxRetries || 3,
-            retryDelay: webhookConfig.retryDelay || 5000,
-            timeout: webhookConfig.timeout || 30000,
-            eventTypes: webhookConfig.eventTypes || ['message', 'message.update', 'message.receipt', 'connection.update', 'qr', 'group-participants.update']
-          };
-
-          webhookAdvanced.configureWebhook(instanceName, advancedConfig);
-          result.webhookConfigured = true;
-          result.webhookUrl = webhookUrl;
-        } else {
-          result.webhookConfigured = true;
-          result.webhookUrl = webhookUrl;
-        }
-      } catch (webhookError) {
-        console.error('Erro ao configurar webhook:', webhookError);
-        result.webhookError = webhookError.message;
-      }
-    }
-
-    res.json(result);
   } catch (error) {
     console.error('Erro ao criar instância:', error);
     res.status(500).json({ error: error.message });

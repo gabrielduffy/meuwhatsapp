@@ -47,22 +47,6 @@ interface Instance {
 
 interface CreateInstanceData {
   instanceName: string;
-  webhookUrl?: string;
-  webhookConfig?: {
-    eventTypes?: string[];
-    maxRetries?: number;
-    retryDelay?: number;
-    timeout?: number;
-  };
-  proxy?: {
-    host: string;
-    port: number;
-    username?: string;
-    password?: string;
-  };
-  token?: string;
-  markOnline?: boolean;
-  browser?: string;
 }
 
 // ========================================
@@ -86,9 +70,6 @@ export default function Instancias() {
   // Estado do formulário de criação
   const [createForm, setCreateForm] = useState<CreateInstanceData>({
     instanceName: '',
-    webhookUrl: '',
-    markOnline: true,
-    browser: 'Chrome',
   });
 
   // Estado de configuração de instância
@@ -136,35 +117,16 @@ export default function Instancias() {
     }
 
     try {
-      const payload: any = {
+      const payload = {
         instanceName: createForm.instanceName.trim(),
       };
 
-      if (createForm.webhookUrl?.trim()) {
-        payload.webhookUrl = createForm.webhookUrl.trim();
-
-        if (createForm.webhookConfig?.eventTypes && createForm.webhookConfig.eventTypes.length > 0) {
-          payload.webhookConfig = createForm.webhookConfig;
-        }
-      }
-
-      if (createForm.markOnline !== undefined) {
-        payload.markOnline = createForm.markOnline;
-      }
-
-      if (createForm.browser) {
-        payload.browser = createForm.browser;
-      }
-
       await api.post('/instance/create', payload);
 
-      toast.success('Instância criada com sucesso!');
+      toast.success('Instância criada! Clique em Conectar para escanear o QR Code.');
       setShowCreateModal(false);
       setCreateForm({
         instanceName: '',
-        webhookUrl: '',
-        markOnline: true,
-        browser: 'Chrome',
       });
 
       loadInstances();
@@ -464,9 +426,8 @@ export default function Instancias() {
                 {/* Status Badge */}
                 <div className="flex items-center gap-2 mb-4">
                   <div
-                    className={`w-2 h-2 rounded-full ${statusInfo.color} ${
-                      statusInfo.label === 'Conectado' ? 'animate-pulse' : ''
-                    }`}
+                    className={`w-2 h-2 rounded-full ${statusInfo.color} ${statusInfo.label === 'Conectado' ? 'animate-pulse' : ''
+                      }`}
                   />
                   <span className={`text-sm font-medium ${statusInfo.color}`}>
                     {statusInfo.label}
@@ -572,67 +533,6 @@ export default function Instancias() {
                   <p className="text-xs text-white/40 mt-1">
                     Use apenas letras minúsculas, números e hífens
                   </p>
-                </div>
-
-                {/* Webhook URL */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
-                    Webhook URL (Opcional)
-                  </label>
-                  <input
-                    type="url"
-                    value={createForm.webhookUrl}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, webhookUrl: e.target.value })
-                    }
-                    placeholder="https://seu-servidor.com/webhook"
-                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
-                  />
-                  <p className="text-xs text-white/40 mt-1">
-                    URL para receber eventos do WhatsApp
-                  </p>
-                </div>
-
-                {/* Opções */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Browser */}
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Navegador
-                    </label>
-                    <select
-                      value={createForm.browser}
-                      onChange={(e) =>
-                        setCreateForm({ ...createForm, browser: e.target.value })
-                      }
-                      className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                    >
-                      <option value="Chrome">Chrome</option>
-                      <option value="Firefox">Firefox</option>
-                      <option value="Edge">Edge</option>
-                      <option value="Safari">Safari</option>
-                    </select>
-                  </div>
-
-                  {/* Mark Online */}
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Marcar como Online
-                    </label>
-                    <div className="flex items-center gap-3 h-12">
-                      <input
-                        type="checkbox"
-                        checked={createForm.markOnline}
-                        onChange={(e) =>
-                          setCreateForm({ ...createForm, markOnline: e.target.checked })
-                        }
-                        className="w-5 h-5 rounded border-white/10 bg-black/20 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-white/60">
-                        Marcar presença como online automaticamente
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Botões */}
