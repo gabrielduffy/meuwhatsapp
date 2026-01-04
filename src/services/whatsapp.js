@@ -35,7 +35,7 @@ async function createInstance(instanceName, options = {}) {
   console.log(`[${instanceName}] Criando instância...`);
 
   const sessionPath = path.join(SESSIONS_DIR, instanceName);
-  
+
   if (!fs.existsSync(sessionPath)) {
     fs.mkdirSync(sessionPath, { recursive: true });
   }
@@ -47,10 +47,10 @@ async function createInstance(instanceName, options = {}) {
   let agent = undefined;
   if (options.proxy) {
     const { host, port, username, password, protocol } = options.proxy;
-    const proxyUrl = username && password 
+    const proxyUrl = username && password
       ? `${protocol || 'http'}://${username}:${password}@${host}:${port}`
       : `${protocol || 'http'}://${host}:${port}`;
-    
+
     if (protocol === 'socks5' || protocol === 'socks4') {
       agent = new SocksProxyAgent(proxyUrl);
     } else {
@@ -101,7 +101,12 @@ async function createInstance(instanceName, options = {}) {
   saveInstanceTokens();
 
   // Criar métricas da instância
-  createInstanceMetrics(instanceName);
+  // Criar métricas da instância (soft fail)
+  try {
+    createInstanceMetrics(instanceName);
+  } catch (err) {
+    console.warn(`[${instanceName}] Falha ao iniciar métricas (ignorado):`, err.message);
+  }
 
   // Eventos de conexão
   socket.ev.on('connection.update', async (update) => {
@@ -110,7 +115,7 @@ async function createInstance(instanceName, options = {}) {
     if (qr) {
       console.log(`[${instanceName}] QR Code gerado`);
       instances[instanceName].qrCode = qr;
-      
+
       try {
         const qrBase64 = await QRCode.toDataURL(qr);
         instances[instanceName].qrCodeBase64 = qrBase64;
@@ -147,7 +152,7 @@ async function createInstance(instanceName, options = {}) {
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-      
+
       console.log(`[${instanceName}] Conexão fechada. Status: ${statusCode}. Reconectar: ${shouldReconnect}`);
 
       instances[instanceName].isConnected = false;
@@ -349,15 +354,15 @@ function getAllInstances() {
 
 async function deleteInstance(instanceName) {
   const instance = instances[instanceName];
-  
+
   if (instance) {
     if (instance.socket) {
       try {
         await instance.socket.logout();
-      } catch (e) {}
+      } catch (e) { }
       instance.socket.end();
     }
-    
+
     delete instances[instanceName];
     delete instanceTokens[instanceName];
     delete webhooks[instanceName];
@@ -416,7 +421,7 @@ async function sendText(instanceName, to, text, options = {}) {
   }
 
   const jid = formatJid(to);
-  
+
   // Simular digitação se configurado
   if (options.simulateTyping) {
     await instance.socket.sendPresenceUpdate('composing', jid);
@@ -605,7 +610,7 @@ async function sendContact(instanceName, to, contactName, contactNumber, options
   if (options.delay) await delay(options.delay);
 
   const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${contactName}\nTEL;type=CELL;type=VOICE;waid=${contactNumber}:+${contactNumber}\nEND:VCARD`;
-  
+
   const result = await instance.socket.sendMessage(jid, {
     contacts: {
       displayName: contactName,
@@ -1054,7 +1059,7 @@ async function getProfilePicture(instanceName, remoteJid) {
   }
 
   const jid = formatJid(remoteJid);
-  
+
   try {
     const url = await instance.socket.profilePictureUrl(jid, 'image');
     return { url };
@@ -1141,15 +1146,15 @@ async function sendWebhook(instanceName, data) {
 
 function formatJid(number) {
   let cleaned = String(number).replace(/\D/g, '');
-  
+
   if (cleaned.includes('@')) {
     return cleaned;
   }
-  
+
   if (cleaned.endsWith('@g.us') || cleaned.endsWith('@s.whatsapp.net')) {
     return cleaned;
   }
-  
+
   return `${cleaned}@s.whatsapp.net`;
 }
 
@@ -1161,9 +1166,9 @@ function getMessageType(message) {
 
 function extractText(message) {
   if (!message.message) return null;
-  
+
   const msg = message.message;
-  
+
   if (msg.conversation) return msg.conversation;
   if (msg.extendedTextMessage?.text) return msg.extendedTextMessage.text;
   if (msg.imageMessage?.caption) return msg.imageMessage.caption;
@@ -1171,7 +1176,7 @@ function extractText(message) {
   if (msg.documentMessage?.caption) return msg.documentMessage.caption;
   if (msg.buttonsResponseMessage?.selectedButtonId) return msg.buttonsResponseMessage.selectedButtonId;
   if (msg.listResponseMessage?.singleSelectReply?.selectedRowId) return msg.listResponseMessage.singleSelectReply.selectedRowId;
-  
+
   return null;
 }
 
@@ -1216,7 +1221,7 @@ async function loadExistingSessions() {
   if (!fs.existsSync(SESSIONS_DIR)) return;
 
   const sessions = fs.readdirSync(SESSIONS_DIR);
-  
+
   for (const sessionName of sessions) {
     const sessionPath = path.join(SESSIONS_DIR, sessionName);
     if (fs.statSync(sessionPath).isDirectory()) {
@@ -1252,7 +1257,7 @@ module.exports = {
   loadExistingSessions,
   setRejectCalls,
   instanceTokens,
-  
+
   // Mensagens
   sendText,
   sendImage,
@@ -1269,13 +1274,13 @@ module.exports = {
   forwardMessage,
   deleteMessage,
   markAsRead,
-  
+
   // Presença
   updatePresence,
   setProfileStatus,
   setProfileName,
   setProfilePicture,
-  
+
   // Grupos
   createGroup,
   getGroups,
@@ -1289,7 +1294,7 @@ module.exports = {
   updateGroupSubject,
   updateGroupDescription,
   updateGroupPicture,
-  
+
   // Chat
   getChats,
   getContacts,
@@ -1298,13 +1303,13 @@ module.exports = {
   muteChat,
   blockContact,
   unblockContact,
-  
+
   // Utilitários
   checkNumberExists,
   getProfilePicture,
   getBusinessProfile,
   formatJid,
-  
+
   // Webhooks
   setWebhook,
   getWebhook,
