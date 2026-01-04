@@ -13,6 +13,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  loginDemo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,6 +113,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginDemo = async () => {
+    setIsLoading(true);
+    try {
+      // Simular delay de rede
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const demoUser: Usuario = {
+        id: 999,
+        nome: 'Administrador Demo',
+        email: 'demo@whatsbenemax.com',
+        email_verificado: true,
+        papel: 'admin',
+        empresa_id: 1,
+        avatar_url: 'https://ui-avatars.com/api/?name=Admin+Demo&background=5B21B6&color=fff',
+        criado_em: new Date().toISOString(),
+      };
+
+      const demoEmpresa: Empresa = {
+        id: 1,
+        nome: 'Empresa Demonstração',
+        slug: 'empresa-demo',
+        saldo_creditos: 1000,
+        plano_nome: 'Business',
+      };
+
+      setUsuario(demoUser);
+      setEmpresa(demoEmpresa);
+
+      // Salvar flags falsas no storage para persistência básica
+      localStorage.setItem('auth_token', 'DEMO_TOKEN');
+      localStorage.setItem('refresh_token', 'DEMO_REFRESH');
+      localStorage.setItem('user_data', JSON.stringify(demoUser));
+      localStorage.setItem('empresa_data', JSON.stringify(demoEmpresa));
+
+      toast.success('Modo Demonstração Ativado!');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -123,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshUser,
+        loginDemo,
       }}
     >
       {children}

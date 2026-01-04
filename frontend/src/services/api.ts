@@ -30,6 +30,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      const token = localStorage.getItem('auth_token');
+      // Se estiver em modo DEMO, não faz logout, apenas retorna o erro para a tela tratar
+      if (token === 'DEMO_TOKEN') {
+        return Promise.reject(error);
+      }
+
       // Token expirado - tentar renovar
       const refreshToken = localStorage.getItem('refresh_token');
 

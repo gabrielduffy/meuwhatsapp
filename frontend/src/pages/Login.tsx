@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, loginDemo } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -135,6 +135,19 @@ export default function Login() {
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-white text-gray-500">ou</span>
             </div>
+          </div>
+
+          {/* Botão Demo */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={loginDemo}
+              disabled={isLoading}
+              className="w-full py-3 bg-gray-100 border border-purple-200 text-purple-700 font-semibold rounded-lg hover:bg-purple-50 transition-all flex items-center justify-center gap-2"
+            >
+              <Eye className="w-5 h-5" />
+              Acessar Painel (Demo)
+            </button>
           </div>
 
           {/* Link Cadastro */}
