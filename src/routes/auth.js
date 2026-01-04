@@ -5,8 +5,29 @@ const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { validarSchema } = require('../utilitarios/validadores');
 
 /**
- * POST /api/autenticacao/cadastrar
- * Cadastrar novo usuário/empresa
+ * @swagger
+ * /api/autenticacao/cadastrar:
+ *   post:
+ *     summary: Cadastrar novo usuário/empresa
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nome, email, senha, nomeEmpresa]
+ *             properties:
+ *               nome: { type: string, example: "João Silva" }
+ *               email: { type: string, example: "joao@example.com" }
+ *               senha: { type: string, example: "senha123" }
+ *               nomeEmpresa: { type: string, example: "Minha Empresa" }
+ *               codigoAfiliado: { type: string, example: "AFIL123" }
+ *     responses:
+ *       201:
+ *         description: Usuário criado com sucesso
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
  */
 router.post('/cadastrar', async (req, res) => {
   try {
@@ -40,8 +61,26 @@ router.post('/cadastrar', async (req, res) => {
 });
 
 /**
- * POST /api/autenticacao/entrar
- * Fazer login
+ * @swagger
+ * /api/autenticacao/entrar:
+ *   post:
+ *     summary: Fazer login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, senha]
+ *             properties:
+ *               email: { type: string, example: "joao@example.com" }
+ *               senha: { type: string, example: "senha123" }
+ *     responses:
+ *       200:
+ *         description: Login bem sucedido
+ *       401:
+ *         description: Credenciais inválidas
  */
 router.post('/entrar', async (req, res) => {
   try {
@@ -220,8 +259,18 @@ router.get('/verificar/:token', async (req, res) => {
 });
 
 /**
- * GET /api/autenticacao/eu
- * Obter dados do usuário autenticado
+ * @swagger
+ * /api/autenticacao/eu:
+ *   get:
+ *     summary: Obter dados do usuário autenticado
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dados do usuário e empresa
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get('/eu', autenticarMiddleware, async (req, res) => {
   try {

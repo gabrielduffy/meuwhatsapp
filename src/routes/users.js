@@ -11,8 +11,32 @@ router.use(autenticarMiddleware);
 router.use(garantirMultiTenant);
 
 /**
- * POST /api/usuarios
- * Criar usuário (apenas empresa ou administrador)
+ * @swagger
+ * /api/usuarios:
+ *   post:
+ *     summary: Criar usuário (apenas empresa ou administrador)
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nome, email, senha]
+ *             properties:
+ *               nome: { type: string, example: "Novo Usuário" }
+ *               email: { type: string, example: "novo@example.com" }
+ *               senha: { type: string, example: "senha123" }
+ *               funcao: { type: string, enum: [usuario, empresa, administrador], example: "usuario" }
+ *     responses:
+ *       201:
+ *         description: Usuário criado com sucesso
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.post('/',
   verificarPermissao(['empresa', 'administrador']),
@@ -61,8 +85,25 @@ router.post('/',
 );
 
 /**
- * GET /api/usuarios
- * Listar usuários da empresa
+ * @swagger
+ * /api/usuarios:
+ *   get:
+ *     summary: Listar usuários da empresa
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: ativo
+ *         schema: { type: boolean }
+ *       - in: query
+ *         name: funcao
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Lista de usuários
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get('/', async (req, res) => {
   try {

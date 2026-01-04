@@ -3,6 +3,7 @@
  * Documentação interativa da API
  */
 
+const path = require('path');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const config = require('./env');
@@ -36,12 +37,16 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Desenvolvimento Local'
+        url: 'https://meuwhatsapp-meuwhatsapp.ax5glv.easypanel.host',
+        description: 'Servidor Easypanel (Atual)'
       },
       {
         url: 'https://api.whatsbenemax.com',
-        description: 'Produção'
+        description: 'Produção Principal'
+      },
+      {
+        url: 'http://localhost:3000',
+        description: 'Desenvolvimento Local'
       }
     ],
     components: {
@@ -51,6 +56,12 @@ const swaggerOptions = {
           scheme: 'bearer',
           bearerFormat: 'JWT',
           description: 'Token JWT obtido através do endpoint /api/auth/login'
+        },
+        apiKey: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'X-API-Key',
+          description: 'Chave de API para rotas legadas (definida no arquivo .env)'
         }
       },
       responses: {
@@ -197,9 +208,8 @@ const swaggerOptions = {
     ]
   },
   apis: [
-    './src/rotas/*.js',
-    './src/routes/*.js',
-    './src/middlewares/*.js'
+    path.join(__dirname, '../routes/*.js'),
+    path.join(__dirname, '../middlewares/*.js')
   ]
 };
 

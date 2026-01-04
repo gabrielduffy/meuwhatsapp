@@ -5,7 +5,29 @@ const { validateInstance, requireConnected } = require('../middlewares/auth');
 const whatsapp = require('../services/whatsapp');
 const webhookAdvanced = require('../services/webhook-advanced');
 
-// Criar nova instância
+/**
+ * @swagger
+ * /instance/create:
+ *   post:
+ *     summary: Criar nova instância de WhatsApp
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKey: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               token: { type: string, example: "token_opcional" }
+ *               browser: { type: string, example: "Chrome" }
+ *     responses:
+ *       200:
+ *         description: Instância criada ou inicializada
+ */
 router.post('/create', instanceLimiter, async (req, res) => {
   try {
     const { instanceName, proxy, token, markOnline, browser, webhookUrl, webhookConfig } = req.body;
@@ -64,7 +86,18 @@ router.post('/create', instanceLimiter, async (req, res) => {
   }
 });
 
-// Listar todas as instâncias
+/**
+ * @swagger
+ * /instance/list:
+ *   get:
+ *     summary: Listar todas as instâncias ativas
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKey: []
+ *     responses:
+ *       200:
+ *         description: Lista de instâncias
+ */
 router.get('/list', (req, res) => {
   const instances = whatsapp.getAllInstances();
   res.json(instances);
@@ -96,7 +129,7 @@ router.get('/:instanceName/qrcode', (req, res) => {
     return res.send(buffer);
   }
 
-  res.json({ 
+  res.json({
     status: 'pending',
     qrcode: instance.qrCode,
     qrcodeBase64: instance.qrCodeBase64,
@@ -121,7 +154,23 @@ router.post('/:instanceName/pairing-code', async (req, res) => {
   }
 });
 
-// Status da instância
+/**
+ * @swagger
+ * /instance/{instanceName}/status:
+ *   get:
+ *     summary: Obter status de uma instância
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKey: []
+ *     parameters:
+ *       - in: path
+ *         name: instanceName
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Status da instância
+ */
 router.get('/:instanceName/status', (req, res) => {
   const { instanceName } = req.params;
   const instance = whatsapp.getInstance(instanceName);
@@ -144,7 +193,7 @@ router.get('/:instanceName/status', (req, res) => {
 router.get('/:instanceName/info', validateInstance, requireConnected, async (req, res) => {
   try {
     const instance = req.instance;
-    
+
     res.json({
       instanceName: req.instanceName,
       isConnected: instance.isConnected,

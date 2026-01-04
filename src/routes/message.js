@@ -14,7 +14,29 @@ function validateMessageRequest(req, res, fields = ['instanceName', 'to']) {
   return true;
 }
 
-// Enviar texto
+/**
+ * @swagger
+ * /message/send-text:
+ *   post:
+ *     summary: Enviar mensagem de texto
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKey: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, text]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               text: { type: string, example: "Olá Mundo!" }
+ *     responses:
+ *       200:
+ *         description: Mensagem enviada
+ */
 router.post('/send-text', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'text'])) return;
@@ -27,7 +49,30 @@ router.post('/send-text', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar imagem
+/**
+ * @swagger
+ * /message/send-image:
+ *   post:
+ *     summary: Enviar mensagem com imagem
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKey: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, imageUrl]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               imageUrl: { type: string, example: "https://exemplo.com/imagem.jpg" }
+ *               caption: { type: string, example: "Confira esta imagem" }
+ *     responses:
+ *       200:
+ *         description: Imagem enviada
+ */
 router.post('/send-image', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'imageUrl'])) return;

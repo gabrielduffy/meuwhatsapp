@@ -10,8 +10,18 @@ router.use(autenticarMiddleware);
 router.use(garantirMultiTenant);
 
 /**
- * GET /api/empresa
- * Obter dados da empresa
+ * @swagger
+ * /api/empresa:
+ *   get:
+ *     summary: Obter dados da empresa logada
+ *     tags: [Empresas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dados da empresa
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 router.get('/', async (req, res) => {
   try {
@@ -60,8 +70,18 @@ router.put('/', verificarPermissao(['empresa', 'administrador']), async (req, re
 });
 
 /**
- * GET /api/empresa/creditos
- * Obter saldo de créditos
+ * @swagger
+ * /api/empresa/creditos:
+ *   get:
+ *     summary: Obter saldo de créditos da empresa
+ *     tags: [Empresas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Saldo de créditos
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get('/creditos', async (req, res) => {
   try {
