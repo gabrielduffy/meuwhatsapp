@@ -104,14 +104,18 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middlewares globais
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors(corsOptions)); // CORS com whitelist de origins
-app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// 1. Static Files (Prioridade máxima para evitar interferência de middlewares)
 const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
+logger.info(`Configurando express.static em: ${frontendDistPath}`);
+app.use(express.static(frontendDistPath));
+
+// 2. Middlewares de Segurança e CORS
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors(corsOptions));
+app.use(compression());
 
 const publicPaths = [
   '/health', '/status', '/api-docs',
@@ -139,10 +143,6 @@ app.get('/api/debug-frontend', (req, res) => {
     enableSwagger: config.enableSwagger
   });
 });
-
-// Servir build do React (SPA moderno) - DEVE VIR ANTES DA AUTENTICAÇÃO GLOBAL
-logger.info(`Configurando express.static para: ${frontendDistPath}`);
-app.use(express.static(frontendDistPath));
 
 // Log de todas as requisições (apenas em desenvolvimento)
 if (config.nodeEnv !== 'production') {
