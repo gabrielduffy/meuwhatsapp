@@ -245,28 +245,28 @@ app.use('/api/relatorios', relatoriosRoutes);
 // Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
 // Serve o index.html do React para todas as rotas não-API
 app.get('*', (req, res, next) => {
-  // Se for rota de API ou arquivo estático, pular
-  if (req.path.startsWith('/api') ||
-    req.path.startsWith('/status') ||
-    req.path.startsWith('/instance') ||
-    req.path.startsWith('/message') ||
-    req.path.startsWith('/group') ||
-    req.path.startsWith('/chat') ||
-    req.path.startsWith('/misc') ||
-    req.path.startsWith('/webhook') ||
-    req.path.startsWith('/warming') ||
-    req.path.startsWith('/metrics') ||
-    req.path.startsWith('/scheduler') ||
-    req.path.startsWith('/contacts') ||
-    req.path.startsWith('/broadcast') ||
-    req.path.startsWith('/autoresponder') ||
-    req.path.startsWith('/assets/') ||
-    req.path.includes('.')) {
+  const pathPart = req.path;
+
+  // Se for rota de API, arquivo estático (com ponto) ou caminhos legados, pular
+  if (pathPart.includes('.') ||
+    pathPart.startsWith('/api/') ||
+    pathPart.startsWith('/status/') ||
+    pathPart.startsWith('/instance/') ||
+    pathPart.startsWith('/message/') ||
+    pathPart.startsWith('/group/') ||
+    pathPart.startsWith('/chat/') ||
+    pathPart.startsWith('/webhook/') ||
+    pathPart.startsWith('/warming/') ||
+    pathPart.startsWith('/metrics/') ||
+    pathPart.startsWith('/scheduler/') ||
+    pathPart.startsWith('/contacts/') ||
+    pathPart.startsWith('/broadcast/') ||
+    pathPart.startsWith('/autoresponder/')) {
     return next();
   }
 
   // Tentar servir o index.html do React
-  const reactIndexPath = path.join(__dirname, '../frontend/dist/index.html');
+  const reactIndexPath = path.join(frontendDistPath, 'index.html');
   if (fs.existsSync(reactIndexPath)) {
     return res.sendFile(reactIndexPath);
   }
