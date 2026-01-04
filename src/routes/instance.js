@@ -77,8 +77,13 @@ router.post('/create', async (req, res) => {
  *         description: Lista de instâncias
  */
 router.get('/list', (req, res) => {
-  const instances = whatsapp.getAllInstances();
-  res.json(instances);
+  const instancesObj = whatsapp.getAllInstances();
+  // Converter objeto { nome: dados } para array [ { instanceName: nome, ...dados } ]
+  const instancesList = Object.entries(instancesObj).map(([name, data]) => ({
+    instanceName: name,
+    ...data
+  }));
+  res.json(instancesList);
 });
 
 // Obter QR Code
