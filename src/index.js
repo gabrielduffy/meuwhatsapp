@@ -142,243 +142,275 @@ app.get('/api/debug-frontend', (req, res) => {
     nodeEnv: config.nodeEnv,
     enableSwagger: config.enableSwagger
   });
-});
 
-// Log de todas as requisições (apenas em desenvolvimento)
-if (config.nodeEnv !== 'production') {
+  app.get('/api/debug-full', async (req, res) => {
+    const results = {
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV,
+      fs: { write: false, error: null },
+      db: { connected: false, error: null },
+      modules: { baileys: false }
+    };
+
+    // 1. Testar FS
+    try {
+      const testFile = path.join(__dirname, 'test-write.txt');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      results.fs.write = true;
+    } catch (e) { results.fs.error = e.message; }
+
+    // 2. Testar DB
+    try {
+      const { query } = require('./config/database');
+      await query('SELECT NOW()');
+      results.db.connected = true;
+    } catch (e) { results.db.error = e.message; }
+
+    // 3. Testar Modulos
+    try {
+      require('@whiskeysockets/baileys');
+      results.modules.baileys = true;
+    } catch (e) { results.modules.error = e.message; }
+
+    res.json(results);
+  });
+
+  // Log de todas as requisições (apenas em desenvolvimento)
+  if (config.nodeEnv !== 'production') {
+    app.use((req, res, next) => {
+      logger.debug(`${req.method} ${req.url}`);
+      next();
+    });
+  }
+
+  // White Label - detectar domínio customizado
+  // Skip for assets and static files
   app.use((req, res, next) => {
-    logger.debug(`${req.method} ${req.url}`);
+    if (req.path.startsWith('/assets/') || req.path.includes('.')) {
+      return next();
+    }
+    whitelabelMiddleware(req, res, next);
+  });
+
+  // Rate limiting
+  app.use(rateLimiter);
+
+  // Autenticação Seletiva
+  // Legacy API routes require API Key
+  const legacyApiPrefixes = [
+    '/instance', '/message', '/group', '/chat', '/misc',
+    '/webhook', '/warming', '/metrics', '/scheduler',
+    '/contacts', '/broadcast', '/autoresponder'
+  ];
+
+  app.use((req, res, next) => {
+    const path = req.path;
+
+    // 1. Verificar se é um asset estático ou rota pública básica
+    if (publicPaths.some(p => path === p || path.startsWith(p))) {
+      return next();
+    }
+
+    // 2. Verificar se é uma rota SaaS (elas têm sua própria autenticação JWT interna)
+    if (path.startsWith('/api/')) {
+      return next();
+    }
+
+    // 3. Verificar se é uma rota legado que requer API Key
+    // EXCEÇÃO CRÍTICA: Permitir rotas de instância para o modo Demo funcionar sem API Key
+    if (path.startsWith('/instance/create') || path.startsWith('/instance/list') || path.includes('/qrcode')) {
+      return next();
+    }
+
+    if (legacyApiPrefixes.some(p => path.startsWith(p))) {
+      return authMiddleware(req, res, next);
+    }
+
+    // 4. Se for qualquer outra coisa (provavelmente rota do React Router), deixar passar
+    // O fallback app.get('*') lá embaixo entregará o index.html
     next();
   });
-}
 
-// White Label - detectar domínio customizado
-// Skip for assets and static files
-app.use((req, res, next) => {
-  if (req.path.startsWith('/assets/') || req.path.includes('.')) {
-    return next();
-  }
-  whitelabelMiddleware(req, res, next);
-});
-
-// Rate limiting
-app.use(rateLimiter);
-
-// Autenticação Seletiva
-// Legacy API routes require API Key
-const legacyApiPrefixes = [
-  '/instance', '/message', '/group', '/chat', '/misc',
-  '/webhook', '/warming', '/metrics', '/scheduler',
-  '/contacts', '/broadcast', '/autoresponder'
-];
-
-app.use((req, res, next) => {
-  const path = req.path;
-
-  // 1. Verificar se é um asset estático ou rota pública básica
-  if (publicPaths.some(p => path === p || path.startsWith(p))) {
-    return next();
-  }
-
-  // 2. Verificar se é uma rota SaaS (elas têm sua própria autenticação JWT interna)
-  if (path.startsWith('/api/')) {
-    return next();
-  }
-
-  // 3. Verificar se é uma rota legado que requer API Key
-  // EXCEÇÃO CRÍTICA: Permitir rotas de instância para o modo Demo funcionar sem API Key
-  if (path.startsWith('/instance/create') || path.startsWith('/instance/list') || path.includes('/qrcode')) {
-    return next();
-  }
-
-  if (legacyApiPrefixes.some(p => path.startsWith(p))) {
-    return authMiddleware(req, res, next);
-  }
-
-  // 4. Se for qualquer outra coisa (provavelmente rota do React Router), deixar passar
-  // O fallback app.get('*') lá embaixo entregará o index.html
-  next();
-});
-
-// Rotas básicas e documentação
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: '2.1.0',
-      uptime: process.uptime(),
-      environment: config.nodeEnv
-    }
+  // Rotas básicas e documentação
+  app.get('/health', (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        version: '2.1.0',
+        uptime: process.uptime(),
+        environment: config.nodeEnv
+      }
+    });
   });
-});
 
-if (config.enableSwagger) {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
-  logger.info('Swagger documentation disponível em /api-docs');
-}
-
-// Registrar rotas existentes
-app.use('/api/autenticacao', autenticacaoRoutes);
-app.use('/status', statusRoutes);
-app.use('/instance', instanceRoutes);
-app.use('/message', messageRoutes);
-app.use('/group', groupRoutes);
-app.use('/chat', chatRoutes);
-app.use('/misc', miscRoutes);
-app.use('/webhook', webhookRoutes);
-app.use('/warming', warmingRoutes);
-app.use('/metrics', metricsRoutes);
-app.use('/scheduler', schedulerRoutes);
-app.use('/contacts', contactsRoutes);
-app.use('/broadcast', broadcastRoutes);
-app.use('/autoresponder', autoresponderRoutes);
-
-// Registrar novas rotas SaaS
-app.use('/api/usuarios', usuarioRoutes);
-app.use('/api/empresa', empresaRoutes);
-app.use('/api/planos', planoRoutes);
-app.use('/api/contatos', contatoRoutes);
-app.use('/api/agentes-ia', agenteIARoutes);
-app.use('/api/prospeccao', prospeccaoRoutes);
-app.use('/api/chat', chatInternoRoutes);
-app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
-app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
-app.use('/api/crm', crmRoutes);
-app.use('/api/followup', followupRoutes);
-app.use('/api/whitelabel', whitelabelRoutes);
-app.use('/api/notificacoes', notificacoesRoutes);
-app.use('/api/relatorios', relatoriosRoutes);
-
-// Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
-// Serve o index.html do React para todas as rotas não-API
-app.get('*', (req, res, next) => {
-  const pathPart = req.path;
-
-  // Se for rota de API, arquivo estático (com ponto) ou caminhos legados, pular
-  if (pathPart.includes('.') ||
-    pathPart.startsWith('/api/') ||
-    pathPart.startsWith('/api-docs') ||
-    pathPart.startsWith('/status/') ||
-    pathPart.startsWith('/instance/') ||
-    pathPart.startsWith('/message/') ||
-    pathPart.startsWith('/group/') ||
-    pathPart.startsWith('/chat/') ||
-    pathPart.startsWith('/webhook/') ||
-    pathPart.startsWith('/warming/') ||
-    pathPart.startsWith('/metrics/') ||
-    pathPart.startsWith('/scheduler/') ||
-    pathPart.startsWith('/contacts/') ||
-    pathPart.startsWith('/broadcast/') ||
-    pathPart.startsWith('/autoresponder/')) {
-    return next();
+  if (config.enableSwagger) {
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+    logger.info('Swagger documentation disponível em /api-docs');
   }
 
-  // Tentar servir o index.html do React
-  const reactIndexPath = path.join(frontendDistPath, 'index.html');
-  if (fs.existsSync(reactIndexPath)) {
-    return res.sendFile(reactIndexPath);
+  // Registrar rotas existentes
+  app.use('/api/autenticacao', autenticacaoRoutes);
+  app.use('/status', statusRoutes);
+  app.use('/instance', instanceRoutes);
+  app.use('/message', messageRoutes);
+  app.use('/group', groupRoutes);
+  app.use('/chat', chatRoutes);
+  app.use('/misc', miscRoutes);
+  app.use('/webhook', webhookRoutes);
+  app.use('/warming', warmingRoutes);
+  app.use('/metrics', metricsRoutes);
+  app.use('/scheduler', schedulerRoutes);
+  app.use('/contacts', contactsRoutes);
+  app.use('/broadcast', broadcastRoutes);
+  app.use('/autoresponder', autoresponderRoutes);
+
+  // Registrar novas rotas SaaS
+  app.use('/api/usuarios', usuarioRoutes);
+  app.use('/api/empresa', empresaRoutes);
+  app.use('/api/planos', planoRoutes);
+  app.use('/api/contatos', contatoRoutes);
+  app.use('/api/agentes-ia', agenteIARoutes);
+  app.use('/api/prospeccao', prospeccaoRoutes);
+  app.use('/api/chat', chatInternoRoutes);
+  app.use('/api/integracoes', integracaoRoutes.rotasProtegidas);
+  app.use('/api/integracoes', integracaoRoutes.rotasPublicas);
+  app.use('/api/crm', crmRoutes);
+  app.use('/api/followup', followupRoutes);
+  app.use('/api/whitelabel', whitelabelRoutes);
+  app.use('/api/notificacoes', notificacoesRoutes);
+  app.use('/api/relatorios', relatoriosRoutes);
+
+  // Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
+  // Serve o index.html do React para todas as rotas não-API
+  app.get('*', (req, res, next) => {
+    const pathPart = req.path;
+
+    // Se for rota de API, arquivo estático (com ponto) ou caminhos legados, pular
+    if (pathPart.includes('.') ||
+      pathPart.startsWith('/api/') ||
+      pathPart.startsWith('/api-docs') ||
+      pathPart.startsWith('/status/') ||
+      pathPart.startsWith('/instance/') ||
+      pathPart.startsWith('/message/') ||
+      pathPart.startsWith('/group/') ||
+      pathPart.startsWith('/chat/') ||
+      pathPart.startsWith('/webhook/') ||
+      pathPart.startsWith('/warming/') ||
+      pathPart.startsWith('/metrics/') ||
+      pathPart.startsWith('/scheduler/') ||
+      pathPart.startsWith('/contacts/') ||
+      pathPart.startsWith('/broadcast/') ||
+      pathPart.startsWith('/autoresponder/')) {
+      return next();
+    }
+
+    // Tentar servir o index.html do React
+    const reactIndexPath = path.join(frontendDistPath, 'index.html');
+    if (fs.existsSync(reactIndexPath)) {
+      return res.sendFile(reactIndexPath);
+    }
+
+    // Se React build não existir, continuar para 404
+    next();
+  });
+
+  // Rota de fallback para 404 (DEVE VIR ANTES DO ERROR HANDLER)
+  app.use(notFoundHandler);
+
+  // Error handler global (DEVE SER O ÚLTIMO MIDDLEWARE)
+  app.use(errorHandler);
+
+  // ========== INICIALIZAÇÃO DO BANCO DE DADOS ==========
+  async function initializeDatabase() {
+    try {
+      logger.info('Inicializando banco de dados...');
+
+      // Verificar se o arquivo de schema existe
+      const schemaPath = path.join(__dirname, 'config/schema.sql');
+
+      if (fs.existsSync(schemaPath)) {
+        const schema = fs.readFileSync(schemaPath, 'utf8');
+
+        // Executar schema (criar tabelas, índices, triggers, etc)
+        await dbQuery(schema);
+
+        logger.info('Tabelas PostgreSQL criadas/verificadas com sucesso');
+      } else {
+        logger.warn('Arquivo schema.sql não encontrado, pulando criação de tabelas');
+      }
+
+      // Executar schema SaaS (multi-tenant, autenticação, etc)
+      const saasSchemaPath = path.join(__dirname, 'config/saas-schema.sql');
+      if (fs.existsSync(saasSchemaPath)) {
+        const saasSchema = fs.readFileSync(saasSchemaPath, 'utf8');
+        await dbQuery(saasSchema);
+        logger.info('Tabelas SaaS criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de status
+      const statusSchemaPath = path.join(__dirname, 'config/status-schema.sql');
+      if (fs.existsSync(statusSchemaPath)) {
+        const statusSchema = fs.readFileSync(statusSchemaPath, 'utf8');
+        await dbQuery(statusSchema);
+        logger.info('Tabelas de Status criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de IA e Prospecção
+      const iaProspeccaoSchemaPath = path.join(__dirname, 'config/ia-prospeccao-schema.sql');
+      if (fs.existsSync(iaProspeccaoSchemaPath)) {
+        const iaProspeccaoSchema = fs.readFileSync(iaProspeccaoSchemaPath, 'utf8');
+        await dbQuery(iaProspeccaoSchema);
+        logger.info('Tabelas de IA e Prospecção criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de Chat e Integrações
+      const chatSchemaPath = path.join(__dirname, 'config/chat-schema.sql');
+      if (fs.existsSync(chatSchemaPath)) {
+        const chatSchema = fs.readFileSync(chatSchemaPath, 'utf8');
+        await dbQuery(chatSchema);
+        logger.info('Tabelas de Chat e Integrações criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de CRM Kanban
+      const crmSchemaPath = path.join(__dirname, 'config/crm-schema.sql');
+      if (fs.existsSync(crmSchemaPath)) {
+        const crmSchema = fs.readFileSync(crmSchemaPath, 'utf8');
+        await dbQuery(crmSchema);
+        logger.info('Tabelas de CRM Kanban criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de Follow-up Inteligente
+      const followupSchemaPath = path.join(__dirname, 'config/followup-schema.sql');
+      if (fs.existsSync(followupSchemaPath)) {
+        const followupSchema = fs.readFileSync(followupSchemaPath, 'utf8');
+        await dbQuery(followupSchema);
+        logger.info('Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
+      }
+
+      // Executar schema de White Label
+      const whitelabelSchemaPath = path.join(__dirname, 'config/whitelabel-schema.sql');
+      if (fs.existsSync(whitelabelSchemaPath)) {
+        const whitelabelSchema = fs.readFileSync(whitelabelSchemaPath, 'utf8');
+        await dbQuery(whitelabelSchema);
+        logger.info('Tabelas de White Label criadas/verificadas com sucesso');
+      }
+
+      // Testar Redis
+      await redis.ping();
+      logger.info('Redis conectado e funcionando');
+
+    } catch (error) {
+      logger.error('Erro ao inicializar banco de dados', { error: error.message, stack: error.stack });
+      logger.warn('O sistema continuará, mas funcionalidades de banco podem não funcionar');
+    }
   }
 
-  // Se React build não existir, continuar para 404
-  next();
-});
-
-// Rota de fallback para 404 (DEVE VIR ANTES DO ERROR HANDLER)
-app.use(notFoundHandler);
-
-// Error handler global (DEVE SER O ÚLTIMO MIDDLEWARE)
-app.use(errorHandler);
-
-// ========== INICIALIZAÇÃO DO BANCO DE DADOS ==========
-async function initializeDatabase() {
-  try {
-    logger.info('Inicializando banco de dados...');
-
-    // Verificar se o arquivo de schema existe
-    const schemaPath = path.join(__dirname, 'config/schema.sql');
-
-    if (fs.existsSync(schemaPath)) {
-      const schema = fs.readFileSync(schemaPath, 'utf8');
-
-      // Executar schema (criar tabelas, índices, triggers, etc)
-      await dbQuery(schema);
-
-      logger.info('Tabelas PostgreSQL criadas/verificadas com sucesso');
-    } else {
-      logger.warn('Arquivo schema.sql não encontrado, pulando criação de tabelas');
-    }
-
-    // Executar schema SaaS (multi-tenant, autenticação, etc)
-    const saasSchemaPath = path.join(__dirname, 'config/saas-schema.sql');
-    if (fs.existsSync(saasSchemaPath)) {
-      const saasSchema = fs.readFileSync(saasSchemaPath, 'utf8');
-      await dbQuery(saasSchema);
-      logger.info('Tabelas SaaS criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de status
-    const statusSchemaPath = path.join(__dirname, 'config/status-schema.sql');
-    if (fs.existsSync(statusSchemaPath)) {
-      const statusSchema = fs.readFileSync(statusSchemaPath, 'utf8');
-      await dbQuery(statusSchema);
-      logger.info('Tabelas de Status criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de IA e Prospecção
-    const iaProspeccaoSchemaPath = path.join(__dirname, 'config/ia-prospeccao-schema.sql');
-    if (fs.existsSync(iaProspeccaoSchemaPath)) {
-      const iaProspeccaoSchema = fs.readFileSync(iaProspeccaoSchemaPath, 'utf8');
-      await dbQuery(iaProspeccaoSchema);
-      logger.info('Tabelas de IA e Prospecção criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de Chat e Integrações
-    const chatSchemaPath = path.join(__dirname, 'config/chat-schema.sql');
-    if (fs.existsSync(chatSchemaPath)) {
-      const chatSchema = fs.readFileSync(chatSchemaPath, 'utf8');
-      await dbQuery(chatSchema);
-      logger.info('Tabelas de Chat e Integrações criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de CRM Kanban
-    const crmSchemaPath = path.join(__dirname, 'config/crm-schema.sql');
-    if (fs.existsSync(crmSchemaPath)) {
-      const crmSchema = fs.readFileSync(crmSchemaPath, 'utf8');
-      await dbQuery(crmSchema);
-      logger.info('Tabelas de CRM Kanban criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de Follow-up Inteligente
-    const followupSchemaPath = path.join(__dirname, 'config/followup-schema.sql');
-    if (fs.existsSync(followupSchemaPath)) {
-      const followupSchema = fs.readFileSync(followupSchemaPath, 'utf8');
-      await dbQuery(followupSchema);
-      logger.info('Tabelas de Follow-up Inteligente criadas/verificadas com sucesso');
-    }
-
-    // Executar schema de White Label
-    const whitelabelSchemaPath = path.join(__dirname, 'config/whitelabel-schema.sql');
-    if (fs.existsSync(whitelabelSchemaPath)) {
-      const whitelabelSchema = fs.readFileSync(whitelabelSchemaPath, 'utf8');
-      await dbQuery(whitelabelSchema);
-      logger.info('Tabelas de White Label criadas/verificadas com sucesso');
-    }
-
-    // Testar Redis
-    await redis.ping();
-    logger.info('Redis conectado e funcionando');
-
-  } catch (error) {
-    logger.error('Erro ao inicializar banco de dados', { error: error.message, stack: error.stack });
-    logger.warn('O sistema continuará, mas funcionalidades de banco podem não funcionar');
-  }
-}
-
-// Iniciar servidor (usar httpServer para suportar Socket.io)
-httpServer.listen(config.port, '0.0.0.0', async () => {
-  console.log(`
+  // Iniciar servidor (usar httpServer para suportar Socket.io)
+  httpServer.listen(config.port, '0.0.0.0', async () => {
+    console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
 ║   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗██████╗ ███████╗   ║
@@ -405,36 +437,36 @@ httpServer.listen(config.port, '0.0.0.0', async () => {
 ╚══════════════════════════════════════════════════════════════════╝
   `);
 
-  logger.info('Servidor HTTP iniciado', { port: config.port, env: config.nodeEnv });
+    logger.info('Servidor HTTP iniciado', { port: config.port, env: config.nodeEnv });
 
-  // Inicializar banco de dados PostgreSQL e Redis
-  await initializeDatabase();
+    // Inicializar banco de dados PostgreSQL e Redis
+    await initializeDatabase();
 
-  // Inicializar sistema de métricas
-  initMetrics();
+    // Inicializar sistema de métricas
+    initMetrics();
 
-  // Inicializar sistema de agendamento
-  initScheduler();
+    // Inicializar sistema de agendamento
+    initScheduler();
 
-  // Inicializar sistema de broadcast
-  initBroadcast();
+    // Inicializar sistema de broadcast
+    initBroadcast();
 
-  // Inicializar sistema de auto-resposta
-  initAutoResponder();
+    // Inicializar sistema de auto-resposta
+    initAutoResponder();
 
-  // Inicializar sistema de webhook avançado
-  initWebhookAdvanced();
+    // Inicializar sistema de webhook avançado
+    initWebhookAdvanced();
 
-  // Inicializar tarefa de follow-up
-  iniciarTarefaFollowup();
+    // Inicializar tarefa de follow-up
+    iniciarTarefaFollowup();
 
-  // Inicializar tarefa de white label
-  iniciarTarefaWhiteLabel();
+    // Inicializar tarefa de white label
+    iniciarTarefaWhiteLabel();
 
-  // Carregar sessões existentes
-  await loadExistingSessions();
+    // Carregar sessões existentes
+    await loadExistingSessions();
 
-  logger.info('Todos os sistemas inicializados com sucesso!');
-});
+    logger.info('Todos os sistemas inicializados com sucesso!');
+  });
 
-module.exports = app;
+  module.exports = app;
