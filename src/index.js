@@ -111,6 +111,15 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Pre-auth public routes and assets
+const publicPaths = [
+  '/health', '/status', '/api-docs',
+  '/assets', '/vite.svg', '/favicon.ico', '/logo.png'
+];
+
+// Servir build do React (SPA moderno) - DEVE VIR ANTES DA AUTENTICAÇÃO GLOBAL
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
 // Log de todas as requisições (apenas em desenvolvimento)
 if (config.nodeEnv !== 'production') {
   app.use((req, res, next) => {
@@ -119,23 +128,44 @@ if (config.nodeEnv !== 'production') {
   });
 }
 
-// Servir build do React (SPA moderno) - DEVE VIR PRIMEIRO
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-// Servir arquivos estáticos do sistema antigo HTML (apenas para compatibilidade)
-// COMENTADO: O React app substitui completamente os HTMLs antigos
-// app.use(express.static(path.join(__dirname, '../public')));
-
 // White Label - detectar domínio customizado
 app.use(whitelabelMiddleware);
 
-// Swagger Documentation (apenas em desenvolvimento ou se habilitado)
-if (config.enableSwagger) {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
-  logger.info('Swagger documentation disponível em /api-docs');
-}
+// Rate limiting
+app.use(rateLimiter);
 
-// Rotas públicas (sem autenticação)
+// Autenticação Seletiva
+// Legacy API routes require API Key
+const legacyApiPrefixes = [
+  '/instance', '/message', '/group', '/chat', '/misc',
+  '/webhook', '/warming', '/metrics', '/scheduler',
+  '/contacts', '/broadcast', '/autoresponder'
+];
+
+app.use((req, res, next) => {
+  const path = req.path;
+
+  // 1. Verificar se é um asset estático ou rota pública básica
+  if (publicPaths.some(p => path === p || path.startsWith(p))) {
+    return next();
+  }
+
+  // 2. Verificar se é uma rota SaaS (elas têm sua própria autenticação JWT interna)
+  if (path.startsWith('/api/')) {
+    return next();
+  }
+
+  // 3. Verificar se é uma rota legado que requer API Key
+  if (legacyApiPrefixes.some(p => path.startsWith(p))) {
+    return authMiddleware(req, res, next);
+  }
+
+  // 4. Se for qualquer outra coisa (provavelmente rota do React Router), deixar passar
+  // O fallback app.get('*') lá embaixo entregará o index.html
+  next();
+});
+
+// Rotas básicas e documentação
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -149,21 +179,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rate limiting
-app.use(rateLimiter);
-
-// Autenticação global
-app.use((req, res, next) => {
-  const publicPaths = [
-    '/health', '/public', '/status',
-    '/entrar', '/cadastrar', '/esqueci-senha', '/recuperar-senha', // Rotas React públicas
-    '/assets', '/vite.svg', '/' // Assets do React e landing page
-  ];
-  if (publicPaths.some(p => req.path === p || req.path.startsWith(p))) {
-    return next();
-  }
-  authMiddleware(req, res, next);
-});
+if (config.enableSwagger) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+  logger.info('Swagger documentation disponível em /api-docs');
+}
 
 // Registrar rotas existentes
 app.use('/api/autenticacao', autenticacaoRoutes);
@@ -202,19 +221,19 @@ app.use('/api/relatorios', relatoriosRoutes);
 app.get('*', (req, res, next) => {
   // Se for rota de API ou arquivo estático, pular
   if (req.path.startsWith('/api') ||
-      req.path.startsWith('/status') ||
-      req.path.startsWith('/instance') ||
-      req.path.startsWith('/message') ||
-      req.path.startsWith('/group') ||
-      req.path.startsWith('/chat') ||
-      req.path.startsWith('/misc') ||
-      req.path.startsWith('/webhook') ||
-      req.path.startsWith('/warming') ||
-      req.path.startsWith('/metrics') ||
-      req.path.startsWith('/scheduler') ||
-      req.path.startsWith('/contacts') ||
-      req.path.startsWith('/broadcast') ||
-      req.path.startsWith('/autoresponder')) {
+    req.path.startsWith('/status') ||
+    req.path.startsWith('/instance') ||
+    req.path.startsWith('/message') ||
+    req.path.startsWith('/group') ||
+    req.path.startsWith('/chat') ||
+    req.path.startsWith('/misc') ||
+    req.path.startsWith('/webhook') ||
+    req.path.startsWith('/warming') ||
+    req.path.startsWith('/metrics') ||
+    req.path.startsWith('/scheduler') ||
+    req.path.startsWith('/contacts') ||
+    req.path.startsWith('/broadcast') ||
+    req.path.startsWith('/autoresponder')) {
     return next();
   }
 
