@@ -336,6 +336,11 @@ async function initializeDatabase() {
     const { repararBanco } = require('./utilitarios/reparar-banco');
     await repararBanco();
 
+    // Garantir dados mínimos (Seed)
+    const { seedInicial } = require('./utilitarios/seed-inicial');
+    // Executar seed apenas se necessário (o próprio script verifica)
+    await seedInicial();
+
     // Verificar se o arquivo de schema existe
     const schemaPath = path.join(__dirname, 'config/schema.sql');
 
