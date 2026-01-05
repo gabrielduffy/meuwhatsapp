@@ -332,6 +332,10 @@ async function initializeDatabase() {
   try {
     logger.info('Inicializando banco de dados...');
 
+    // Reparo necessário para tipos de coluna incorretos (UUID -> VARCHAR)
+    const { repararBanco } = require('./utilitarios/reparar-banco');
+    await repararBanco();
+
     // Verificar se o arquivo de schema existe
     const schemaPath = path.join(__dirname, 'config/schema.sql');
 

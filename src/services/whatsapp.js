@@ -267,11 +267,8 @@ async function createInstance(instanceName, options = {}) {
             await chatServico.receberMensagem(empresaId, instanceName, dados);
           } else {
             // Para enviadas via celular, também queremos salvar
-            // O serviço enviarMensagem cria uma nova mensagem de saída.
-            // Aqui estamos apenas SINCRONIZANDO uma que já ocorreu.
-            // Vou usar receberMensagem mas forçar a direção se possível, ou deixar como recebida por enquanto para teste.
-            // Hack: Passar metadados indicando que é sync
-            await chatServico.receberMensagem(empresaId, instanceName, { ...dados, direcaoOverride: 'enviada' });
+            // Passamos direcao: 'enviada' para o serviço registrar corretamente
+            await chatServico.receberMensagem(empresaId, instanceName, { ...dados, direcao: 'enviada' });
           }
 
         } catch (err) {
