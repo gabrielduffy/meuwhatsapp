@@ -23,6 +23,7 @@ import Relatorios from './pages/Relatorios';
 import Assinatura from './pages/Assinatura';
 import Notificacoes from './pages/Notificacoes';
 import Manager from './pages/Manager';
+import EnviarMensagem from './pages/EnviarMensagem';
 
 function App() {
   return (
@@ -232,6 +233,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Manager />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enviar-mensagem"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <EnviarMensagem />
                 </Layout>
               </ProtectedRoute>
             }

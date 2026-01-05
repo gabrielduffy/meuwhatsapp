@@ -16,6 +16,7 @@ import {
   LogOut,
   Contact,
   Smartphone,
+  Send,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -23,6 +24,7 @@ const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Instâncias', path: '/instancias', icon: Smartphone },
   { label: 'Conversas', path: '/conversas', icon: MessageCircle },
+  { label: 'Enviar Mensagem', path: '/enviar-mensagem', icon: Send },
   { label: 'Contatos', path: '/contatos', icon: Contact },
   { label: 'CRM', path: '/crm', icon: GitBranch },
   { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },
@@ -48,9 +50,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-white/10 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-white/10 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-white/10 bg-gradient-to-r from-purple-600/20 to-cyan-600/20">
@@ -80,15 +81,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-300 group ${
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white shadow-neon-purple border border-purple-400/30'
-                      : 'text-white/60 hover:text-white hover:bg-white/5 border border-transparent'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-300 group ${isActive
+                    ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white shadow-neon-purple border border-purple-400/30'
+                    : 'text-white/60 hover:text-white hover:bg-white/5 border border-transparent'
+                    }`}
                 >
-                  <Icon className={`w-5 h-5 transition-all duration-300 ${
-                    isActive ? 'text-purple-300' : 'text-white/40 group-hover:text-cyan-300'
-                  }`} />
+                  <Icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-purple-300' : 'text-white/40 group-hover:text-cyan-300'
+                    }`} />
                   <span className="font-medium">{item.label}</span>
                   {isActive && (
                     <div className="ml-auto w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-cyan-400 animate-pulse" />
