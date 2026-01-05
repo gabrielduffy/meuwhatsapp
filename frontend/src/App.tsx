@@ -25,6 +25,7 @@ import Notificacoes from './pages/Notificacoes';
 import Manager from './pages/Manager';
 import EnviarMensagem from './pages/EnviarMensagem';
 import Documentacao from './pages/Documentacao';
+import Status from './pages/Status';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
         />
         <Routes>
           {/* Rotas Públicas */}
+          <Route path="/status" element={<Status />} />
           <Route path="/entrar" element={<Login />} />
           <Route path="/cadastrar" element={<Cadastrar />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
