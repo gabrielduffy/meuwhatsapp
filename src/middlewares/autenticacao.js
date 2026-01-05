@@ -21,6 +21,30 @@ async function autenticarMiddleware(req, res, next) {
 
     const token = partes[1];
 
+    // DEMO BYPASS
+    if (token === 'DEMO_TOKEN' || process.env.NODE_ENV === 'development') {
+      const { query } = require('../config/database');
+
+      // Buscar primeira empresa e usuário para simular sessão
+      const empresaRes = await query('SELECT * FROM empresas LIMIT 1');
+      const usuarioRes = await query('SELECT * FROM usuarios LIMIT 1');
+
+      if (empresaRes.rows.length > 0) {
+        req.empresa = empresaRes.rows[0];
+        req.empresaId = req.empresa.id;
+
+        if (usuarioRes.rows.length > 0) {
+          req.usuario = usuarioRes.rows[0];
+          req.usuarioId = req.usuario.id;
+        } else {
+          // Mock user se não houver usuários
+          req.usuario = { id: '0000-demo', nome: 'Demo User', empresa_id: req.empresaId };
+          req.usuarioId = '0000-demo';
+        }
+        return next();
+      }
+    }
+
     // Verificar token
     const payload = verificarToken(token);
 

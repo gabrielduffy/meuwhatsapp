@@ -189,8 +189,40 @@ async function enviarMensagem(empresaId, conversaId, remetenteId, dados) {
     status: 'enviada'
   });
 
-  // Aqui você integraria com a API do WhatsApp para enviar a mensagem
-  // await enviarMensagemWhatsApp(conversa.instancia_id, contato.telefone, conteudo);
+  // Buscar contato para obter telefone (assumindo que conversa tem contato_id)
+  const contato = await contatoRepo.buscarPorId(conversa.contato_id, empresaId);
+  if (!contato) throw new Error('Contato não encontrado');
+
+  // Enviar via WhatsApp (Lazy load para evitar ciclo)
+  const whatsappService = require('../services/whatsapp');
+
+  // Buscar nome da instância (O banco tem instancia_id que na vdd é o nome, segundo o schema comment)
+  // Se estiver nulo, usar a primeira instância disponível ou falhar. 
+  // Assumindo que conversa.instancia_id guarda o NOME da instância (confuso no schema, mas vamos tentar usar como string)
+  const instanceName = conversa.instancia_id;
+
+  let resultadoEnvio;
+  try {
+    if (tipoMensagem === 'imagem' && midiaUrl) {
+      resultadoEnvio = await whatsappService.sendImage(instanceName, contato.telefone, midiaUrl, conteudo);
+    } else if (tipoMensagem === 'audio' && midiaUrl) {
+      resultadoEnvio = await whatsappService.sendAudio(instanceName, contato.telefone, midiaUrl);
+    } else {
+      resultadoEnvio = await whatsappService.sendText(instanceName, contato.telefone, conteudo);
+    }
+
+    // Atualizar ID da mensagem com o do WhatsApp
+    if (resultadoEnvio && resultadoEnvio.messageId) {
+      await chatRepo.atualizarWhatsAppId(mensagem.id, resultadoEnvio.messageId);
+      mensagem.whatsapp_mensagem_id = resultadoEnvio.messageId;
+    }
+  } catch (err) {
+    console.error('Erro ao enviar para WhatsApp:', err);
+    // Atualizar status para erro
+    await chatRepo.atualizarStatusMensagem(mensagem.id, 'erro');
+    mensagem.status = 'erro';
+    // Não damos throw para não quebrar o fluxo da UI, mas o status mostra erro
+  }
 
   // Emitir evento em tempo real
   emitirParaConversa(conversaId, 'nova_mensagem', {

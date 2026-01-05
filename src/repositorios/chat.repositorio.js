@@ -432,6 +432,21 @@ async function deletarMensagem(id, empresaId) {
   return resultado.rows[0];
 }
 
+/**
+ * Atualizar ID do WhatsApp da mensagem
+ */
+async function atualizarWhatsAppId(id, whatsappMensagemId) {
+  const sql = `
+    UPDATE mensagens_chat
+    SET whatsapp_mensagem_id = $1
+    WHERE id = $2
+    RETURNING *
+  `;
+
+  const resultado = await query(sql, [whatsappMensagemId, id]);
+  return resultado.rows[0];
+}
+
 module.exports = {
   // Conversas
   criarConversa,
@@ -450,6 +465,7 @@ module.exports = {
   criarMensagem,
   listarMensagens,
   buscarMensagemPorWhatsAppId,
+  atualizarWhatsAppId,
   atualizarStatusMensagem,
   deletarMensagem
 };
