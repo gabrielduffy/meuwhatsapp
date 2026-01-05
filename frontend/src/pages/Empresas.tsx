@@ -97,6 +97,7 @@ export default function Empresas() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showWhitelabelModal, setShowWhitelabelModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -276,295 +277,15 @@ export default function Empresas() {
     );
   }
 
-  const tabs = [
-    {
-      id: 'overview',
-      label: 'Visão Geral',
-      icon: <Building2 />,
-      content: (
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
-          {/* Company Info */}
-          <motion.div variants={item} className="lg:col-span-2">
-            <Card variant="gradient">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-purple-400" />
-                Informações da Empresa
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Nome</label>
-                  <p className="font-semibold text-white">{empresa?.nome || '-'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Email</label>
-                  <p className="text-white/80">{empresa?.email || '-'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Telefone</label>
-                  <p className="text-white/80">{empresa?.telefone || '-'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Documento</label>
-                  <p className="text-white/80">{empresa?.documento || '-'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Cidade/Estado</label>
-                  <p className="text-white/80">
-                    {empresa?.cidade || '-'} / {empresa?.estado || '-'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">CEP</label>
-                  <p className="text-white/80">{empresa?.cep || '-'}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-white/60 mb-1">Endereço</label>
-                  <p className="text-white/80">{empresa?.endereco || '-'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Status</label>
-                  <Badge variant={getStatusBadge(empresa?.status || '')} pulse>
-                    {getStatusLabel(empresa?.status || '')}
-                  </Badge>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-1">Criada em</label>
-                  <p className="text-white/80">{formatDate(empresa?.criado_em || '')}</p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Plan Info */}
-          <motion.div variants={item}>
-            <Card variant="gradient">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-cyan-400" />
-                Plano Atual
-              </h3>
-              <div className="mb-4">
-                <h4 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  {plano?.nome || 'Nenhum plano'}
-                </h4>
-                <p className="text-3xl font-bold text-green-400 mt-2">
-                  {formatCurrency(plano?.preco_mensal || 0)}
-                  <span className="text-sm text-white/60">/mês</span>
-                </p>
-              </div>
-              <div className="border-t border-white/10 pt-4">
-                <p className="text-sm text-white/60 mb-2">Recursos:</p>
-                <ul className="text-sm space-y-2 text-white/80">
-                  <li className="flex items-center gap-2">
-                    <UsersIcon className="w-4 h-4 text-purple-400" />
-                    Até {plano?.max_usuarios || 0} usuários
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-cyan-400" />
-                    Até {plano?.max_instancias || 0} instâncias
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-green-400" />
-                    Até {plano?.max_contatos || 0} contatos
-                  </li>
-                </ul>
-              </div>
-              <div className="mt-4">
-                <Button variant="neon" className="w-full">
-                  Ver Todos os Planos
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        </motion.div>
-      ),
-    },
-    {
-      id: 'uso',
-      label: 'Uso & Limites',
-      icon: <Activity />,
-      content: (
-        <Card variant="gradient">
-          <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-purple-400" />
-            Uso e Limites
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Usuários */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-white">Usuários</span>
-                <span className="text-sm text-white/60">
-                  {uso?.uso.usuarios} / {uso?.limites.max_usuarios}
-                </span>
-              </div>
-              <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${uso?.percentual.usuarios || 0}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                  className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full shadow-neon-purple"
-                />
-              </div>
-              <p className="text-xs text-white/60 mt-2">{uso?.percentual.usuarios || 0}% utilizado</p>
-            </div>
-
-            {/* Instâncias */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-white">Instâncias</span>
-                <span className="text-sm text-white/60">
-                  {uso?.uso.instancias} / {uso?.limites.max_instancias}
-                </span>
-              </div>
-              <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${uso?.percentual.instancias || 0}%` }}
-                  transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
-                  className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-3 rounded-full shadow-neon-cyan"
-                />
-              </div>
-              <p className="text-xs text-white/60 mt-2">{uso?.percentual.instancias || 0}% utilizado</p>
-            </div>
-
-            {/* Contatos */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-white">Contatos</span>
-                <span className="text-sm text-white/60">
-                  {uso?.uso.contatos} / {uso?.limites.max_contatos}
-                </span>
-              </div>
-              <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${uso?.percentual.contatos || 0}%` }}
-                  transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
-                  className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
-                />
-              </div>
-              <p className="text-xs text-white/60 mt-2">{uso?.percentual.contatos || 0}% utilizado</p>
-            </div>
-          </div>
-        </Card>
-      ),
-    },
-    {
-      id: 'creditos',
-      label: 'Créditos',
-      icon: <TrendingUp />,
-      content: (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Credits Info */}
-          <Card variant="gradient">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-400" />
-              Créditos
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">Saldo de Créditos</span>
-                <span className="text-3xl font-bold text-green-400">{creditos?.saldo_creditos || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">Usados Este Mês</span>
-                <span className="text-xl font-semibold text-red-400">{creditos?.creditos_usados_mes || 0}</span>
-              </div>
-              {creditos?.creditos_resetam_em && (
-                <div className="text-xs text-white/60 pt-3 border-t border-white/10">
-                  Próximo reset: {formatDate(creditos.creditos_resetam_em)}
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Recent Transactions */}
-          <Card variant="gradient">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-purple-400" />
-              Transações Recentes
-            </h3>
-            {transacoes.length === 0 ? (
-              <p className="text-center text-white/60 py-8">Nenhuma transação ainda</p>
-            ) : (
-              <div className="space-y-3">
-                {transacoes.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{t.tipo}</p>
-                      <p className="text-xs text-white/60">{formatDate(t.criado_em)}</p>
-                    </div>
-                    <span
-                      className={`font-bold ${
-                        t.valor > 0 ? 'text-green-400' : 'text-red-400'
-                      }`}
-                    >
-                      {t.valor > 0 ? '+' : ''}
-                      {t.valor}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-      ),
-    },
-    {
-      id: 'whitelabel',
-      label: 'White-label',
-      icon: <Palette />,
-      hidden: !empresa?.whitelabel_ativo,
-      content: (
-        <Card variant="gradient">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Palette className="w-5 h-5 text-purple-400" />
-              Configurações White-label
-            </h3>
-            <Button variant="glass" icon={<Edit className="w-4 h-4" />} onClick={openWhitelabelModal}>
-              Editar
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Logo URL</label>
-              <p className="text-sm text-white/80 truncate">{empresa?.logo_url || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Domínio Customizado</label>
-              <p className="text-sm text-white/80">{empresa?.dominio_customizado || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Cor Primária</label>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-10 h-10 rounded-lg border-2 border-white/20"
-                  style={{ backgroundColor: empresa?.cor_primaria || '#8B5CF6' }}
-                />
-                <p className="text-sm text-white/80">{empresa?.cor_primaria || '#8B5CF6'}</p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Cor Secundária</label>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-10 h-10 rounded-lg border-2 border-white/20"
-                  style={{ backgroundColor: empresa?.cor_secundaria || '#3B82F6' }}
-                />
-                <p className="text-sm text-white/80">{empresa?.cor_secundaria || '#3B82F6'}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      ),
-    },
+  const tabsList = [
+    { id: 'overview', label: 'Visão Geral', icon: Building2 },
+    { id: 'uso', label: 'Uso & Limites', icon: Activity },
+    { id: 'creditos', label: 'Créditos', icon: TrendingUp },
   ];
+
+  if (empresa?.whitelabel_ativo) {
+    tabsList.push({ id: 'whitelabel', label: 'White-label', icon: Palette });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 p-8">
@@ -586,7 +307,285 @@ export default function Empresas() {
       </motion.div>
 
       {/* Tabs */}
-      <Tabs tabs={tabs} defaultTab="overview" />
+      <div className="mb-6">
+        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} />
+      </div>
+
+      {/* Conteúdo */}
+      <div className="mt-6">
+        {/* Overview */}
+        {activeTab === 'overview' && (
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* Company Info */}
+            <motion.div variants={item} className="lg:col-span-2">
+              <Card variant="gradient">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-purple-400" />
+                  Informações da Empresa
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Nome</label>
+                    <p className="font-semibold text-white">{empresa?.nome || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Email</label>
+                    <p className="text-white/80">{empresa?.email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Telefone</label>
+                    <p className="text-white/80">{empresa?.telefone || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Documento</label>
+                    <p className="text-white/80">{empresa?.documento || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Cidade/Estado</label>
+                    <p className="text-white/80">
+                      {empresa?.cidade || '-'} / {empresa?.estado || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">CEP</label>
+                    <p className="text-white/80">{empresa?.cep || '-'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-white/60 mb-1">Endereço</label>
+                    <p className="text-white/80">{empresa?.endereco || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Status</label>
+                    <Badge variant={getStatusBadge(empresa?.status || '')} pulse>
+                      {getStatusLabel(empresa?.status || '')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Criada em</label>
+                    <p className="text-white/80">{formatDate(empresa?.criado_em || '')}</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Plan Info */}
+            <motion.div variants={item}>
+              <Card variant="gradient">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-cyan-400" />
+                  Plano Atual
+                </h3>
+                <div className="mb-4">
+                  <h4 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                    {plano?.nome || 'Nenhum plano'}
+                  </h4>
+                  <p className="text-3xl font-bold text-green-400 mt-2">
+                    {formatCurrency(plano?.preco_mensal || 0)}
+                    <span className="text-sm text-white/60">/mês</span>
+                  </p>
+                </div>
+                <div className="border-t border-white/10 pt-4">
+                  <p className="text-sm text-white/60 mb-2">Recursos:</p>
+                  <ul className="text-sm space-y-2 text-white/80">
+                    <li className="flex items-center gap-2">
+                      <UsersIcon className="w-4 h-4 text-purple-400" />
+                      Até {plano?.max_usuarios || 0} usuários
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-cyan-400" />
+                      Até {plano?.max_instancias || 0} instâncias
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-green-400" />
+                      Até {plano?.max_contatos || 0} contatos
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-4">
+                  <Button variant="neon" className="w-full">
+                    Ver Todos os Planos
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Uso */}
+        {activeTab === 'uso' && (
+          <Card variant="gradient">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-purple-400" />
+              Uso e Limites
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Usuários */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white">Usuários</span>
+                  <span className="text-sm text-white/60">
+                    {uso?.uso.usuarios} / {uso?.limites.max_usuarios}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uso?.percentual.usuarios || 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full shadow-neon-purple"
+                  />
+                </div>
+                <p className="text-xs text-white/60 mt-2">{uso?.percentual.usuarios || 0}% utilizado</p>
+              </div>
+
+              {/* Instâncias */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white">Instâncias</span>
+                  <span className="text-sm text-white/60">
+                    {uso?.uso.instancias} / {uso?.limites.max_instancias}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uso?.percentual.instancias || 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+                    className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-3 rounded-full shadow-neon-cyan"
+                  />
+                </div>
+                <p className="text-xs text-white/60 mt-2">{uso?.percentual.instancias || 0}% utilizado</p>
+              </div>
+
+              {/* Contatos */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white">Contatos</span>
+                  <span className="text-sm text-white/60">
+                    {uso?.uso.contatos} / {uso?.limites.max_contatos}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uso?.percentual.contatos || 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
+                  />
+                </div>
+                <p className="text-xs text-white/60 mt-2">{uso?.percentual.contatos || 0}% utilizado</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Créditos */}
+        {activeTab === 'creditos' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Credits Info */}
+            <Card variant="gradient">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                Créditos
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/60">Saldo de Créditos</span>
+                  <span className="text-3xl font-bold text-green-400">{creditos?.saldo_creditos || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/60">Usados Este Mês</span>
+                  <span className="text-xl font-semibold text-red-400">{creditos?.creditos_usados_mes || 0}</span>
+                </div>
+                {creditos?.creditos_resetam_em && (
+                  <div className="text-xs text-white/60 pt-3 border-t border-white/10">
+                    Próximo reset: {formatDate(creditos.creditos_resetam_em)}
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Recent Transactions */}
+            <Card variant="gradient">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-purple-400" />
+                Transações Recentes
+              </h3>
+              {transacoes.length === 0 ? (
+                <p className="text-center text-white/60 py-8">Nenhuma transação ainda</p>
+              ) : (
+                <div className="space-y-3">
+                  {transacoes.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{t.tipo}</p>
+                        <p className="text-xs text-white/60">{formatDate(t.criado_em)}</p>
+                      </div>
+                      <span
+                        className={`font-bold ${t.valor > 0 ? 'text-green-400' : 'text-red-400'
+                          }`}
+                      >
+                        {t.valor > 0 ? '+' : ''}
+                        {t.valor}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Whitelabel */}
+        {activeTab === 'whitelabel' && empresa?.whitelabel_ativo && (
+          <Card variant="gradient">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Palette className="w-5 h-5 text-purple-400" />
+                Configurações White-label
+              </h3>
+              <Button variant="glass" icon={<Edit className="w-4 h-4" />} onClick={openWhitelabelModal}>
+                Editar
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">Logo URL</label>
+                <p className="text-sm text-white/80 truncate">{empresa?.logo_url || '-'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">Domínio Customizado</label>
+                <p className="text-sm text-white/80">{empresa?.dominio_customizado || '-'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">Cor Primária</label>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-10 h-10 rounded-lg border-2 border-white/20"
+                    style={{ backgroundColor: empresa?.cor_primaria || '#8B5CF6' }}
+                  />
+                  <p className="text-sm text-white/80">{empresa?.cor_primaria || '#8B5CF6'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">Cor Secundária</label>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-10 h-10 rounded-lg border-2 border-white/20"
+                    style={{ backgroundColor: empresa?.cor_secundaria || '#3B82F6' }}
+                  />
+                  <p className="text-sm text-white/80">{empresa?.cor_secundaria || '#3B82F6'}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
 
       {/* Edit Company Modal */}
       <Modal
