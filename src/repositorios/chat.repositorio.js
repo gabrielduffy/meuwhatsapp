@@ -93,7 +93,8 @@ async function listarConversas(empresaId, filtros = {}) {
     SELECT c.*,
            ct.nome as contato_nome,
            ct.telefone as contato_telefone,
-           u.nome as atribuido_nome
+           u.nome as atribuido_nome,
+           (SELECT conteudo FROM mensagens_chat WHERE conversa_id = c.id ORDER BY criado_em DESC LIMIT 1) as ultima_mensagem
     FROM conversas_chat c
     LEFT JOIN contatos ct ON c.contato_id = ct.id
     LEFT JOIN usuarios u ON c.atribuido_para = u.id

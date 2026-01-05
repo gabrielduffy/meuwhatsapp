@@ -13,9 +13,10 @@ interface Etapa {
 interface KanbanColumnProps {
   etapa: Etapa;
   onDealClick: (negociacao: any) => void;
+  onSendMessage?: (id: string) => void;
 }
 
-export default function KanbanColumn({ etapa, onDealClick }: KanbanColumnProps) {
+export default function KanbanColumn({ etapa, onDealClick, onSendMessage }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id: etapa.id,
   });
@@ -57,6 +58,7 @@ export default function KanbanColumn({ etapa, onDealClick }: KanbanColumnProps) 
               key={negociacao.id}
               negociacao={negociacao}
               onClick={() => onDealClick(negociacao)}
+              onSendMessage={onSendMessage}
             />
           ))}
         </SortableContext>

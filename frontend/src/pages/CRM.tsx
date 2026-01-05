@@ -27,6 +27,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import KanbanColumn from '../components/crm/KanbanColumn';
 import DealCard from '../components/crm/DealCard';
 import CreateDealModal from '../components/crm/CreateDealModal';
@@ -56,10 +57,14 @@ interface Negociacao {
   status: string;
   prioridade: string;
   etapa_id: string;
+  contato_id?: string;
   contato_nome?: string;
+  contato_telefone?: string;
+  contato_email?: string;
   responsavel_nome?: string;
   criado_em: string;
   entrou_etapa_em: string;
+  etiquetas?: string[];
 }
 
 interface Stats {
@@ -79,6 +84,7 @@ interface Stats {
 }
 
 export default function CRM() {
+  const navigate = useNavigate();
   // Estados principais
   const [funis, setFunis] = useState<Funil[]>([]);
   const [funilSelecionado, setFunilSelecionado] = useState<string | null>(null);
@@ -465,6 +471,14 @@ export default function CRM() {
                 key={etapa.id}
                 etapa={etapa}
                 onDealClick={handleDealClick}
+                onSendMessage={(id) => {
+                  const deal = etapas.flatMap(e => e.negociacoes).find(n => n.id === id);
+                  if (deal?.contato_id) {
+                    navigate(`/conversas?contatoId=${deal.contato_id}`);
+                  } else {
+                    navigate('/conversas');
+                  }
+                }}
               />
             ))}
           </div>

@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import api from '../../lib/api';
+import Input from '../ui/Input';
+import api from '../../services/api';
 import toast from 'react-hot-toast';
 import {
-  DollarSign,
-  User,
-  TrendingUp,
+  MessageCircle,
+  Smartphone,
+  Mail,
+  Trash2,
+  Send,
   CheckCircle,
   XCircle,
-  Clock,
-  MessageSquare,
+  Briefcase,
+  User,
+  Clock
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface DealDetailsModalProps {
   isOpen: boolean;
@@ -30,28 +32,29 @@ export default function DealDetailsModal({
 }: DealDetailsModalProps) {
   const [negociacao, setNegociacao] = useState<any>(null);
   const [historico, setHistorico] = useState<any[]>([]);
-  const [tarefas, setTarefas] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [novoComentario, setNovoComentario] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-      carregarDetalhes();
+    if (isOpen && negociacaoId) {
+      carregarDados();
     }
   }, [isOpen, negociacaoId]);
 
-  const carregarDetalhes = async () => {
+  const carregarDados = async () => {
     setLoading(true);
     try {
-      const [negRes, histRes, tarefasRes] = await Promise.all([
-        api.get(`/crm/negociacoes/${negociacaoId}`),
-        api.get(`/crm/negociacoes/${negociacaoId}/historico`),
-        api.get(`/crm/negociacoes/${negociacaoId}/tarefas`),
+      const [negRes, histRes, usuariosRes] = await Promise.all([
+        api.get(`/api/crm/negociacoes/${negociacaoId}`),
+        api.get(`/api/crm/negociacoes/${negociacaoId}/historico`),
+        api.get('/api/usuarios')
       ]);
 
       setNegociacao(negRes.data.negociacao);
       setHistorico(histRes.data.historico || []);
-      setTarefas(tarefasRes.data.tarefas || []);
+      setUsuarios(usuariosRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar detalhes:', error);
       toast.error('Erro ao carregar detalhes da negociação');
@@ -60,12 +63,41 @@ export default function DealDetailsModal({
     }
   };
 
-  const handleGanhar = async () => {
-    if (!confirm('Tem certeza que deseja marcar como ganha?')) return;
+  const handleUpdate = async (field: string, value: any) => {
+    try {
+      await api.put(`/api/crm/negociacoes/${negociacaoId}`, { [field]: value });
+      setNegociacao((prev: any) => ({ ...prev, [field]: value }));
+    } catch (error) {
+      toast.error('Erro ao atualizar');
+    }
+  };
+
+  const handleAddComment = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!novoComentario.trim()) return;
 
     setActionLoading(true);
     try {
-      await api.post(`/crm/negociacoes/${negociacaoId}/ganhar`);
+      await api.post(`/api/crm/negociacoes/${negociacaoId}/historico`, {
+        tipo: 'comentario',
+        dados: { comentario: novoComentario }
+      });
+      setNovoComentario('');
+      const { data } = await api.get(`/api/crm/negociacoes/${negociacaoId}/historico`);
+      setHistorico(data.historico || []);
+      toast.success('Comentário adicionado');
+    } catch (error) {
+      toast.error('Erro ao adicionar comentário');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleGanhar = async () => {
+    if (!confirm('Tem certeza que deseja marcar como ganha?')) return;
+    setActionLoading(true);
+    try {
+      await api.post(`/api/crm/negociacoes/${negociacaoId}/ganhar`);
       toast.success('Negociação marcada como ganha!');
       onSuccess();
       onClose();
@@ -79,10 +111,9 @@ export default function DealDetailsModal({
   const handlePerder = async () => {
     const motivo = prompt('Qual o motivo da perda?');
     if (!motivo) return;
-
     setActionLoading(true);
     try {
-      await api.post(`/crm/negociacoes/${negociacaoId}/perder`, { motivo });
+      await api.post(`/api/crm/negociacoes/${negociacaoId}/perder`, { motivo });
       toast.success('Negociação marcada como perdida');
       onSuccess();
       onClose();
@@ -93,9 +124,24 @@ export default function DealDetailsModal({
     }
   };
 
-  if (loading) {
+  const handleDelete = async () => {
+    if (!confirm('Esta ação não pode ser desfeita. Excluir negociação?')) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/api/crm/negociacoes/${negociacaoId}`);
+      toast.success('Negociação excluída');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast.error('Erro ao excluir');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading || !negociacao) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Detalhes da Negociação" size="lg">
+      <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Card" size="lg">
         <div className="flex items-center justify-center py-12">
           <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
         </div>
@@ -103,149 +149,144 @@ export default function DealDetailsModal({
     );
   }
 
-  if (!negociacao) {
-    return null;
-  }
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={negociacao.titulo} size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Detalhes do Card"
+      size="lg"
+      footer={
+        <div className="flex justify-between w-full">
+          <Button variant="danger" onClick={handleDelete} loading={actionLoading}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir Card
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="glass" onClick={onClose}>Cancelar</Button>
+            <Button variant="neon" onClick={onClose}>Salvar</Button>
+          </div>
+        </div>
+      }
+    >
       <div className="space-y-6">
-        {/* Info Principal */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gradient-to-r from-green-600/20 to-green-600/10 border border-green-400/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-white/60">Valor</span>
-            </div>
-            <p className="text-2xl font-bold text-green-300">
-              R$ {negociacao.valor?.toLocaleString('pt-BR') || '0'}
-            </p>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-purple-400" />
-              <span className="text-sm text-white/60">Etapa Atual</span>
-            </div>
-            <p className="text-lg font-semibold text-white">{negociacao.etapa_nome}</p>
-          </div>
-        </div>
-
-        {/* Status e Prioridade */}
-        <div className="flex gap-3">
-          <Badge variant={negociacao.status === 'aberta' ? 'info' : 'success'}>
-            {negociacao.status}
-          </Badge>
-          <Badge
-            variant={
-              negociacao.prioridade === 'alta'
-                ? 'danger'
-                : negociacao.prioridade === 'media'
-                ? 'warning'
-                : 'success'
-            }
-          >
-            Prioridade: {negociacao.prioridade}
-          </Badge>
-        </div>
-
-        {/* Contato e Responsável */}
-        <div className="grid grid-cols-2 gap-4">
-          {negociacao.contato_nome && (
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-cyan-400" />
-              <div>
-                <p className="text-xs text-white/60">Contato</p>
-                <p className="text-white font-medium">{negociacao.contato_nome}</p>
-              </div>
-            </div>
-          )}
-
-          {negociacao.responsavel_nome && (
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-purple-400" />
-              <div>
-                <p className="text-xs text-white/60">Responsável</p>
-                <p className="text-white font-medium">{negociacao.responsavel_nome}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Tarefas */}
-        {tarefas.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Nome do Lead *"
+            value={negociacao.contato_nome || negociacao.titulo}
+            onChange={(e: any) => handleUpdate('titulo', e.target.value)}
+            placeholder="Ex: Paulo Sérgio"
+          />
           <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-400" />
-              Tarefas ({tarefas.length})
-            </h3>
-            <div className="space-y-2">
-              {tarefas.map((tarefa) => (
-                <div
-                  key={tarefa.id}
-                  className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between"
-                >
-                  <span className={tarefa.concluida ? 'text-white/40 line-through' : 'text-white'}>
-                    {tarefa.titulo}
-                  </span>
-                  {tarefa.concluida && (
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  )}
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Closer Responsável
+            </label>
+            <select
+              value={negociacao.responsavel_id || ''}
+              onChange={(e) => handleUpdate('responsavel_id', e.target.value)}
+              className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white"
+            >
+              <option value="">Selecione um closer</option>
+              {usuarios.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Input
+              label="WhatsApp"
+              value={negociacao.contato_telefone || ''}
+              readOnly
+              icon={<Smartphone className="w-4 h-4" />}
+            />
+            <button className="absolute right-3 top-9 p-1.5 rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400">
+              <MessageCircle className="w-4 h-4" />
+            </button>
+          </div>
+          <Input
+            label="Email"
+            value={negociacao.contato_email || ''}
+            readOnly
+            icon={<Mail className="w-4 h-4" />}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Observações
+          </label>
+          <textarea
+            value={negociacao.descricao || ''}
+            onChange={(e) => handleUpdate('descricao', e.target.value)}
+            className="w-full h-32 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white resize-none"
+            placeholder="Adicione observações sobre o lead..."
+          />
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-purple-500" />
+            Comentários ({historico.filter(h => h.tipo === 'comentario').length})
+          </h3>
+
+          <form onSubmit={handleAddComment} className="flex gap-2">
+            <Input
+              value={novoComentario}
+              onChange={(e: any) => setNovoComentario(e.target.value)}
+              placeholder="Adicionar comentário..."
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              variant="neon"
+              loading={actionLoading}
+              icon={<Send className="w-4 h-4" />}
+            />
+          </form>
+
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+            {historico
+              .filter(h => h.tipo === 'comentario' || h.tipo === 'criada' || h.tipo === 'movida')
+              .map((item, idx) => (
+                <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-bold text-xs text-purple-600 dark:text-purple-400">
+                      {item.atribuido_nome || item.usuario_nome || 'Sistema'}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(item.criado_em).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {item.tipo === 'comentario' ? item.dados?.comentario : (item.descricao || `Evento: ${item.tipo}`)}
+                  </p>
                 </div>
               ))}
-            </div>
           </div>
-        )}
+        </div>
 
-        {/* Histórico */}
-        {historico.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-cyan-400" />
-              Histórico ({historico.length})
-            </h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {historico.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white/5 border-l-4 border-purple-400/50 rounded p-3"
-                >
-                  <p className="text-sm text-white/80">{item.descricao}</p>
-                  <p className="text-xs text-white/40 mt-1">
-                    {new Date(item.criado_em).toLocaleString('pt-BR')}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Ações */}
-        {negociacao.status === 'aberta' && (
-          <div className="flex gap-3 pt-4 border-t border-white/10">
-            <Button
-              variant="success"
-              onClick={handleGanhar}
-              loading={actionLoading}
-              icon={<CheckCircle className="w-4 h-4" />}
-              className="flex-1"
-            >
-              Marcar como Ganha
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handlePerder}
-              loading={actionLoading}
-              icon={<XCircle className="w-4 h-4" />}
-              className="flex-1"
-            >
-              Marcar como Perdida
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <Button
+            variant="success"
+            onClick={handleGanhar}
+            loading={actionLoading}
+            className="flex-1 py-3"
+            icon={<CheckCircle className="w-5 h-5" />}
+          >
+            Vendido / Ganho
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handlePerder}
+            loading={actionLoading}
+            className="flex-1 py-3"
+            icon={<XCircle className="w-5 h-5" />}
+          >
+            Perdido
+          </Button>
+        </div>
       </div>
     </Modal>
   );

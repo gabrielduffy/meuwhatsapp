@@ -411,6 +411,8 @@ async function listarNegociacoes(empresaId, filtros = {}) {
   let sql = `
     SELECT n.*,
            c.nome as contato_nome,
+           c.telefone as contato_telefone,
+           c.email as contato_email,
            u.nome as responsavel_nome,
            e.nome as etapa_nome
     FROM negociacoes n

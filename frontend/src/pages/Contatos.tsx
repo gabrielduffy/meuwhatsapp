@@ -135,7 +135,12 @@ export default function Contatos() {
     try {
       setLoading(true);
       const { data } = await api.get('/api/contatos');
-      setContatos(data);
+      // A API retorna { contatos: [], total: 0, ... }
+      if (data && Array.isArray(data.contatos)) {
+        setContatos(data.contatos);
+      } else if (Array.isArray(data)) {
+        setContatos(data);
+      }
     } catch (error: any) {
       console.error('Erro ao carregar contatos:', error);
       showToast('Erro ao carregar contatos', 'error');

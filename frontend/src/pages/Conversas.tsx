@@ -7,12 +7,19 @@ import {
   Smile,
   Paperclip,
   MoreVertical,
-  X,
+  Check,
+  CheckCheck,
+  Users,
+  User,
+  Clock,
+  Briefcase,
+  Mail
 } from 'lucide-react';
 import api from '../services/api';
 
 interface Conversa {
-  id: string; // UUID
+  id: string;
+  contato_id: string;
   contato_nome: string;
   contato_telefone: string;
   avatar?: string;
@@ -25,12 +32,9 @@ interface Conversa {
   criado_em: string;
   etiquetas?: string[];
   status?: string;
-  // mapped fields for UI
-  nome: string;
-  telefone: string;
-  timestamp: string;
-  nao_lida: boolean;
-  mensagens_nao_lidas: number;
+  atribuido_para?: string;
+  atribuido_nome?: string;
+  departamento?: string;
 }
 
 interface Mensagem {
@@ -39,55 +43,36 @@ interface Mensagem {
   conteudo: string;
   criado_em: string;
   status: string;
-  // mapped fields for UI
-  tipo: 'enviada' | 'recebida';
-  texto: string;
-  timestamp: string;
+  tipo_mensagem: string;
 }
 
-type FiltroType = 'todas' | 'nao-lidas';
+type TabType = 'todos' | 'aguardando' | 'meus' | 'grupos';
 
 export default function Conversas() {
   const [conversas, setConversas] = useState<Conversa[]>([]);
-  const [conversasFiltradas, setConversasFiltradas] = useState<Conversa[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('todos');
   const [conversaSelecionada, setConversaSelecionada] = useState<Conversa | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [novaMensagem, setNovaMensagem] = useState('');
   const [loading, setLoading] = useState(true);
   const [showMessages, setShowMessages] = useState(false);
   const [showDetalhes, setShowDetalhes] = useState(false);
-  const [buscaQuery] = useState(''); // TODO: Implementar setSearch
-  const [filtroAtivo, setFiltroAtivo] = useState<FiltroType>('todas');
+  const [buscaQuery, setBuscaQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadConversas();
+    // Iniciar polling ou socket idealmente
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensagens]);
 
-  useEffect(() => {
-    filtrarConversas();
-  }, [conversas, buscaQuery, filtroAtivo]);
-
   const loadConversas = async () => {
     try {
       const { data } = await api.get('/api/chat/conversas');
-      // Map API response to UI model
-      const mapped = data.conversas.map((c: any) => ({
-        ...c,
-        nome: c.contato_nome || c.contato_telefone,
-        telefone: c.contato_telefone,
-        ultima_mensagem: '...', // API doesn't return content of last message yet, only timestamp
-        timestamp: new Date(c.ultima_mensagem_em || c.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        nao_lida: c.nao_lidas > 0,
-        mensagens_nao_lidas: c.nao_lidas
-      }));
-
-      setConversas(mapped);
-      setConversasFiltradas(mapped);
+      setConversas(data.conversas || []);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
     } finally {
@@ -95,304 +80,232 @@ export default function Conversas() {
     }
   };
 
-  const filtrarConversas = () => {
-    let resultado = [...conversas];
-
-    // Filtro de busca
-    if (buscaQuery.trim()) {
-      const query = buscaQuery.toLowerCase();
-      resultado = resultado.filter(
-        (c) =>
-          c.nome.toLowerCase().includes(query) ||
-          c.telefone.includes(query) ||
-          c.ultima_mensagem.toLowerCase().includes(query)
-      );
-    }
-
-    // Filtro de não lidas
-    if (filtroAtivo === 'nao-lidas') {
-      resultado = resultado.filter((c) => c.nao_lida);
-    }
-
-    setConversasFiltradas(resultado);
-  };
-
   const abrirConversa = async (conversa: Conversa) => {
     setConversaSelecionada(conversa);
     setShowMessages(true);
-    setShowDetalhes(true);
-
     try {
       const { data } = await api.get(`/api/chat/conversas/${conversa.id}/mensagens`);
-
-      const mappedMsgs = data.mensagens.map((m: any) => ({
-        ...m,
-        tipo: m.direcao, // 'enviada' | 'recebida' matches
-        texto: m.conteudo || (m.midia_url ? '[Mídia]' : ''),
-        timestamp: new Date(m.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }));
-      setMensagens(mappedMsgs);
-
-      // Marcar como lida
+      setMensagens(data.mensagens || []);
       await api.post(`/api/chat/conversas/${conversa.id}/marcar-lida`);
-
-      setConversas((prev) =>
-        prev.map((c) =>
-          c.id === conversa.id
-            ? { ...c, nao_lida: false, mensagens_nao_lidas: 0 }
-            : c
-        )
-      );
+      setConversas(prev => prev.map(c => c.id === conversa.id ? { ...c, nao_lidas: 0 } : c));
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
     }
   };
 
-  const enviarMensagem = async (e: React.FormEvent) => {
+  const handleEnviar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaMensagem.trim() || !conversaSelecionada) return;
 
-    // Otimistic update
-    const now = new Date();
-    const timestamp = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const tempId = 'temp-' + Date.now();
-
-    const novaMensagemObj: Mensagem = {
-      id: tempId,
-      direcao: 'enviada',
-      conteudo: novaMensagem,
-      criado_em: now.toISOString(),
-      status: 'enviando',
-      tipo: 'enviada',
-      texto: novaMensagem,
-      timestamp,
-    };
-
-    setMensagens([...mensagens, novaMensagemObj]);
+    const texto = novaMensagem;
     setNovaMensagem('');
+
+    // Otimistic update
+    const tempMsg: Mensagem = {
+      id: Date.now().toString(),
+      direcao: 'enviada',
+      conteudo: texto,
+      criado_em: new Date().toISOString(),
+      status: 'enviando',
+      tipo_mensagem: 'texto'
+    };
+    setMensagens(prev => [...prev, tempMsg]);
 
     try {
       await api.post(`/api/chat/conversas/${conversaSelecionada.id}/mensagens`, {
-        tipo_mensagem: 'texto', // ou 'text' conforme backend
-        conteudo: novaMensagem
+        tipo_mensagem: 'texto',
+        conteudo: texto
       });
-
+      // Idealmente o socket atualizará a lista
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('Erro ao enviar:', error);
     }
   };
 
-  const handleBackToList = () => {
-    setShowMessages(false);
-  };
+  const filteredConversas = conversas.filter(c => {
+    const matchesBusca = c.contato_nome?.toLowerCase().includes(buscaQuery.toLowerCase()) ||
+      c.contato_telefone?.includes(buscaQuery);
 
-  const handleFiltroClick = (tipo: FiltroType) => {
-    setFiltroAtivo(tipo);
-  };
+    if (!matchesBusca) return false;
+
+    if (activeTab === 'aguardando') return !c.atribuido_para;
+    if (activeTab === 'meus') return c.atribuido_para; // Simplificado
+    if (activeTab === 'grupos') return false; // TODO groups logic
+    return true;
+  });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500 dark:text-gray-400">Carregando...</div>
+      <div className="flex items-center justify-center h-full bg-white dark:bg-gray-950">
+        <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full">
-      {/* Coluna 1: Lista de Conversas */}
-      <div
-        className={`w-full md:w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800 ${showMessages ? 'hidden md:flex' : 'flex'
-          }`}
-      >
-        {/* Header da Lista */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-bold text-lg mb-3 dark:text-white">Conversas</h2>
+    <div className="flex h-full bg-gray-50 dark:bg-gray-950 overflow-hidden">
+      {/* Sidebar: Lista de Conversas */}
+      <div className={`w-full md:w-96 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${showMessages ? 'hidden md:flex' : 'flex'}`}>
+        {/* Top Header */}
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Conversas</h1>
+            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <MoreVertical className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
 
-          {/* Filtros */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleFiltroClick('todas')}
-              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filtroAtivo === 'todas'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-            >
-              Todas
-            </button>
-            <button
-              onClick={() => handleFiltroClick('nao-lidas')}
-              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filtroAtivo === 'nao-lidas'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-            >
-              Não Lidas
-            </button>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Pesquisar..."
+              value={buscaQuery}
+              onChange={(e) => setBuscaQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-purple-500 dark:text-white"
+            />
+          </div>
+
+          {/* Custom Tabs */}
+          <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            {(['todos', 'aguardando', 'meus', 'grupos'] as TabType[]).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all capitalize ${activeTab === tab
+                  ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Lista de Conversas */}
-        <div className="flex-1 overflow-y-auto">
-          {conversasFiltradas.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              Nenhuma conversa encontrada
-            </div>
-          ) : (
-            conversasFiltradas.map((conversa) => (
-              <div
-                key={conversa.id}
-                onClick={() => abrirConversa(conversa)}
-                className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${conversa.nao_lida
-                    ? 'bg-purple-50 dark:bg-purple-900/20'
-                    : ''
-                  } ${conversaSelecionada?.id === conversa.id
-                    ? 'bg-gray-100 dark:bg-gray-700'
-                    : ''
-                  }`}
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={conversa.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversa.nome)}&background=random`}
-                    alt={conversa.nome}
-                    className="w-12 h-12 rounded-full flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-semibold truncate dark:text-white">
-                        {conversa.nome}
-                      </h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {conversa.timestamp}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {conversa.ultima_mensagem}
-                      </p>
-                      {conversa.mensagens_nao_lidas > 0 && (
-                        <span className="ml-2 px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full flex-shrink-0">
-                          {conversa.mensagens_nao_lidas}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        {/* List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {filteredConversas.map(conversa => (
+            <div
+              key={conversa.id}
+              onClick={() => abrirConversa(conversa)}
+              className={`flex items-center gap-3 p-4 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors ${conversaSelecionada?.id === conversa.id ? 'bg-purple-50/50 dark:bg-purple-900/10' : ''}`}
+            >
+              <div className="relative">
+                <img
+                  src={conversa.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversa.contato_nome)}&background=random`}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                {conversa.nao_lidas > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900">
+                    {conversa.nao_lidas}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                    {conversa.contato_nome}
+                  </h3>
+                  <span className="text-[10px] text-gray-400">
+                    {conversa.ultima_mensagem_em ? new Date(conversa.ultima_mensagem_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {conversa.atribuido_para ? <User className="w-3 h-3 text-purple-500" /> : <Clock className="w-3 h-3 text-gray-400" />}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {conversa.ultima_mensagem || 'Inicie uma conversa...'}
+                  </p>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Coluna 2: Área de Mensagens */}
-      <div
-        className={`flex-1 flex flex-col bg-white dark:bg-gray-800 ${!showMessages ? 'hidden md:flex' : 'flex'
-          }`}
-      >
+      {/* Main: Chat Window */}
+      <div className={`flex-1 flex flex-col bg-white dark:bg-gray-900 ${!showMessages ? 'hidden md:flex' : 'flex'}`}>
         {conversaSelecionada ? (
           <>
-            {/* Header do Chat */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Botão Voltar (Mobile) */}
-                  <button
-                    onClick={handleBackToList}
-                    className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  </button>
-
-                  <img
-                    src={conversaSelecionada.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversaSelecionada.nome)}&background=random`}
-                    alt={conversaSelecionada.nome}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <h3 className="font-bold dark:text-white">
-                      {conversaSelecionada.nome}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {conversaSelecionada.status || 'offline'}
-                    </p>
+            {/* Chat Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-10">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setShowMessages(false)} className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <img
+                  src={conversaSelecionada.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversaSelecionada.contato_nome)}&background=random`}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <h2 className="font-bold text-gray-900 dark:text-white">{conversaSelecionada.contato_nome}</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-gray-500">Online</span>
                   </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Search className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  </button>
-                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowDetalhes(!showDetalhes)}
+                  className={`p-2 rounded-lg transition-colors ${showDetalhes ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'}`}
+                >
+                  <Briefcase className="w-5 h-5" />
+                </button>
+                <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* Mensagens */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
-              {mensagens.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                  Nenhuma mensagem ainda
-                </div>
-              ) : (
-                mensagens.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`mb-4 flex ${msg.tipo === 'enviada' ? 'justify-end' : 'justify-start'
-                      }`}
-                  >
-                    <div className="max-w-[70%]">
-                      <div
-                        className={`rounded-lg p-3 shadow ${msg.tipo === 'enviada'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white dark:bg-gray-700 dark:text-white'
-                          }`}
-                      >
-                        <p className="break-words">{msg.texto}</p>
-                        <p
-                          className={`text-xs mt-1 ${msg.tipo === 'enviada'
-                              ? 'text-purple-200'
-                              : 'text-gray-500 dark:text-gray-400'
-                            }`}
-                        >
-                          {msg.timestamp}
-                        </p>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-950/50 relative">
+              {/* Background patterns could go here */}
+              <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#8b5cf6 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }}></div>
+
+              {mensagens.map((msg) => {
+                const isMine = msg.direcao === 'enviada';
+                return (
+                  <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] md:max-w-[60%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                      <div className={`px-4 py-2.5 rounded-2xl shadow-sm text-sm ${isMine
+                        ? 'bg-purple-600 text-white rounded-tr-none'
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-none border border-gray-100 dark:border-gray-700'}`}>
+                        {msg.conteudo}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
+                        {new Date(msg.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMine && (
+                          msg.status === 'read' ? <CheckCheck className="w-3 h-3 text-cyan-400" /> : <Check className="w-3 h-3" />
+                        )}
                       </div>
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input de Mensagem */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <form onSubmit={enviarMensagem} className="flex gap-2">
-                <button
-                  type="button"
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Emoji"
-                >
-                  <Smile className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            {/* Input Area */}
+            <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+              <form onSubmit={handleEnviar} className="flex items-center gap-2 max-w-5xl mx-auto">
+                <button type="button" className="p-2.5 text-gray-500 hover:text-purple-600 transition-colors">
+                  <Smile className="w-6 h-6" />
                 </button>
-                <button
-                  type="button"
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Anexar arquivo"
-                >
-                  <Paperclip className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                <button type="button" className="p-2.5 text-gray-500 hover:text-purple-600 transition-colors">
+                  <Paperclip className="w-6 h-6" />
                 </button>
                 <input
                   type="text"
+                  placeholder="Escreva uma mensagem..."
                   value={novaMensagem}
                   onChange={(e) => setNovaMensagem(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                  className="flex-1 py-2.5 px-4 bg-gray-100 dark:bg-gray-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-purple-500 dark:text-white"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                  disabled={!novaMensagem.trim()}
+                  className="p-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -400,104 +313,63 @@ export default function Conversas() {
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            <div className="text-center">
-              <MessageCircle className="w-24 h-24 mx-auto mb-4 opacity-20" />
-              <p className="text-lg font-semibold">Selecione uma conversa</p>
-              <p className="text-sm">Escolha uma conversa da lista para começar</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div className="w-24 h-24 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-6">
+              <MessageCircle className="w-12 h-12 text-purple-600" />
             </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Seus Chats</h2>
+            <p className="text-gray-500 max-w-xs">Selecione uma conversa ao lado para começar o atendimento.</p>
           </div>
         )}
       </div>
 
-      {/* Coluna 3: Detalhes do Contato */}
-      {conversaSelecionada && showDetalhes && (
-        <div className="hidden lg:flex w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-col overflow-y-auto">
-          {/* Header com Avatar */}
-          <div className="p-6 text-center border-b border-gray-200 dark:border-gray-700">
-            <div className="flex justify-end mb-2">
-              <button
-                onClick={() => setShowDetalhes(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              </button>
-            </div>
+      {/* Right Sidebar: Details */}
+      {showDetalhes && conversaSelecionada && (
+        <div className="w-80 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hidden xl:flex flex-col">
+          <div className="p-6 text-center border-b border-gray-100 dark:border-gray-800">
             <img
-              src={conversaSelecionada.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversaSelecionada.nome)}&background=random`}
-              alt={conversaSelecionada.nome}
-              className="w-24 h-24 rounded-full mx-auto mb-3"
+              src={conversaSelecionada.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversaSelecionada.contato_nome)}&background=random`}
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-purple-100 dark:border-purple-900/30"
             />
-            <h3 className="font-bold text-xl mb-1 dark:text-white">
-              {conversaSelecionada.nome}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-              {conversaSelecionada.telefone}
-            </p>
-
-            {/* Etiquetas */}
-            {conversaSelecionada.etiquetas &&
-              conversaSelecionada.etiquetas.length > 0 && (
-                <div className="flex gap-2 justify-center flex-wrap">
-                  {conversaSelecionada.etiquetas.map((etiqueta, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-purple-600 text-white text-xs rounded-full"
-                    >
-                      {etiqueta}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{conversaSelecionada.contato_nome}</h3>
+            <p className="text-sm text-gray-500">{conversaSelecionada.contato_telefone}</p>
           </div>
 
-          {/* Informações */}
-          <div className="p-4">
-            <h4 className="font-bold mb-3 dark:text-white">Informações</h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Email:</span>
-                <span className="dark:text-white">
-                  {conversaSelecionada.email || '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Empresa:</span>
-                <span className="dark:text-white">
-                  {conversaSelecionada.empresa || '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Cidade:</span>
-                <span className="dark:text-white">
-                  {conversaSelecionada.cidade || '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Desde:</span>
-                <span className="dark:text-white">
-                  {conversaSelecionada.criado_em || '-'}
-                </span>
+          <div className="p-6 space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Informações do Contato</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{conversaSelecionada.email || 'Não informado'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{conversaSelecionada.empresa || 'Empresa não informada'}</span>
+                </div>
               </div>
             </div>
 
-            {/* Negociações */}
-            <h4 className="font-bold mt-6 mb-3 dark:text-white">Negociações</h4>
-            <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-              <p>Nenhuma negociação encontrada</p>
+            <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Atendimento</h4>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-500">Status</span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Ativo</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Atribuído para</span>
+                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{conversaSelecionada.atribuido_nome || 'Ninguém'}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Ações Rápidas */}
-            <h4 className="font-bold mt-6 mb-3 dark:text-white">Ações Rápidas</h4>
             <div className="space-y-2">
-              <button className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm">
-                Adicionar ao CRM
+              <button className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors">
+                Ir para CRM
               </button>
-              <button className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm">
-                Adicionar Etiqueta
-              </button>
-              <button className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm">
-                Ver Histórico
+              <button className="w-full py-2 px-4 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                Finalizar Atendimento
               </button>
             </div>
           </div>
