@@ -2,9 +2,7 @@ import { useState } from 'react';
 import {
     CheckCircle,
     HelpCircle,
-    Info,
-    Activity,
-    ArrowRight
+    Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -146,7 +144,7 @@ export default function Status() {
                                         <div
                                             key={dIdx}
                                             className={`flex-1 h-full rounded-[1px] ${day === 'green' ? 'bg-[#00C292]' :
-                                                    day === 'red' ? 'bg-[#FF4D4D]' : 'bg-[#4DA3FF]'
+                                                day === 'red' ? 'bg-[#FF4D4D]' : 'bg-[#4DA3FF]'
                                                 }`}
                                         />
                                     ))}

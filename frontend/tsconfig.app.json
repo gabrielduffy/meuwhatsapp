@@ -18,14 +18,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": [
-      "vite/client",
-      "framer-motion"
+      "vite/client"
     ],
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
