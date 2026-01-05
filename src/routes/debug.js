@@ -23,4 +23,34 @@ router.get('/db', async (req, res) => {
     }
 });
 
+router.post('/message', async (req, res) => {
+    try {
+        const chatServico = require('../servicos/chat.servico');
+        const { query } = require('../config/database');
+
+        // 1. Get Company
+        const empresaRes = await query('SELECT id FROM empresas ORDER BY criado_em DESC LIMIT 1');
+        const empresaId = empresaRes.rows[0]?.id;
+
+        if (!empresaId) throw new Error('No company found');
+
+        // 2. Simulate Message
+        const dados = {
+            contatoTelefone: '5511999999999',
+            contatoNome: 'Debug User',
+            whatsappMensagemId: 'DEBUG-' + Date.now(),
+            tipoMensagem: 'text',
+            conteudo: 'Teste Debug Manual',
+            direcao: 'recebida',
+            status: 'recebida'
+        };
+
+        const result = await chatServico.receberMensagem(empresaId, 'debug_instance', dados);
+        res.json({ success: true, result });
+    } catch (error) {
+        console.error('Debug Message Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
