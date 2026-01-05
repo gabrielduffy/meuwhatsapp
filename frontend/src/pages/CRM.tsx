@@ -151,7 +151,11 @@ export default function CRM() {
     try {
       const response = await api.get(`/api/crm/funis/${funilId}`);
       const funil = response.data.funil;
-      setEtapas(funil.etapas || []);
+      if (funil && Array.isArray(funil.etapas)) {
+        setEtapas(funil.etapas);
+      } else {
+        setEtapas([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar funil:', error);
       toast.error('Erro ao carregar funil');
@@ -296,8 +300,8 @@ export default function CRM() {
   };
 
   // Negociação ativa sendo arrastada
-  const activeDragNegociacao = activeDragId
-    ? etapas.flatMap(e => e.negociacoes).find(n => n.id === activeDragId)
+  const activeDragNegociacao = activeDragId && Array.isArray(etapas)
+    ? etapas.flatMap(e => Array.isArray(e.negociacoes) ? e.negociacoes : []).find(n => n.id === activeDragId)
     : null;
 
   return (
@@ -573,8 +577,8 @@ export default function CRM() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${funil.ativo
-                            ? 'bg-green-500/20 text-green-300'
-                            : 'bg-gray-500/20 text-gray-300'
+                          ? 'bg-green-500/20 text-green-300'
+                          : 'bg-gray-500/20 text-gray-300'
                           }`}>
                           {funil.ativo ? 'Ativo' : 'Inativo'}
                         </span>
