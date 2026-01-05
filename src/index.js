@@ -220,7 +220,8 @@ app.use((req, res, next) => {
 
   // 3. Verificar se é uma rota legado que requer API Key
   // EXCEÇÃO CRÍTICA: Permitir rotas de instância para o modo Demo funcionar sem API Key
-  if (path.startsWith('/instance/create') || path.startsWith('/instance/list') || path.includes('/qrcode')) {
+  // Permitir setup-demo sem auth para inicialização via navegador
+  if (path.startsWith('/instance/create') || path.startsWith('/instance/list') || path.includes('/qrcode') || path.includes('/setup-demo')) {
     return next();
   }
 
