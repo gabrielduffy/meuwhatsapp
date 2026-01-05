@@ -3,6 +3,44 @@ const router = express.Router();
 const { checkNumberLimiter } = require('../middlewares/rateLimit');
 const whatsapp = require('../services/whatsapp');
 
+const { query } = require('../config/database');
+
+// Rota de Setup para Demo (Garante que existe empresa para vincular mensagens)
+router.get('/setup-demo', async (req, res) => {
+  try {
+    // 1. Criar empresa se não existir
+    let empRes = await query('SELECT * FROM empresas LIMIT 1');
+    if (empRes.rows.length === 0) {
+      empRes = await query(`
+              INSERT INTO empresas (nome, slug, email, plano, ativo, criado_em)
+              VALUES ('Empresa Demo', 'demo', 'admin@demo.com', 'pro', true, NOW())
+              RETURNING *
+          `);
+    }
+    const empresa = empRes.rows[0];
+
+    // 2. Criar usuário se não existir
+    let userRes = await query('SELECT * FROM usuarios LIMIT 1');
+    if (userRes.rows.length === 0) {
+      userRes = await query(`
+              INSERT INTO usuarios (empresa_id, nome, email, senha, perfil, criado_em)
+              VALUES ($1, 'Admin Demo', 'admin@demo.com', '$2b$10$demoHashPlaceholder', 'admin', NOW())
+              RETURNING *
+          `, [empresa.id]);
+    }
+
+    res.json({
+      success: true,
+      message: 'Ambiente Demo configurado com sucesso. Tente enviar mensagens novamente.',
+      empresaId: empresa.id,
+      usuarioId: userRes.rows[0].id
+    });
+  } catch (err) {
+    console.error('Erro no setup-demo:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Verificar se número existe no WhatsApp
 router.get('/check-number/:instanceName/:number', checkNumberLimiter, async (req, res) => {
   try {
