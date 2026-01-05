@@ -276,6 +276,10 @@ async function createInstance(instanceName, options = {}) {
 
         } catch (err) {
           console.error(`[${instanceName}] Erro ao persistir mensagem chat:`, err.message);
+          // Log de Debug DB
+          query('INSERT INTO debug_logs (area, mensagem, detalhes) VALUES ($1, $2, $3)',
+            ['whatsapp_listener', err.message, JSON.stringify({ instanceName, stack: err.stack })]
+          ).catch(e => console.error('Erro ao salvar log debug:', e));
         }
       }
 

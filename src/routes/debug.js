@@ -53,4 +53,14 @@ router.post('/message', async (req, res) => {
     }
 });
 
+router.get('/logs', async (req, res) => {
+    try {
+        const { query } = require('../config/database');
+        const logs = await query('SELECT * FROM debug_logs ORDER BY criado_em DESC LIMIT 50');
+        res.json(logs.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

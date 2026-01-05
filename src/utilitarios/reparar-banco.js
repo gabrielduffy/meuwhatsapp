@@ -35,6 +35,18 @@ async function repararBanco() {
             }
         }
 
+        // 2. Criar tabela de logs de debug se não existir
+        await query(`
+          CREATE TABLE IF NOT EXISTS debug_logs (
+            id SERIAL PRIMARY KEY,
+            area VARCHAR(50),
+            mensagem TEXT,
+            detalhes JSONB,
+            criado_em TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        logger.info('Tabela debug_logs verificada.');
+
         logger.info('Reparo do banco concluído.');
     } catch (error) {
         logger.error('Erro crítico no reparo do banco:', error.message);
