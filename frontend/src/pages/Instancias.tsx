@@ -17,9 +17,11 @@ import {
   CheckCircle,
   Clock,
   Globe,
+  User,
 } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import Tabs from '../components/ui/Tabs';
 
 // ========================================
 // INTERFACES
@@ -80,6 +82,14 @@ export default function Instancias() {
     profileStatus: '',
     webhookUrl: '',
   });
+
+  const [activeTab, setActiveTab] = useState('geral');
+
+  const CONFIG_TABS = [
+    { id: 'geral', label: 'Geral', icon: Settings },
+    { id: 'perfil', label: 'Perfil', icon: User },
+    { id: 'webhook', label: 'Webhook', icon: Globe },
+  ];
 
   // ========================================
   // CARREGAMENTO DE INSTÂNCIAS
@@ -735,75 +745,100 @@ export default function Instancias() {
               </div>
 
               {/* Form */}
-              <div className="space-y-4">
-                {/* Rejeitar Chamadas */}
-                <div className="flex items-center justify-between p-4 bg-black/20 border border-white/10 rounded-lg">
-                  <div>
-                    <p className="text-white font-medium">Rejeitar Chamadas</p>
-                    <p className="text-sm text-white/60">
-                      Rejeitar chamadas automaticamente
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={configForm.rejectCalls}
-                    onChange={(e) =>
-                      setConfigForm({ ...configForm, rejectCalls: e.target.checked })
-                    }
-                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-purple-600 focus:ring-purple-500"
-                  />
-                </div>
+              {/* Tabs e Form */}
+              <div className="mt-2">
+                <Tabs
+                  tabs={CONFIG_TABS}
+                  activeTab={activeTab}
+                  onChange={setActiveTab}
+                  className="mb-6 bg-black/40 p-1.5"
+                />
 
-                {/* Nome do Perfil */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
-                    Nome do Perfil
-                  </label>
-                  <input
-                    type="text"
-                    value={configForm.profileName}
-                    onChange={(e) =>
-                      setConfigForm({ ...configForm, profileName: e.target.value })
-                    }
-                    placeholder="Seu nome no WhatsApp"
-                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
-                  />
-                </div>
+                <div className="min-h-[200px]">
+                  {/* ABA GERAL */}
+                  {activeTab === 'geral' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-black/20 border border-white/10 rounded-lg hover:border-purple-500/30 transition-colors">
+                        <div>
+                          <p className="text-white font-medium">Rejeitar Chamadas</p>
+                          <p className="text-sm text-white/60">
+                            Rejeitar chamadas de voz e vídeo automaticamente
+                          </p>
+                        </div>
+                        <div className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={configForm.rejectCalls}
+                            onChange={(e) =>
+                              setConfigForm({ ...configForm, rejectCalls: e.target.checked })
+                            }
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Status do Perfil */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
-                    Recado (Status)
-                  </label>
-                  <input
-                    type="text"
-                    value={configForm.profileStatus}
-                    onChange={(e) =>
-                      setConfigForm({ ...configForm, profileStatus: e.target.value })
-                    }
-                    placeholder="Seu recado no WhatsApp"
-                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
-                  />
-                </div>
+                  {/* ABA PERFIL */}
+                  {activeTab === 'perfil' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          Nome do Perfil
+                        </label>
+                        <input
+                          type="text"
+                          value={configForm.profileName}
+                          onChange={(e) =>
+                            setConfigForm({ ...configForm, profileName: e.target.value })
+                          }
+                          placeholder="Seu nome no WhatsApp"
+                          className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          Recado (Status)
+                        </label>
+                        <input
+                          type="text"
+                          value={configForm.profileStatus}
+                          onChange={(e) =>
+                            setConfigForm({ ...configForm, profileStatus: e.target.value })
+                          }
+                          placeholder="Seu recado no WhatsApp"
+                          className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                {/* Webhook URL (NOVO) */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-purple-400" />
-                    Webhook URL
-                  </label>
-                  <input
-                    type="text"
-                    value={configForm.webhookUrl}
-                    onChange={(e) =>
-                      setConfigForm({ ...configForm, webhookUrl: e.target.value })
-                    }
-                    placeholder="https://seu-sistema.com/webhook"
-                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
-                  />
-                  <p className="text-xs text-white/40 mt-1">
-                    URL para receber eventos de mensagens e status.
-                  </p>
+                  {/* ABA WEBHOOK */}
+                  {activeTab === 'webhook' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-purple-400" />
+                          Webhook URL
+                        </label>
+                        <input
+                          type="text"
+                          value={configForm.webhookUrl}
+                          onChange={(e) =>
+                            setConfigForm({ ...configForm, webhookUrl: e.target.value })
+                          }
+                          placeholder="https://seu-sistema.com/webhook"
+                          className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
+                        />
+                        <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                          <p className="text-xs text-blue-200">
+                            ℹ️ Esta URL receberá todos os eventos da instância (mensagens recebidas, status de envio, mudanças de conexão).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

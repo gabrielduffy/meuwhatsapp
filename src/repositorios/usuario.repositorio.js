@@ -167,6 +167,12 @@ const usuarioRepositorio = {
       contador++;
     }
 
+    if (dados.api_token !== undefined) {
+      campos.push(`api_token = $${contador}`);
+      valores.push(dados.api_token);
+      contador++;
+    }
+
     if (campos.length === 0) {
       throw new Error('Nenhum campo para atualizar');
     }

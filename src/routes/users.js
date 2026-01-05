@@ -302,4 +302,42 @@ router.post('/:id/redefinir-senha', verificarPermissao(['empresa', 'administrado
   }
 });
 
+const { v4: uuidv4 } = require('uuid');
+
+/**
+ * GET /api/usuarios/me/token
+ * Obter token de API do usuário atual
+ */
+router.get('/me/token', async (req, res) => {
+  try {
+    const usuario = await usuarioRepo.buscarPorId(req.usuarioId);
+    if (!usuario) return res.status(404).json({ erro: 'Usuário não encontrado' });
+
+    if (!usuario.api_token) {
+      // Gera se não existir
+      const token = uuidv4();
+      await usuarioRepo.atualizar(req.usuarioId, { api_token: token });
+      return res.json({ token });
+    }
+
+    res.json({ token: usuario.api_token });
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
+/**
+ * POST /api/usuarios/me/token
+ * Regenerar token de API
+ */
+router.post('/me/token', async (req, res) => {
+  try {
+    const token = uuidv4();
+    await usuarioRepo.atualizar(req.usuarioId, { api_token: token });
+    res.json({ token, mensagem: 'Token regenerado com sucesso' });
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
 module.exports = router;
