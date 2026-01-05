@@ -287,6 +287,8 @@ app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
+app.use('/api/debug', require('./routes/debug'));
+
 // Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
 // Serve o index.html do React para todas as rotas não-API
 app.get('*', (req, res, next) => {
