@@ -53,7 +53,7 @@ export default function Followup() {
   const carregarSequencias = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/followup/sequencias');
+      const response = await api.get('/api/followup/sequencias');
       setSequencias(response.data || []);
     } catch (error: any) {
       toast.error('Erro ao carregar sequências');
@@ -65,7 +65,7 @@ export default function Followup() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/followup/sequencias', formData);
+      await api.post('/api/followup/sequencias', formData);
       toast.success('Sequência criada com sucesso!');
       setCreateModalOpen(false);
       await carregarSequencias();
@@ -76,7 +76,7 @@ export default function Followup() {
 
   const handleToggle = async (sequencia: Sequencia) => {
     try {
-      await api.patch(`/followup/sequencias/${sequencia.id}/status`, {
+      await api.patch(`/api/followup/sequencias/${sequencia.id}/status`, {
         ativo: !sequencia.ativo,
       });
       toast.success(`Sequência ${sequencia.ativo ? 'desativada' : 'ativada'}!`);
@@ -90,7 +90,7 @@ export default function Followup() {
     if (!confirm(`Deletar sequência "${sequencia.nome}"?`)) return;
 
     try {
-      await api.delete(`/followup/sequencias/${sequencia.id}`);
+      await api.delete(`/api/followup/sequencias/${sequencia.id}`);
       toast.success('Sequência deletada!');
       await carregarSequencias();
     } catch (error: any) {
@@ -214,14 +214,12 @@ export default function Followup() {
               <Card variant="gradient">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${
-                      sequencia.ativo
+                    <div className={`p-3 rounded-lg ${sequencia.ativo
                         ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
                         : 'bg-white/5'
-                    }`}>
-                      <Clock className={`w-6 h-6 ${
-                        sequencia.ativo ? 'text-purple-300' : 'text-white/40'
-                      }`} />
+                      }`}>
+                      <Clock className={`w-6 h-6 ${sequencia.ativo ? 'text-purple-300' : 'text-white/40'
+                        }`} />
                     </div>
                     <div>
                       <h3 className="font-bold text-white">{sequencia.nome}</h3>

@@ -113,4 +113,53 @@ router.get('/business-profile/:instanceName/:number', async (req, res) => {
   }
 });
 
+// Rota de Reparo de Banco de Dados (Executa todos os schemas)
+router.get('/repair-db', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    // Lista de schemas na ordem correta de execução
+    const schemas = [
+      'schema.sql',
+      'saas-schema.sql',
+      'chat-schema.sql',
+      'crm-schema.sql',
+      'followup-schema.sql',
+      'ia-prospeccao-schema.sql', // Corrigido nome do arquivo
+      'status-schema.sql',
+      'whitelabel-schema.sql'
+    ];
+
+    const results = [];
+    const configDir = path.join(__dirname, '../config');
+
+    for (const schemaFile of schemas) {
+      const schemaPath = path.join(configDir, schemaFile);
+
+      if (fs.existsSync(schemaPath)) {
+        try {
+          const sql = fs.readFileSync(schemaPath, 'utf8');
+          await query(sql);
+          results.push({ file: schemaFile, status: 'success' });
+        } catch (err) {
+          console.error(`Erro ao executar schema ${schemaFile}:`, err);
+          results.push({ file: schemaFile, status: 'error', error: err.message });
+        }
+      } else {
+        results.push({ file: schemaFile, status: 'skipped', reason: 'File not found' });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Processo de reparo de banco de dados concluído',
+      details: results
+    });
+  } catch (error) {
+    console.error('Erro geral no repair-db:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

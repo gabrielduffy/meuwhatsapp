@@ -3,10 +3,74 @@ const router = express.Router();
 const contatoRepo = require('../repositorios/contato.repositorio');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { garantirMultiTenant, verificarLimite } = require('../middlewares/empresa');
+const { getInstance } = require('../services/whatsapp');
+const { v4: uuidv4 } = require('uuid');
 
 // Todas as rotas requerem autenticação e multi-tenant
 router.use(autenticarMiddleware);
 router.use(garantirMultiTenant);
+
+/**
+ * POST /api/contatos/sincronizar/:instancia
+ * Sincronizar contatos do WhatsApp (Baileys) para o Banco SQL
+ */
+router.post('/sincronizar/:instancia', async (req, res) => {
+  try {
+    const { instancia } = req.params;
+    const instance = getInstance(instancia);
+
+    if (!instance || !instance.isConnected) {
+      return res.status(400).json({ erro: 'Instância não conectada ou não encontrada' });
+    }
+
+    // Obter contatos do WhatsApp via Baileys Store
+    const store = instance.socket.store;
+    if (!store || !store.contacts) {
+      return res.status(400).json({ erro: 'Store de contatos indisponível na instância' });
+    }
+
+    const whatsappContacts = Object.values(store.contacts);
+    const contatosParaImportar = [];
+
+    // Filtrar e formatar contacts
+    for (const c of whatsappContacts) {
+      // Ignorar grupos e contatos sem nome
+      if (c.id && !c.id.includes('@g.us')) {
+        const numero = c.id.replace('@s.whatsapp.net', '');
+        const nome = c.name || c.notify || c.verifiedName || `Link-${numero.substring(0, 4)}`;
+
+        contatosParaImportar.push({
+          nome: nome,
+          telefone: numero,
+          email: '', // WhatsApp não fornece email
+          empresa: '',
+          cargo: '',
+          tags: ['whatsapp-sync'],
+          campos_customizados: {},
+          observacoes: 'Importado via sincronização'
+        });
+      }
+    }
+
+    if (contatosParaImportar.length === 0) {
+      return res.json({ mensagem: 'Nenhum contato encontrado para sincronizar' });
+    }
+
+    // Usar o método de lote existente no repositório (ou fazer loop se não existir)
+    // O contatoRepo.importarLote foi visto no `view_file` anterior (linha 245 de contact.js)
+    const resultado = await contatoRepo.importarLote(req.empresaId, contatosParaImportar);
+
+    res.json({
+      mensagem: 'Sincronização concluída',
+      total_encontrados: contatosParaImportar.length,
+      ...resultado
+    });
+
+  } catch (erro) {
+    console.error('[Contatos] Erro na sincronização:', erro);
+    res.status(500).json({ erro: erro.message });
+  }
+});
 
 /**
  * POST /api/contatos

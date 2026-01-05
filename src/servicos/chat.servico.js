@@ -242,6 +242,8 @@ async function enviarMensagem(empresaId, conversaId, remetenteId, dados) {
  * Esta função seria chamada pelo webhook do WhatsApp
  */
 async function receberMensagem(empresaId, instanciaId, dadosMensagem) {
+  console.log('[Chat Service] Recebendo mensagem:', { empresaId, instanciaId, dadosMensagem });
+
   const {
     contatoTelefone,
     contatoNome,
@@ -255,55 +257,64 @@ async function receberMensagem(empresaId, instanciaId, dadosMensagem) {
     direcao = 'recebida' // Default value
   } = dadosMensagem;
 
-  // Criar ou buscar contato
-  let contato = await contatoRepo.buscarPorTelefone(contatoTelefone, empresaId);
+  try {
+    // Criar ou buscar contato
+    let contato = await contatoRepo.buscarPorTelefone(contatoTelefone, empresaId);
 
-  if (!contato) {
-    contato = await contatoRepo.criar({
+    if (!contato) {
+      console.log('[Chat Service] Contato não encontrado, criando novo:', contatoTelefone);
+      contato = await contatoRepo.criar({
+        empresaId,
+        nome: contatoNome || 'Desconhecido',
+        telefone: contatoTelefone,
+        tags: ['chat']
+      });
+    }
+
+    // Registrar interação
+    await contatoRepo.registrarInteracao(contato.id, empresaId, 'mensagem');
+
+    // Criar ou buscar conversa
+    console.log('[Chat Service] Buscando/Criando conversa para contato:', contato.id);
+    const conversa = await criarOuBuscarConversa(empresaId, instanciaId, contato.id);
+
+    // Criar mensagem
+    const mensagem = await chatRepo.criarMensagem({
+      conversaId: conversa.id,
       empresaId,
-      nome: contatoNome || 'Desconhecido',
-      telefone: contatoTelefone,
-      tags: ['chat']
+      whatsappMensagemId,
+      direcao,
+      tipoMensagem,
+      conteudo,
+      midiaUrl,
+      midiaTipo,
+      midiaNomeArquivo,
+      status: 'recebida',
+      metadados
     });
+
+    console.log('[Chat Service] Mensagem criada com sucesso:', mensagem.id);
+
+    // Emitir evento em tempo real
+    emitirParaConversa(conversa.id, 'nova_mensagem', {
+      mensagem
+    });
+
+    emitirParaEmpresa(empresaId, 'mensagem_recebida', {
+      conversa_id: conversa.id,
+      mensagem,
+      contato
+    });
+
+    return {
+      conversa,
+      mensagem,
+      contato
+    };
+  } catch (erro) {
+    console.error('[Chat Service] Erro ao processar mensagem recebida:', erro);
+    throw erro;
   }
-
-  // Registrar interação
-  await contatoRepo.registrarInteracao(contato.id, empresaId, 'mensagem');
-
-  // Criar ou buscar conversa
-  const conversa = await criarOuBuscarConversa(empresaId, instanciaId, contato.id);
-
-  // Criar mensagem
-  const mensagem = await chatRepo.criarMensagem({
-    conversaId: conversa.id,
-    empresaId,
-    whatsappMensagemId,
-    direcao,
-    tipoMensagem,
-    conteudo,
-    midiaUrl,
-    midiaTipo,
-    midiaNomeArquivo,
-    status: 'recebida',
-    metadados
-  });
-
-  // Emitir evento em tempo real
-  emitirParaConversa(conversa.id, 'nova_mensagem', {
-    mensagem
-  });
-
-  emitirParaEmpresa(empresaId, 'mensagem_recebida', {
-    conversa_id: conversa.id,
-    mensagem,
-    contato
-  });
-
-  return {
-    conversa,
-    mensagem,
-    contato
-  };
 }
 
 /**

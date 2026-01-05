@@ -80,7 +80,7 @@ export default function Usuarios() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/usuarios');
+      const { data } = await api.get('/api/usuarios');
       const userList = data.usuarios || data || [];
       setUsuarios(userList);
       updateStats(userList);
@@ -134,7 +134,7 @@ export default function Usuarios() {
   const handleCreateUser = async () => {
     try {
       setSubmitting(true);
-      await api.post('/usuarios', formData);
+      await api.post('/api/usuarios', formData);
       toast.success('Usuário criado com sucesso!');
       setShowCreateModal(false);
       resetForm();
@@ -152,7 +152,7 @@ export default function Usuarios() {
     try {
       setSubmitting(true);
       const { senha, ...updateData } = formData;
-      await api.put(`/usuarios/${selectedUser.id}`, updateData);
+      await api.put(`/api/usuarios/${selectedUser.id}`, updateData);
       toast.success('Usuário atualizado com sucesso!');
       setShowEditModal(false);
       resetForm();
@@ -167,7 +167,7 @@ export default function Usuarios() {
   const handleToggleStatus = async (user: Usuario) => {
     try {
       const endpoint = user.ativo ? 'desativar' : 'ativar';
-      await api.post(`/usuarios/${user.id}/${endpoint}`);
+      await api.post(`/api/usuarios/${user.id}/${endpoint}`);
       toast.success(`Usuário ${user.ativo ? 'desativado' : 'ativado'} com sucesso!`);
       loadUsers();
     } catch (error: any) {
@@ -177,7 +177,7 @@ export default function Usuarios() {
 
   const handleResetPassword = async (user: Usuario) => {
     try {
-      await api.post(`/usuarios/${user.id}/redefinir-senha`);
+      await api.post(`/api/usuarios/${user.id}/redefinir-senha`);
       toast.success('Email de redefinição enviado!');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erro ao enviar email');
@@ -189,7 +189,7 @@ export default function Usuarios() {
 
     try {
       setSubmitting(true);
-      await api.delete(`/usuarios/${selectedUser.id}`);
+      await api.delete(`/api/usuarios/${selectedUser.id}`);
       toast.success('Usuário excluído com sucesso!');
       setShowDeleteModal(false);
       setSelectedUser(null);

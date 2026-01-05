@@ -133,7 +133,7 @@ export default function CRM() {
 
   const carregarFunis = async () => {
     try {
-      const response = await api.get('/crm/funis');
+      const response = await api.get('/api/crm/funis');
       const funisAtivos = response.data.funis.filter((f: Funil) => f.ativo);
       setFunis(funisAtivos);
 
@@ -149,7 +149,7 @@ export default function CRM() {
   const carregarFunil = async (funilId: string) => {
     setLoading(true);
     try {
-      const response = await api.get(`/crm/funis/${funilId}`);
+      const response = await api.get(`/api/crm/funis/${funilId}`);
       const funil = response.data.funil;
       setEtapas(funil.etapas || []);
     } catch (error) {
@@ -162,7 +162,7 @@ export default function CRM() {
 
   const carregarEstatisticas = async () => {
     try {
-      const response = await api.get('/crm/estatisticas');
+      const response = await api.get('/api/crm/estatisticas');
       setStats(response.data);
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
@@ -219,7 +219,7 @@ export default function CRM() {
 
     // Chamar API
     try {
-      await api.put(`/crm/negociacoes/${negociacaoId}/mover`, {
+      await api.put(`/api/crm/negociacoes/${negociacaoId}/mover`, {
         etapa_id: novaEtapaId,
       });
       toast.success('Negociação movida com sucesso!');
@@ -266,7 +266,7 @@ export default function CRM() {
     setCreatingFunnel(true);
 
     try {
-      await api.post('/crm/funis', {
+      await api.post('/api/crm/funis', {
         nome: newFunnelName,
         descricao: newFunnelDescription,
       });
@@ -286,7 +286,7 @@ export default function CRM() {
 
   const handleToggleFunnelStatus = async (funilId: string, ativo: boolean) => {
     try {
-      await api.put(`/crm/funis/${funilId}`, { ativo: !ativo });
+      await api.put(`/api/crm/funis/${funilId}`, { ativo: !ativo });
       toast.success(`Funil ${!ativo ? 'ativado' : 'desativado'} com sucesso!`);
       await carregarFunis();
     } catch (error: any) {
@@ -468,7 +468,7 @@ export default function CRM() {
           <DragOverlay>
             {activeDragNegociacao && (
               <div className="opacity-50 cursor-grabbing">
-                <DealCard negociacao={activeDragNegociacao} onClick={() => {}} />
+                <DealCard negociacao={activeDragNegociacao} onClick={() => { }} />
               </div>
             )}
           </DragOverlay>
@@ -572,11 +572,10 @@ export default function CRM() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          funil.ativo
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${funil.ativo
                             ? 'bg-green-500/20 text-green-300'
                             : 'bg-gray-500/20 text-gray-300'
-                        }`}>
+                          }`}>
                           {funil.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                         <Button
