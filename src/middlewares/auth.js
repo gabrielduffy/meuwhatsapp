@@ -39,25 +39,31 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// Autenticação por instância (API Key + Instance Token)
+// Autenticação por instância (API Key OU Instance Token)
 function instanceAuthMiddleware(req, res, next) {
   const apiKey = req.headers['x-api-key'] || req.query.apikey;
   const instanceToken = req.headers['x-instance-token'] || req.query.instancetoken;
   const instanceName = req.params.instanceName || req.body?.instanceName;
 
-  // Primeiro verificar API Key global
-  if (!apiKey || apiKey !== API_KEY) {
-    return res.status(401).json({ error: 'API Key inválida' });
+  // 1. Verificar API Key global (Admin)
+  if (apiKey && apiKey === API_KEY) {
+    return next();
   }
 
-  // Se tiver token de instância, validar
-  if (instanceToken && instanceName) {
-    if (instanceTokens[instanceName] && instanceTokens[instanceName] !== instanceToken) {
-      return res.status(401).json({ error: 'Token de instância inválido' });
+  // 2. Se não for admin, verificar se tem Token de Instância válido para esta instância
+  if (instanceName && instanceToken) {
+    const validToken = instanceTokens[instanceName];
+    if (validToken && validToken === instanceToken) {
+      return next();
     }
   }
 
-  next();
+  // 3. Se nenhum for válido
+  return res.status(401).json({
+    success: false,
+    error: 'Não autorizado',
+    message: 'Forneça uma API Key válida ou o Instance Token correto.'
+  });
 }
 
 // Middleware para validar se instância existe

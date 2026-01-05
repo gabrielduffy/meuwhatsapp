@@ -95,6 +95,29 @@ async function repararBanco() {
           )
         `);
 
+        // 5. Garantir colunas em instances (SaaS base)
+        try {
+            const colsInstances = [
+                { nome: 'empresa_id', tipo: 'UUID' },
+                { nome: 'token', tipo: 'VARCHAR(255)' }
+            ];
+
+            for (const col of colsInstances) {
+                const res = await query(`
+              SELECT column_name 
+              FROM information_schema.columns 
+              WHERE table_name = 'instances' AND column_name = $1
+            `, [col.nome]);
+
+                if (res.rows.length === 0) {
+                    logger.info(`Adicionando coluna instances.${col.nome}...`);
+                    await query(`ALTER TABLE instances ADD COLUMN ${col.nome} ${col.tipo}`);
+                }
+            }
+        } catch (err) {
+            logger.error('Erro ao reparar tabela instances:', err.message);
+        }
+
         logger.info('Reparo do banco concluído.');
     } catch (error) {
         logger.error('Erro crítico no reparo do banco:', error.message);

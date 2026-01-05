@@ -227,7 +227,7 @@ app.use((req, res, next) => {
   }
 
   if (legacyApiPrefixes.some(p => path.startsWith(p))) {
-    return authMiddleware(req, res, next);
+    return instanceAuthMiddleware(req, res, next);
   }
 
   // 4. Se for qualquer outra coisa (provavelmente rota do React Router), deixar passar

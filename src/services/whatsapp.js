@@ -121,9 +121,22 @@ async function createInstance(instanceName, options = {}) {
     lastActivity: new Date().toISOString()
   };
 
-  // Salvar token
+  // Salvar token em memória e arquivo
   instanceTokens[instanceName] = instanceToken;
   saveInstanceTokens();
+
+  // Salvar no banco (SaaS / Multi-tenant) para persistência robusta
+  try {
+    const empresaId = options.empresaId || await getEmpresaPadraoId();
+    await query(`
+      INSERT INTO instances (instance_name, token, empresa_id, status)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (instance_name) DO UPDATE 
+      SET token = EXCLUDED.token, status = EXCLUDED.status, updated_at = NOW()
+    `, [instanceName, instanceToken, empresaId, 'connecting']);
+  } catch (err) {
+    console.warn(`[${instanceName}] Falha ao persistir no banco (ignorado):`, err.message);
+  }
 
   // Inicializar métricas (soft fail)
   try {
@@ -157,6 +170,10 @@ async function createInstance(instanceName, options = {}) {
         qrcode: qr,
         qrcodeBase64: instances[instanceName].qrCodeBase64
       });
+
+      // Persistir QR no banco
+      query('UPDATE instances SET qr_code = $1, status = $2, updated_at = NOW() WHERE instance_name = $3',
+        [qr, 'qr', instanceName]).catch(e => console.error('Erro ao salvar QR no banco:', e.message));
     }
 
     if (connection === 'connecting') {
@@ -182,6 +199,10 @@ async function createInstance(instanceName, options = {}) {
         status: 'connected',
         user: socket.user
       });
+
+      // Persistir status no banco
+      query('UPDATE instances SET status = $1, phone_number = $2, qr_code = NULL, last_connected_at = NOW(), updated_at = NOW() WHERE instance_name = $3',
+        ['connected', socket.user?.id?.split(':')[0], instanceName]).catch(e => console.error('Erro ao salvar status no banco:', e.message));
     }
 
     if (connection === 'close') {
@@ -203,6 +224,10 @@ async function createInstance(instanceName, options = {}) {
         statusCode,
         willReconnect: shouldReconnect
       });
+
+      // Persistir status no banco
+      query('UPDATE instances SET status = $1, updated_at = NOW() WHERE instance_name = $2',
+        ['disconnected', instanceName]).catch(e => console.error('Erro ao salvar status logout no banco:', e.message));
 
       if (shouldReconnect) {
         const reconnectDelay = 5000;

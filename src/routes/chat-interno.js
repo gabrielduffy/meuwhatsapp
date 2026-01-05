@@ -138,6 +138,43 @@ router.post('/conversas/:id/marcar-lida', async (req, res) => {
 });
 
 // =====================================================
+// ADMINISTRAÇÃO DE CONVERSAS
+// =====================================================
+
+/**
+ * DELETE /api/chat/conversas/todas
+ * Limpar todas as conversas da empresa (CUIDADO!)
+ */
+router.delete('/conversas/todas', async (req, res) => {
+  try {
+    const conversas = await chatServico.limparTodasConversas(req.empresaId);
+
+    res.json({
+      mensagem: 'Todas as conversas foram deletadas com sucesso',
+      total: conversas.length
+    });
+  } catch (erro) {
+    console.error('[Chat] Erro ao limpar todas as conversas:', erro);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
+/**
+ * DELETE /api/chat/conversas/:id
+ * Deletar conversa individual
+ */
+router.delete('/conversas/:id', async (req, res) => {
+  try {
+    await chatServico.deletarConversa(req.empresaId, req.params.id);
+
+    res.json({ mensagem: 'Conversa deletada com sucesso' });
+  } catch (erro) {
+    console.error('[Chat] Erro ao deletar conversa:', erro);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
+// =====================================================
 // MENSAGENS
 // =====================================================
 

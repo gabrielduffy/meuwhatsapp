@@ -93,13 +93,32 @@ async function listarConversas(empresaId, filtros = {}) {
     SELECT c.*,
            ct.nome as contato_nome,
            ct.telefone as contato_telefone,
-           u.nome as atribuido_nome,
-           (SELECT conteudo FROM mensagens_chat WHERE conversa_id = c.id ORDER BY criado_em DESC LIMIT 1) as ultima_mensagem
+           u.nome as atribuido_nome
     FROM conversas_chat c
     LEFT JOIN contatos ct ON c.contato_id = ct.id
     LEFT JOIN usuarios u ON c.atribuido_para = u.id
     WHERE c.empresa_id = $1
   `;
+
+  // Subconsulta para última mensagem (com fallback para tipo de mídia se conteúdo for vazio)
+  const subqueryUltimaMensagem = `
+    (SELECT 
+      CASE 
+        WHEN conteudo IS NOT NULL AND conteudo != '' THEN conteudo
+        WHEN tipo_mensagem = 'imagem' THEN '📷 Imagem'
+        WHEN tipo_mensagem = 'audio' THEN '🎙️ Áudio'
+        WHEN tipo_mensagem = 'video' THEN '🎥 Vídeo'
+        WHEN tipo_mensagem = 'documento' THEN '📄 Documento'
+        WHEN tipo_mensagem = 'sticker' THEN '🏷️ Figuninha'
+        ELSE 'Mensagem de mídia'
+      END
+     FROM mensagens_chat 
+     WHERE conversa_id = c.id 
+     ORDER BY criado_em DESC 
+     LIMIT 1) as ultima_mensagem
+  `;
+
+  sql = sql.replace('c.*,', `c.*, ${subqueryUltimaMensagem},`);
 
   const params = [empresaId];
   let paramIndex = 2;
@@ -448,6 +467,32 @@ async function atualizarWhatsAppId(id, whatsappMensagemId) {
   return resultado.rows[0];
 }
 
+/**
+ * Deletar conversa individual (e suas mensagens)
+ */
+async function deletarConversa(id, empresaId) {
+  // Deletar mensagens primeiro
+  await query('DELETE FROM mensagens_chat WHERE conversa_id = $1 AND empresa_id = $2', [id, empresaId]);
+
+  // Deletar conversa
+  const sql = 'DELETE FROM conversas_chat WHERE id = $1 AND empresa_id = $2 RETURNING *';
+  const resultado = await query(sql, [id, empresaId]);
+  return resultado.rows[0];
+}
+
+/**
+ * Deletar TODAS as conversas da empresa
+ */
+async function deletarTodasConversas(empresaId) {
+  // Deletar mensagens primeiro
+  await query('DELETE FROM mensagens_chat WHERE empresa_id = $1', [empresaId]);
+
+  // Deletar conversas
+  const sql = 'DELETE FROM conversas_chat WHERE empresa_id = $1 RETURNING *';
+  const resultado = await query(sql, [empresaId]);
+  return resultado.rows;
+}
+
 module.exports = {
   // Conversas
   criarConversa,
@@ -468,5 +513,7 @@ module.exports = {
   buscarMensagemPorWhatsAppId,
   atualizarWhatsAppId,
   atualizarStatusMensagem,
-  deletarMensagem
+  deletarMensagem,
+  deletarConversa,
+  deletarTodasConversas
 };

@@ -442,6 +442,38 @@ async function obterMetricas(empresaId, usuarioId = null) {
   };
 }
 
+/**
+ * Deletar conversa individual
+ */
+async function deletarConversa(empresaId, conversaId) {
+  const conversa = await chatRepo.deletarConversa(conversaId, empresaId);
+
+  if (!conversa) {
+    throw new Error('Conversa não encontrada');
+  }
+
+  // Emitir evento
+  emitirParaEmpresa(empresaId, 'conversa_deletada', {
+    conversa_id: conversaId
+  });
+
+  return conversa;
+}
+
+/**
+ * Limpar todas as conversas da empresa
+ */
+async function limparTodasConversas(empresaId) {
+  const conversas = await chatRepo.deletarTodasConversas(empresaId);
+
+  // Emitir evento global para a empresa
+  emitirParaEmpresa(empresaId, 'todas_conversas_deletadas', {
+    total: conversas.length
+  });
+
+  return conversas;
+}
+
 module.exports = {
   configurarSocketIO,
   emitirParaEmpresa,
@@ -465,5 +497,9 @@ module.exports = {
 
   // Estatísticas
   obterEstatisticas,
-  obterMetricas
+  obterMetricas,
+
+  // Administração de Dados
+  deletarConversa,
+  limparTodasConversas
 };

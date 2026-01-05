@@ -114,7 +114,30 @@ router.post('/send-image', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar documento
+/**
+ * @swagger
+ * /message/send-document:
+ *   post:
+ *     summary: Enviar documento
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, documentUrl]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               documentUrl: { type: string, example: "https://exemplo.com/documento.pdf" }
+ *               fileName: { type: string, example: "manual.pdf" }
+ *               mimetype: { type: string, example: "application/pdf" }
+ *               caption: { type: string, example: "Aqui está o manual solicitado" }
+ *     responses:
+ *       200:
+ *         description: Documento enviado
+ */
 router.post('/send-document', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'documentUrl'])) return;
@@ -127,7 +150,28 @@ router.post('/send-document', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar áudio
+/**
+ * @swagger
+ * /message/send-audio:
+ *   post:
+ *     summary: Enviar áudio (Gravado/PTT ou Arquivo)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, audioUrl]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               audioUrl: { type: string, example: "https://exemplo.com/audio.mp3" }
+ *               ptt: { type: boolean, example: true, description: "Se true, envia como se tivesse sido gravado na hora" }
+ *     responses:
+ *       200:
+ *         description: Áudio enviado
+ */
 router.post('/send-audio', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'audioUrl'])) return;
@@ -140,7 +184,28 @@ router.post('/send-audio', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar vídeo
+/**
+ * @swagger
+ * /message/send-video:
+ *   post:
+ *     summary: Enviar vídeo
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, videoUrl]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               videoUrl: { type: string, example: "https://exemplo.com/video.mp4" }
+ *               caption: { type: string, example: "Veja este vídeo" }
+ *     responses:
+ *       200:
+ *         description: Vídeo enviado
+ */
 router.post('/send-video', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'videoUrl'])) return;
@@ -153,7 +218,27 @@ router.post('/send-video', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar sticker
+/**
+ * @swagger
+ * /message/send-sticker:
+ *   post:
+ *     summary: Enviar Figuninha (Sticker)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, stickerUrl]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               stickerUrl: { type: string, example: "https://exemplo.com/sticker.webp" }
+ *     responses:
+ *       200:
+ *         description: Figurinha enviada
+ */
 router.post('/send-sticker', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'stickerUrl'])) return;
@@ -166,7 +251,30 @@ router.post('/send-sticker', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar localização
+/**
+ * @swagger
+ * /message/send-location:
+ *   post:
+ *     summary: Enviar localização
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, latitude, longitude]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               latitude: { type: number, example: -23.550520 }
+ *               longitude: { type: number, example: -46.633308 }
+ *               name: { type: string, example: "Praça da Sé" }
+ *               address: { type: string, example: "São Paulo, SP" }
+ *     responses:
+ *       200:
+ *         description: Localização enviada
+ */
 router.post('/send-location', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'latitude', 'longitude'])) return;
@@ -179,7 +287,28 @@ router.post('/send-location', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar contato
+/**
+ * @swagger
+ * /message/send-contact:
+ *   post:
+ *     summary: Enviar card de contato (VCard)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, contactName, contactNumber]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               contactName: { type: string, example: "Suporte Técnico" }
+ *               contactNumber: { type: string, example: "5511999998888" }
+ *     responses:
+ *       200:
+ *         description: Contato enviado
+ */
 router.post('/send-contact', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'contactName', 'contactNumber'])) return;
@@ -192,33 +321,29 @@ router.post('/send-contact', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar botões
-router.post('/send-buttons', messageLimiter, async (req, res) => {
-  try {
-    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'text', 'buttons'])) return;
-
-    const { instanceName, to, text, buttons, footer, options } = req.body;
-    const result = await whatsapp.sendButtons(instanceName, to, text, buttons, footer, options || {});
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Enviar lista
-router.post('/send-list', messageLimiter, async (req, res) => {
-  try {
-    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'title', 'description', 'buttonText', 'sections'])) return;
-
-    const { instanceName, to, title, description, buttonText, sections, footer, options } = req.body;
-    const result = await whatsapp.sendList(instanceName, to, title, description, buttonText, sections, footer, options || {});
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Enviar enquete
+/**
+ * @swagger
+ * /message/send-poll:
+ *   post:
+ *     summary: Enviar Enquete (Poll)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, name, values]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               name: { type: string, example: "Qual o melhor dia para a reunião?" }
+ *               values: { type: array, items: { type: string }, example: ["Segunda", "Quarta", "Sexta"] }
+ *               selectableCount: { type: integer, example: 1 }
+ *     responses:
+ *       200:
+ *         description: Enquete enviada
+ */
 router.post('/send-poll', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'name', 'values'])) return;
@@ -231,7 +356,118 @@ router.post('/send-poll', messageLimiter, async (req, res) => {
   }
 });
 
-// Enviar reação
+/**
+ * @swagger
+ * /message/send-buttons:
+ *   post:
+ *     summary: Enviar Botões Interativos
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, text, buttons]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               text: { type: string, example: "Escolha uma opção:" }
+ *               footer: { type: string, example: "WhatsBenemax API" }
+ *               buttons: 
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string, example: "btn1" }
+ *                     text: { type: string, example: "Opção 1" }
+ *     responses:
+ *       200:
+ *         description: Botões enviados
+ */
+router.post('/send-buttons', messageLimiter, async (req, res) => {
+  try {
+    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'text', 'buttons'])) return;
+
+    const { instanceName, to, text, buttons, footer, options } = req.body;
+    const result = await whatsapp.sendButtons(instanceName, to, text, buttons, footer, options || {});
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /message/send-list:
+ *   post:
+ *     summary: Enviar Listas (Menu)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, title, description, buttonText, sections]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               title: { type: string, example: "Menu de Opções" }
+ *               description: { type: string, example: "Selecione um serviço abaixo" }
+ *               buttonText: { type: string, example: "Ver Catálogo" }
+ *               sections:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     title: { type: string, example: "Categoria 1" }
+ *                     rows:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           title: { type: string, example: "Item 1" }
+ *                           description: { type: string, example: "Descrição do item" }
+ *                           rowId: { type: string, example: "id1" }
+ *     responses:
+ *       200:
+ *         description: Lista enviada
+ */
+router.post('/send-list', messageLimiter, async (req, res) => {
+  try {
+    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'title', 'description', 'buttonText', 'sections'])) return;
+
+    const { instanceName, to, title, description, buttonText, sections, footer, options } = req.body;
+    const result = await whatsapp.sendList(instanceName, to, title, description, buttonText, sections, footer, options || {});
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /message/send-reaction:
+ *   post:
+ *     summary: Enviar Reação (Emoji)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, messageId, emoji]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               messageId: { type: string, example: "ABC12345" }
+ *               emoji: { type: string, example: "👍" }
+ *     responses:
+ *       200:
+ *         description: Reação enviada
+ */
 router.post('/send-reaction', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'messageId', 'emoji'])) return;
@@ -244,7 +480,27 @@ router.post('/send-reaction', messageLimiter, async (req, res) => {
   }
 });
 
-// Encaminhar mensagem
+/**
+ * @swagger
+ * /message/forward:
+ *   post:
+ *     summary: Encaminhar Mensagem
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, message]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               to: { type: string, example: "5511999999999" }
+ *               message: { type: object, description: "Objeto bruto da mensagem original" }
+ *     responses:
+ *       200:
+ *         description: Mensagem encaminhada
+ */
 router.post('/forward', messageLimiter, async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'to', 'message'])) return;
@@ -257,7 +513,28 @@ router.post('/forward', messageLimiter, async (req, res) => {
   }
 });
 
-// Deletar mensagem
+/**
+ * @swagger
+ * /message/delete:
+ *   post:
+ *     summary: Deletar Mensagem (Revogar)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, remoteJid, messageId]
+ *             properties:
+ *               instanceName: { type: string, example: "instancia_teste" }
+ *               remoteJid: { type: string, example: "5511999999999@s.whatsapp.net" }
+ *               messageId: { type: string }
+ *               forEveryone: { type: boolean, example: true }
+ *     responses:
+ *       200:
+ *         description: Mensagem deletada
+ */
 router.post('/delete', async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'remoteJid', 'messageId'])) return;
@@ -270,7 +547,27 @@ router.post('/delete', async (req, res) => {
   }
 });
 
-// Marcar como lido
+/**
+ * @swagger
+ * /message/mark-read:
+ *   post:
+ *     summary: Marcar Mensagens como Lidas
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, remoteJid, messageIds]
+ *             properties:
+ *               instanceName: { type: string }
+ *               remoteJid: { type: string }
+ *               messageIds: { type: array, items: { type: string } }
+ *     responses:
+ *       200:
+ *         description: Marcado como lido
+ */
 router.post('/mark-read', async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'remoteJid', 'messageIds'])) return;
@@ -283,13 +580,32 @@ router.post('/mark-read', async (req, res) => {
   }
 });
 
-// Atualizar presença
+/**
+ * @swagger
+ * /message/presence:
+ *   post:
+ *     summary: Atualizar Status de Presença (Digitando...)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, remoteJid, presence]
+ *             properties:
+ *               instanceName: { type: string }
+ *               remoteJid: { type: string }
+ *               presence: { type: string, enum: ["available", "unavailable", "composing", "recording", "paused"] }
+ *     responses:
+ *       200:
+ *         description: Presença atualizada
+ */
 router.post('/presence', async (req, res) => {
   try {
     if (!validateMessageRequest(req, res, ['instanceName', 'remoteJid', 'presence'])) return;
 
     const { instanceName, remoteJid, presence } = req.body;
-    // presence: 'available' | 'unavailable' | 'composing' | 'recording' | 'paused'
     const result = await whatsapp.updatePresence(instanceName, remoteJid, presence);
     res.json(result);
   } catch (error) {
