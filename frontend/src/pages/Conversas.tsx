@@ -113,8 +113,8 @@ export default function Conversas() {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mouseup', handleClickOutside);
+    return () => document.removeEventListener('mouseup', handleClickOutside);
   }, []);
 
   const loadInstances = async () => {
@@ -206,10 +206,15 @@ export default function Conversas() {
     loadConversas(id);
   };
 
+  const handleAction = (label: string) => {
+    toast.success(`${label} em desenvolvimento`);
+    setShowDropdown(false);
+  };
+
   const handleDeletarConversa = async () => {
     if (!conversaSelecionada) return;
 
-    if (!confirm('Tem certeza que deseja excluir esta conversa? Todos os dados serão perdidos.')) return;
+    if (!window.confirm('Tem certeza que deseja excluir esta conversa? Todos os dados serão perdidos.')) return;
 
     try {
       await api.delete(`/api/chat/conversas/${conversaSelecionada.id}`);
@@ -221,6 +226,29 @@ export default function Conversas() {
     } catch (error) {
       toast.error('Erro ao excluir conversa');
       console.error(error);
+    }
+  };
+
+  const handleFecharConversa = async () => {
+    if (!conversaSelecionada) return;
+    try {
+      await api.post(`/api/chat/conversas/${conversaSelecionada.id}/fechar`);
+      toast.success('Conversa fechada');
+      setShowDropdown(false);
+      loadConversas();
+    } catch (error) {
+      toast.error('Erro ao fechar conversa');
+    }
+  };
+
+  const handleArquivarConversa = async () => {
+    if (!conversaSelecionada) return;
+    try {
+      toast.success('Conversa arquivada (Visual)');
+      setShowDropdown(false);
+      loadConversas();
+    } catch (error) {
+      toast.error('Erro ao arquivar');
     }
   };
 
@@ -497,33 +525,57 @@ export default function Conversas() {
                   </button>
 
                   {showDropdown && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1">
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div
+                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => handleAction('IA')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <Bot className="w-4 h-4 text-purple-500" />
                         Ativar Agente IA
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={() => handleAction('Contato')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <UserPlus className="w-4 h-4 text-blue-500" />
                         Criar contato
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={() => handleAction('Reunião')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <Calendar className="w-4 h-4 text-green-500" />
                         Agendar reunião
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={() => handleAction('Etiquetas')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <Tags className="w-4 h-4 text-yellow-500" />
                         Gerenciar Etiquetas
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={() => handleAction('Transferir')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <Share2 className="w-4 h-4 text-indigo-500" />
                         Transferir
                       </button>
                       <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={handleFecharConversa}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         Fechar conversa
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <button
+                        onClick={handleArquivarConversa}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
                         <Archive className="w-4 h-4 text-orange-500" />
                         Arquivar
                       </button>

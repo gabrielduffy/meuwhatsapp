@@ -16,10 +16,10 @@ import toast from 'react-hot-toast';
 
 // Categorias da API
 const CATEGORIES = [
-    { id: 'auth', label: 'Autenticação', icon: Shield },
-    { id: 'instances', label: 'Instâncias', icon: Smartphone },
-    { id: 'messages', label: 'Mensagens', icon: MessageSquare },
-    { id: 'webhooks', label: 'Webhooks', icon: Globe },
+    { id: 'auth', label: 'Autenticação & Segurança', icon: Shield },
+    { id: 'instances', label: 'Gestão de Instâncias', icon: Smartphone },
+    { id: 'messages', label: 'Mensagens Avançadas', icon: MessageSquare },
+    { id: 'webhooks', label: 'Webhooks & Eventos', icon: Globe },
 ];
 
 // Dados da Documentação
@@ -29,40 +29,50 @@ const ENDPOINTS = {
             method: 'GET',
             path: '/instance/list',
             title: 'Listar Instâncias',
-            description: 'Retorna todas as instâncias criadas e seus status.',
+            description: 'Retorna todas as suas conexões ativas, status e tokens de segurança.',
             params: [],
             response: `{
   "status": "success",
   "data": [
     {
-      "name": "instancia_1",
-      "status": "connected"
+      "instanceName": "Comercial_01",
+      "status": "connected",
+      "token": "inst_7f...8a"
     }
   ]
+}`
+        },
+        {
+            method: 'POST',
+            path: '/instance/create',
+            title: 'Criar Nova Conexão',
+            description: 'Inicializa uma nova instância do WhatsApp. Você pode definir um token customizado ou deixar que o sistema gere um seguro para você.',
+            body: `{
+  "instanceName": "Suporte_Vendas",
+  "token": "seu_token_customizado_opcional"
+}`,
+            response: `{
+  "status": "success",
+  "message": "Instância criada com sucesso",
+  "token": "token_gerado_ou_enviado"
 }`
         }
     ],
     instances: [
         {
-            method: 'POST',
-            path: '/instance/create',
-            title: 'Criar Instância',
-            description: 'Cria uma nova instância do WhatsApp.',
-            body: `{
-  "instanceName": "minha_instancia",
-  "token": "seu_token_opcional"
-}`,
-            response: `{
-  "status": "success",
-  "qrcode": "data:image/png;base64,..."
-}`
+            method: 'GET',
+            path: '/instance/qr/{instanceName}',
+            title: 'Obter QR Code',
+            description: 'Retorna o QR Code atual da instância em base64 para conexão.',
+            params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],
+            response: `{ "qrcode": "data:image/png;base64,iVBORw..." }`
         },
         {
-            method: 'DELETE',
-            path: '/instance/delete/{instanceName}',
-            title: 'Deletar Instância',
-            description: 'Remove uma instância e desconecta do WhatsApp.',
-            params: [{ name: 'instanceName', type: 'string', desc: 'Nome da instância' }],
+            method: 'POST',
+            path: '/instance/logout/{instanceName}',
+            title: 'Desconectar WhatsApp',
+            description: 'Realiza o logout da conta do WhatsApp, mas mantém a instância configurada.',
+            params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],
             response: `{ "status": "success" }`
         }
     ],
@@ -70,55 +80,71 @@ const ENDPOINTS = {
         {
             method: 'POST',
             path: '/message/send-text',
-            title: 'Enviar Texto',
-            description: 'Envia uma mensagem de texto simples.',
+            title: 'Texto com Preview',
+            description: 'Envia mensagens de texto com suporte a preview de links e formatação WhatsApp.',
             body: `{
-  "instanceName": "instancia_1",
+  "instanceName": "Comercial",
   "to": "5511999999999",
-  "text": "Olá do Bot!"
+  "text": "Olá! Conheça nosso site: https://whatsbenemax.com"
 }`,
-            response: `{
-  "key": { "id": "..." },
-  "status": "PENDING"
-}`
+            response: `{ "messageId": "BAE5..." }`
         },
         {
             method: 'POST',
-            path: '/message/send-image',
-            title: 'Enviar Imagem',
-            description: 'Envia uma imagem via URL.',
+            path: '/message/send-buttons',
+            title: 'Mensagem com Botões (Exclusivo)',
+            description: 'Envia uma mensagem interativa com botões de clique rápido.',
             body: `{
-  "instanceName": "instancia_1",
+  "instanceName": "Vendas",
   "to": "5511999999999",
-  "imageUrl": "https://exemplo.com/foto.jpg",
-  "caption": "Legenda opcional"
+  "text": "Como podemos ajudar hoje?",
+  "buttons": [
+    {"id": "1", "text": "Planos"},
+    {"id": "2", "text": "Suporte"}
+  ]
 }`,
-            response: `{ "status": "PENDING" }`
+            response: `{ "status": "success" }`
         },
         {
             method: 'POST',
-            path: '/message/send-audio',
-            title: 'Enviar Áudio',
-            description: 'Envia um arquivo de áudio (MP3/OGG).',
+            path: '/message/send-poll',
+            title: 'Criar Enquete',
+            description: 'Envia uma enquete interativa diretamente no chat do cliente.',
             body: `{
-    "instanceName": "instancia_1",
-    "to": "5511999999999",
-    "audioUrl": "https://exemplo.com/audio.mp3",
-    "ptt": true
-  }`,
-            response: `{ "status": "PENDING" }`
+  "instanceName": "Feedback",
+  "to": "5511999999999",
+  "poll": {
+    "name": "Qual sua nota para nosso sistema?",
+    "values": ["10 - Excelente", "8 - Bom", "5 - Médio"],
+    "selectableCount": 1
+  }
+}`,
+            response: `{ "status": "sent" }`
+        },
+        {
+            method: 'POST',
+            path: '/message/send-reaction',
+            title: 'Enviar Reação',
+            description: 'Adiciona uma reação de emoji a uma mensagem específica.',
+            body: `{
+  "instanceName": "Suporte",
+  "to": "5511999999999",
+  "reaction": "🚀",
+  "messageId": "ID_DA_MENSAGEM_ALVO"
+}`,
+            response: `{ "success": true }`
         }
     ],
     webhooks: [
         {
             method: 'POST',
             path: '/webhook/set',
-            title: 'Configurar Webhook',
-            description: 'Define a URL para receber eventos.',
+            title: 'Receber Mensagens em Tempo Real',
+            description: 'Configure sua URL para receber mensagens de texto, imagens e status de leitura.',
             body: `{
-  "instanceName": "instancia_1",
-  "url": "https://seu-sistema.com/webhook",
-  "enabled": true
+  "instanceName": "Producao",
+  "url": "https://api.seu-sistema.com/whats-webhook",
+  "events": ["messages.upsert", "messages.update", "connection.update"]
 }`,
             response: `{ "success": true }`
         }
@@ -204,9 +230,20 @@ export default function Documentacao() {
             {/* Conteúdo Principal */}
             <div className="flex-1 overflow-y-auto p-8">
                 <div className="max-w-4xl mx-auto space-y-8">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">{CATEGORIES.find(c => c.id === activeCategory)?.label}</h1>
-                        <p className="text-gray-400">Explore os endpoints disponíveis para integração.</p>
+                    <div className="mb-8 flex justify-between items-start">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">{CATEGORIES.find(c => c.id === activeCategory)?.label}</h1>
+                            <p className="text-gray-400">Explore os endpoints disponíveis para integração.</p>
+                        </div>
+                        <a
+                            href="https://meuwhatsapp-meuwhatsapp.ax5glv.easypanel.host/api-docs"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-lg shadow-purple-500/20"
+                        >
+                            <Globe className="w-4 h-4" />
+                            Ver Swagger Completo
+                        </a>
                     </div>
 
                     {/* Listagem de Endpoints */}
