@@ -23,6 +23,7 @@ router.get('/conversas', async (req, res) => {
       atribuidoPara: req.query.atribuido_para,
       departamento: req.query.departamento,
       naoLidas: req.query.nao_lidas === 'true',
+      instanciaId: req.query.instancia_id,
       limite: parseInt(req.query.limite) || 50,
       offset: parseInt(req.query.offset) || 0
     };

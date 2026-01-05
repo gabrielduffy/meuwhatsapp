@@ -145,6 +145,12 @@ async function listarConversas(empresaId, filtros = {}) {
     sql += ` AND c.nao_lidas > 0`;
   }
 
+  if (filtros.instanciaId) {
+    sql += ` AND c.instancia_id = $${paramIndex}`;
+    params.push(filtros.instanciaId);
+    paramIndex++;
+  }
+
   sql += ' ORDER BY c.ultima_mensagem_em DESC NULLS LAST, c.criado_em DESC';
 
   if (filtros.limite) {
