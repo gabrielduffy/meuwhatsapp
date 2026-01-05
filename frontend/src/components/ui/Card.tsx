@@ -23,10 +23,40 @@ export default function Card({
   className = '',
   onClick,
 }: CardProps) {
-  const Component = onClick ? motion.button : motion.div;
+  if (onClick) {
+    return (
+      <motion.button
+        whileHover={hover ? { y: -5, scale: 1.02 } : {}}
+        className={`
+          relative overflow-hidden
+          rounded-2xl p-6
+          border
+          shadow-xl
+          transition-all duration-300
+          ${variants[variant]}
+          ${hover ? 'hover:shadow-2xl' : ''}
+          cursor-pointer
+          ${className}
+        `}
+        onClick={onClick}
+      >
+        {hover && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
+        )}
+
+        {variant === 'neon' && hover && (
+          <div className="absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <div className="absolute inset-0 rounded-2xl border-2 border-cyan-400 blur-sm" />
+          </div>
+        )}
+
+        <div className="relative z-10">{children}</div>
+      </motion.button>
+    );
+  }
 
   return (
-    <Component
+    <motion.div
       whileHover={hover ? { y: -5, scale: 1.02 } : {}}
       className={`
         relative overflow-hidden
@@ -36,17 +66,13 @@ export default function Card({
         transition-all duration-300
         ${variants[variant]}
         ${hover ? 'hover:shadow-2xl' : ''}
-        ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}
-      onClick={onClick}
     >
-      {/* Glow effect on hover */}
       {hover && (
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
       )}
 
-      {/* Neon border on hover for neon variant */}
       {variant === 'neon' && hover && (
         <div className="absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
           <div className="absolute inset-0 rounded-2xl border-2 border-cyan-400 blur-sm" />
@@ -54,6 +80,6 @@ export default function Card({
       )}
 
       <div className="relative z-10">{children}</div>
-    </Component>
+    </motion.div>
   );
 }
