@@ -46,10 +46,35 @@ async function autenticarMiddleware(req, res, next) {
     }
 
     // Verificar token
-    const payload = verificarToken(token);
+    let usuarioId;
+
+    try {
+      const payload = verificarToken(token);
+      usuarioId = payload.usuarioId;
+    } catch (e) {
+      // Se JWT falhar, verifica se é um API TOKEN
+      // Apenas se o formato parecer um UUID (para evitar query desnecessária com strings JWT longas)
+      if (token.length < 100) { // UUID tem 36, assumindo token simples
+        const { query } = require('../config/database');
+        // Verifica se coluna existe primeiro para evitar erro em migração pendente? O setup já deve ter rodado.
+        // Mas por segurança, wrap em try
+        try {
+          const userRes = await query('SELECT id FROM usuarios WHERE api_token = $1', [token]);
+          if (userRes && userRes.rows.length > 0) {
+            usuarioId = userRes.rows[0].id;
+          } else {
+            throw e; // Não achou token
+          }
+        } catch (dbErr) {
+          throw e; // Erro de DB ou coluna inexistente
+        }
+      } else {
+        throw e;
+      }
+    }
 
     // Buscar usuário
-    const usuario = await usuarioRepositorio.buscarPorId(payload.usuarioId);
+    const usuario = await usuarioRepositorio.buscarPorId(usuarioId);
     if (!usuario || !usuario.ativo) {
       return res.status(401).json({ erro: 'Usuário não encontrado ou inativo' });
     }
