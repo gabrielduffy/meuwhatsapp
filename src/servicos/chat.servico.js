@@ -251,7 +251,8 @@ async function receberMensagem(empresaId, instanciaId, dadosMensagem) {
     midiaUrl,
     midiaTipo,
     midiaNomeArquivo,
-    metadados
+    metadados,
+    direcao = 'recebida' // Default value
   } = dadosMensagem;
 
   // Criar ou buscar contato
@@ -277,7 +278,7 @@ async function receberMensagem(empresaId, instanciaId, dadosMensagem) {
     conversaId: conversa.id,
     empresaId,
     whatsappMensagemId,
-    direcao: 'recebida',
+    direcao,
     tipoMensagem,
     conteudo,
     midiaUrl,

@@ -3,6 +3,16 @@ const router = express.Router();
 const { messageLimiter } = require('../middlewares/rateLimit');
 const whatsapp = require('../services/whatsapp');
 
+const chatServico = require('../servicos/chat.servico');
+const { query } = require('../config/database');
+
+async function getEmpresaPadraoId() {
+  try {
+    const res = await query('SELECT id FROM empresas ORDER BY criado_em ASC LIMIT 1');
+    return res.rows[0]?.id;
+  } catch (e) { return null; }
+}
+
 // Helper para validar request
 function validateMessageRequest(req, res, fields = ['instanceName', 'to']) {
   for (const field of fields) {
@@ -43,6 +53,25 @@ router.post('/send-text', messageLimiter, async (req, res) => {
 
     const { instanceName, to, text, options } = req.body;
     const result = await whatsapp.sendText(instanceName, to, text, options || {});
+
+    // Persistir mensagem enviada
+    try {
+      const empresaId = await getEmpresaPadraoId();
+      if (empresaId) {
+        await chatServico.receberMensagem(empresaId, instanceName, {
+          contatoTelefone: to,
+          contatoNome: to, // Melhoraria se o usuário passasse o nome
+          whatsappMensagemId: result.key?.id,
+          tipoMensagem: 'texto',
+          conteudo: text, // O conteúdo real enviado
+          direcao: 'enviada',
+          status: 'enviada'
+        });
+      }
+    } catch (persistErr) {
+      console.error('Erro ao salvar mensagem enviada:', persistErr);
+    }
+
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });

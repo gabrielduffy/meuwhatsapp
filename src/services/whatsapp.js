@@ -302,11 +302,64 @@ async function createInstance(instanceName, options = {}) {
         // Incrementar contador de mensagens recebidas
         incrementMetric(instanceName, 'received');
 
-        // Processar auto-resposta com IA
         const text = extractText(message);
-        if (text) {
+
+        // 1. Tentar Agente IA (SaaS)
+        let processedByAI = false;
+        if (empresaId && text) {
+          try {
+            // Import lazy para evitar circular dependencies se houver
+            const agenteIAServico = require('../servicos/agente-ia.servico');
+            const agenteIARepo = require('../repositorios/agente-ia.repositorio');
+
+            const agente = await agenteIARepo.buscarPorInstancia(instanceName, empresaId);
+
+            if (agente && agente.ativo) {
+              console.log(`[${instanceName}] Agente IA ativo encontrado: ${agente.nome}`);
+
+              // Simular digitando
+              await socket.sendPresenceUpdate('composing', message.key.remoteJid);
+
+              // Processar mensagem
+              const resultadoIA = await agenteIAServico.processarMensagem(agente.id, empresaId, text, {
+                nomeContato: message.pushName || 'Cliente',
+                // TODO: Injetar histórico de mensagens aqui para contexto
+              });
+
+              if (resultadoIA && resultadoIA.resposta) {
+                // Enviar resposta
+                const sentMsg = await socket.sendMessage(message.key.remoteJid, { text: resultadoIA.resposta });
+
+                // Persistir resposta da IA
+                await chatServico.receberMensagem(empresaId, instanceName, {
+                  contatoTelefone: message.key.remoteJid.replace('@s.whatsapp.net', ''),
+                  contatoNome: message.pushName,
+                  whatsappMensagemId: sentMsg.key.id,
+                  tipoMensagem: 'texto',
+                  conteudo: resultadoIA.resposta,
+                  direcao: 'enviada',
+                  status: 'enviada',
+                  metadados: {
+                    agenteId: agente.id,
+                    modelo: resultadoIA.modelo,
+                    tokens: resultadoIA.tokens_usados
+                  }
+                });
+
+                processedByAI = true;
+              }
+
+              await socket.sendPresenceUpdate('paused', message.key.remoteJid);
+            }
+          } catch (aiErr) {
+            console.error(`[${instanceName}] Erro ao processar Agente IA:`, aiErr.message);
+          }
+        }
+
+        // 2. Auto-responder Legado (JSON) - Fallback
+        if (!processedByAI && text) {
           handleIncomingMessage(instanceName, message.key.remoteJid, text).catch(err => {
-            console.error(`[${instanceName}] Erro no auto-responder:`, err.message);
+            console.error(`[${instanceName}] Erro no auto-responder legado:`, err.message);
           });
         }
       }

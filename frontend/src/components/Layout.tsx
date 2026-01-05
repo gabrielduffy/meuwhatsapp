@@ -17,6 +17,7 @@ import {
   Contact,
   Smartphone,
   Send,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,6 +29,7 @@ const menuItems = [
   { label: 'Contatos', path: '/contatos', icon: Contact },
   { label: 'CRM', path: '/crm', icon: GitBranch },
   { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },
+  { label: 'Documentação API', path: '/documentacao', icon: FileText },
   { label: 'Follow-up', path: '/followup', icon: Clock },
   { label: 'Integrações', path: '/integracoes', icon: Workflow },
   { label: 'Usuários', path: '/usuarios', icon: Users },
