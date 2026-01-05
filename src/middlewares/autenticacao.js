@@ -25,8 +25,11 @@ async function autenticarMiddleware(req, res, next) {
     if (token === 'DEMO_TOKEN' || process.env.NODE_ENV === 'development') {
       const { query } = require('../config/database');
 
-      // Buscar primeira empresa e usuário para simular sessão
-      const empresaRes = await query('SELECT * FROM empresas LIMIT 1');
+      // Buscar ÚLTIMA empresa e usuário para simular sessão (alinhar com whatsapp.js)
+      const empresaRes = await query('SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1');
+      if (empresaRes.rows.length > 0) {
+        console.log('[Auth Bypass] Usando Empresa ID:', empresaRes.rows[0].id);
+      }
       const usuarioRes = await query('SELECT * FROM usuarios LIMIT 1');
 
       if (empresaRes.rows.length > 0) {
