@@ -21,8 +21,11 @@ const { query } = require('../config/database');
 async function getEmpresaPadraoId() {
   try {
     // Cache simples em memória poderia ser usado aqui
-    const res = await query('SELECT id FROM empresas ORDER BY criado_em ASC LIMIT 1');
-    return res.rows[0]?.id;
+    // Modificado para pegar a ÚLTIMA empresa criada (assume-se que seja a do usuário atual em single-tenant)
+    const res = await query('SELECT id FROM empresas ORDER BY criado_em DESC LIMIT 1');
+    const id = res.rows[0]?.id;
+    if (id) console.log('[WhatsApp] Empresa padrão detectada:', id);
+    return id;
   } catch (e) {
     console.error('Erro ao buscar empresa padrao:', e);
     return null;
