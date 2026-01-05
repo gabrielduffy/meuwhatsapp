@@ -11,10 +11,7 @@ import {
   Trash2,
   Send,
   CheckCircle,
-  XCircle,
-  Briefcase,
-  User,
-  Clock
+  XCircle
 } from 'lucide-react';
 
 interface DealDetailsModalProps {
