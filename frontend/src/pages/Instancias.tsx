@@ -16,6 +16,7 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
+  Globe,
 } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -77,6 +78,7 @@ export default function Instancias() {
     rejectCalls: false,
     profileName: '',
     profileStatus: '',
+    webhookUrl: '',
   });
 
   // ========================================
@@ -248,16 +250,28 @@ export default function Instancias() {
     // Buscar informações detalhadas
     try {
       const { data } = await api.get(`/instance/${instance.instanceName}/info`);
+
+      // Buscar webhook
+      let currentWebhook = '';
+      try {
+        const webhookRes = await api.get(`/webhook/${instance.instanceName}`);
+        if (webhookRes.data?.webhook) {
+          currentWebhook = webhookRes.data.webhook;
+        }
+      } catch (e) { /* ignore webhook error */ }
+
       setConfigForm({
         rejectCalls: data.rejectCalls || false,
         profileName: data.user?.name || '',
         profileStatus: '',
+        webhookUrl: currentWebhook,
       });
     } catch (error) {
       setConfigForm({
         rejectCalls: false,
         profileName: '',
         profileStatus: '',
+        webhookUrl: '',
       });
     }
 
@@ -286,6 +300,15 @@ export default function Instancias() {
       if (configForm.profileStatus.trim()) {
         await api.post(`/instance/${selectedInstance.instanceName}/profile/status`, {
           status: configForm.profileStatus.trim(),
+        });
+      }
+
+      // Atualizar Webhook
+      if (configForm.webhookUrl !== undefined) {
+        await api.post('/webhook/set', {
+          instanceName: selectedInstance.instanceName,
+          webhookUrl: configForm.webhookUrl,
+          events: ['all']
         });
       }
 
@@ -761,6 +784,26 @@ export default function Instancias() {
                     placeholder="Seu recado no WhatsApp"
                     className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
                   />
+                </div>
+
+                {/* Webhook URL (NOVO) */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-purple-400" />
+                    Webhook URL
+                  </label>
+                  <input
+                    type="text"
+                    value={configForm.webhookUrl}
+                    onChange={(e) =>
+                      setConfigForm({ ...configForm, webhookUrl: e.target.value })
+                    }
+                    placeholder="https://seu-sistema.com/webhook"
+                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
+                  />
+                  <p className="text-xs text-white/40 mt-1">
+                    URL para receber eventos de mensagens e status.
+                  </p>
                 </div>
               </div>
 

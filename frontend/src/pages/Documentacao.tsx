@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Copy,
@@ -8,10 +8,12 @@ import {
     Globe,
     Shield,
     ChevronRight,
-    Code
+    Code,
+    Key
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import toast from 'react-hot-toast';
 
 // Categorias da API
 const CATEGORIES = [
@@ -127,6 +129,12 @@ const ENDPOINTS = {
 export default function Documentacao() {
     const [activeCategory, setActiveCategory] = useState('messages');
     const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
+    const [userToken, setUserToken] = useState<string>('');
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) setUserToken(token);
+    }, []);
 
     const handleCopy = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
@@ -134,6 +142,13 @@ export default function Documentacao() {
         setTimeout(() => {
             setCopiedMap(prev => ({ ...prev, [id]: false }));
         }, 2000);
+    };
+
+    const handleCopyToken = () => {
+        if (userToken) {
+            navigator.clipboard.writeText(userToken);
+            toast.success('Token copiado!');
+        }
     };
 
     return (
@@ -169,9 +184,20 @@ export default function Documentacao() {
 
                 <div className="p-4 border-t border-gray-800">
                     <div className="bg-gray-800/50 p-3 rounded text-xs text-gray-400">
-                        <p className="font-semibold text-gray-300 mb-1">Autenticação</p>
-                        <p>Use o Header:</p>
-                        <code className="block mt-1 bg-black/30 p-1 rounded text-cyan-400">apikey: sua_api_key</code>
+                        <p className="font-semibold text-gray-300 mb-1">Seu Token de Acesso</p>
+                        {userToken ? (
+                            <div className="relative group cursor-pointer" onClick={handleCopyToken}>
+                                <code className="block mt-1 bg-black/30 p-2 rounded text-cyan-400 truncate text-[10px] break-all">
+                                    {userToken.substring(0, 15)}...
+                                </code>
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                                    <Copy className="w-4 h-4 text-white" />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-[10px] text-red-400">Faça login para ver o token</p>
+                        )}
+                        <p className="mt-2 text-[10px] text-gray-500">Header: <span className="font-mono text-purple-300">Authorization: Bearer [TOKEN]</span></p>
                     </div>
                 </div>
             </div>
