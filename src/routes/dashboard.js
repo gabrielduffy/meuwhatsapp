@@ -13,10 +13,13 @@ router.get('/kpis', async (req, res) => {
         const empresaId = req.empresaId;
 
         // Instâncias conectadas
-        const { getInstance } = require('../services/whatsapp');
-        // Este é um mock simples pois precisaríamos iterar nas instâncias
-        // Para simplificar, vamos buscar do banco se houver registro de status
-        const instRes = await query('SELECT COUNT(*) FROM whatsapp_instances WHERE empresa_id = $1 AND status = $2', [empresaId, 'connected']);
+        let instanciasConectadas = 0;
+        try {
+            const instRes = await query('SELECT COUNT(*) FROM instances WHERE status = $1', ['connected']);
+            instanciasConectadas = parseInt(instRes.rows[0]?.count || 0);
+        } catch (e) {
+            console.warn('Tabela instances não encontrada ou erro ao contar:', e.message);
+        }
 
         // Contatos ativos
         const contRes = await query('SELECT COUNT(*) FROM contatos WHERE empresa_id = $1', [empresaId]);
@@ -28,7 +31,7 @@ router.get('/kpis', async (req, res) => {
         const empRes = await query('SELECT saldo_creditos FROM empresas WHERE id = $1', [empresaId]);
 
         res.json({
-            instanciasConectadas: parseInt(instRes.rows[0]?.count || 0),
+            instanciasConectadas,
             mensagensHoje: parseInt(msgRes.rows[0]?.count || 0),
             contatosAtivos: parseInt(contRes.rows[0]?.count || 0),
             creditosRestantes: parseFloat(empRes.rows[0]?.saldo_creditos || 0)
