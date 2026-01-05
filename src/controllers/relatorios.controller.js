@@ -17,11 +17,11 @@ async function obterMetricas(req, res) {
     // Buscar métricas de mensagens
     const mensagens = await query(
       `SELECT
-        COUNT(*) FILTER (WHERE tipo = 'enviada') as enviadas,
-        COUNT(*) FILTER (WHERE tipo = 'recebida') as recebidas,
-        COUNT(*) FILTER (WHERE tipo = 'enviada' AND status = 'entregue') as entregues,
-        COUNT(*) FILTER (WHERE tipo = 'enviada' AND status = 'lido') as lidas
-       FROM mensagens
+        COUNT(*) FILTER (WHERE direcao = 'enviada') as enviadas,
+        COUNT(*) FILTER (WHERE direcao = 'recebida') as recebidas,
+        COUNT(*) FILTER (WHERE direcao = 'enviada' AND status = 'entregue') as entregues,
+        COUNT(*) FILTER (WHERE direcao = 'enviada' AND status = 'lido') as lidas
+       FROM mensagens_chat
        WHERE empresa_id = $1
        AND criado_em BETWEEN $2 AND $3`,
       [empresaId, dataInicio, dataFim]
@@ -31,9 +31,9 @@ async function obterMetricas(req, res) {
     const conversas = await query(
       `SELECT
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'aberto') as abertas,
-        COUNT(*) FILTER (WHERE status = 'resolvido') as resolvidas
-       FROM conversas
+        COUNT(*) FILTER (WHERE status = 'aberta') as abertas,
+        COUNT(*) FILTER (WHERE status = 'fechada') as resolvidas
+       FROM conversas_chat
        WHERE empresa_id = $1
        AND criado_em BETWEEN $2 AND $3`,
       [empresaId, dataInicio, dataFim]
@@ -95,9 +95,9 @@ async function obterGraficoMensagens(req, res) {
     const result = await query(
       `SELECT
         DATE(criado_em) as data,
-        COUNT(*) FILTER (WHERE tipo = 'enviada') as enviadas,
-        COUNT(*) FILTER (WHERE tipo = 'recebida') as recebidas
-       FROM mensagens
+        COUNT(*) FILTER (WHERE direcao = 'enviada') as enviadas,
+        COUNT(*) FILTER (WHERE direcao = 'recebida') as recebidas
+       FROM mensagens_chat
        WHERE empresa_id = $1
        AND criado_em >= NOW() - INTERVAL '${parseInt(dias)} days'
        GROUP BY DATE(criado_em)
@@ -122,14 +122,15 @@ async function obterTopConversas(req, res) {
     const result = await query(
       `SELECT
         c.id,
-        c.nome_contato,
-        c.telefone_contato,
+        ct.nome as contato_nome,
+        ct.telefone as contato_telefone,
         COUNT(m.id) as total_mensagens,
         MAX(m.criado_em) as ultima_mensagem
-       FROM conversas c
-       LEFT JOIN mensagens m ON m.conversa_id = c.id
+       FROM conversas_chat c
+       JOIN contatos ct ON c.contato_id = ct.id
+       LEFT JOIN mensagens_chat m ON m.conversa_id = c.id
        WHERE c.empresa_id = $1
-       GROUP BY c.id, c.nome_contato, c.telefone_contato
+       GROUP BY c.id, ct.nome, ct.telefone
        ORDER BY total_mensagens DESC
        LIMIT $2`,
       [empresaId, parseInt(limite)]
@@ -150,12 +151,12 @@ async function obterRelatorioInstancias(req, res) {
     const result = await query(
       `SELECT
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'conectado') as conectadas,
-        COUNT(*) FILTER (WHERE status = 'desconectado') as desconectadas,
-        COUNT(*) FILTER (WHERE status = 'erro') as com_erro
-       FROM instancias
-       WHERE empresa_id = $1`,
-      [empresaId]
+        COUNT(*) FILTER (WHERE status = 'connected') as conectadas,
+        COUNT(*) FILTER (WHERE status = 'disconnected') as desconectadas,
+        COUNT(*) FILTER (WHERE status = 'error') as com_erro
+       FROM instances
+       WHERE 1=1`,
+      []
     );
 
     res.json(result.rows[0]);

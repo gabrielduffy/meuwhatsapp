@@ -25,7 +25,7 @@ router.get('/kpis', async (req, res) => {
         const contRes = await query('SELECT COUNT(*) FROM contatos WHERE empresa_id = $1', [empresaId]);
 
         // Mensagens hoje
-        const msgRes = await query('SELECT COUNT(*) FROM chat_mensagens WHERE empresa_id = $1 AND criado_em >= CURRENT_DATE', [empresaId]);
+        const msgRes = await query('SELECT COUNT(*) FROM mensagens_chat WHERE empresa_id = $1 AND criado_em >= CURRENT_DATE', [empresaId]);
 
         // Créditos restantes (SaaS)
         const empRes = await query('SELECT saldo_creditos FROM empresas WHERE id = $1', [empresaId]);
@@ -55,7 +55,7 @@ router.get('/mensagens-grafico', async (req, res) => {
         to_char(criado_em, 'DD/MM') as data,
         COUNT(*) FILTER (WHERE direcao = 'enviada') as enviadas,
         COUNT(*) FILTER (WHERE direcao = 'recebida') as recebidas
-      FROM chat_mensagens
+      FROM mensagens_chat
       WHERE empresa_id = $1 AND criado_em >= CURRENT_DATE - INTERVAL '7 days'
       GROUP BY to_char(criado_em, 'DD/MM'), date_trunc('day', criado_em)
       ORDER BY date_trunc('day', criado_em) ASC
@@ -79,8 +79,8 @@ router.get('/atividades', async (req, res) => {
         // Buscar histórico de negociações e mensagens recentes
         const sql = `
       (SELECT 'Mensagem de ' || c.nome as descricao, m.criado_em 
-       FROM chat_mensagens m 
-       JOIN chat_conversas cv ON m.conversa_id = cv.id
+       FROM mensagens_chat m 
+       JOIN conversas_chat cv ON m.conversa_id = cv.id
        JOIN contatos c ON cv.contato_id = c.id
        WHERE m.empresa_id = $1 AND m.direcao = 'recebida'
        ORDER BY m.criado_em DESC LIMIT 5)

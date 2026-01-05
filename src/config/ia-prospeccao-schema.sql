@@ -176,9 +176,12 @@ CREATE TABLE IF NOT EXISTS contatos (
   nome_push VARCHAR(200),
   avatar_url VARCHAR(500),
   email VARCHAR(255),
+  empresa VARCHAR(255),
+  cargo VARCHAR(255),
 
   -- Organização
   etiquetas JSONB DEFAULT '[]',
+  tags JSONB DEFAULT '[]',
   atribuido_para UUID REFERENCES usuarios(id),
 
   -- Status
@@ -186,8 +189,14 @@ CREATE TABLE IF NOT EXISTS contatos (
 
   -- Metadados
   metadados JSONB DEFAULT '{}',
+  campos_customizados JSONB DEFAULT '{}',
+  observacoes TEXT,
 
   ultima_mensagem_em TIMESTAMP,
+  ultima_interacao_em TIMESTAMP,
+  tipo_ultima_interacao VARCHAR(50),
+  total_interacoes INTEGER DEFAULT 0,
+
   criado_em TIMESTAMP DEFAULT NOW(),
   atualizado_em TIMESTAMP DEFAULT NOW(),
 
