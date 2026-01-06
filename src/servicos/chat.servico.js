@@ -157,6 +157,43 @@ async function marcarComoLida(empresaId, conversaId) {
   return conversa;
 }
 
+/**
+ * Arquivar conversa
+ */
+async function arquivarConversa(empresaId, conversaId) {
+  const conversa = await chatRepo.arquivarConversa(conversaId, empresaId);
+
+  if (!conversa) {
+    throw new Error('Conversa não encontrada');
+  }
+
+  // Emitir evento
+  emitirParaEmpresa(empresaId, 'conversa_arquivada', {
+    conversa_id: conversaId
+  });
+
+  return conversa;
+}
+
+/**
+ * Alternar bot ativo
+ */
+async function alternarBot(empresaId, conversaId, ativo) {
+  const conversa = await chatRepo.alternarBot(conversaId, empresaId, ativo);
+
+  if (!conversa) {
+    throw new Error('Conversa não encontrada');
+  }
+
+  // Emitir evento
+  emitirParaEmpresa(empresaId, 'conversa_bot_alterado', {
+    conversa_id: conversaId,
+    bot_ativo: ativo
+  });
+
+  return conversa;
+}
+
 // =====================================================
 // MENSAGENS
 // =====================================================
@@ -486,6 +523,8 @@ module.exports = {
   atribuirConversa,
   fecharConversa,
   reabrirConversa,
+  arquivarConversa,
+  alternarBot,
   marcarComoLida,
 
   // Mensagens

@@ -138,6 +138,43 @@ router.post('/conversas/:id/marcar-lida', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/chat/conversas/:id/toggle-bot
+ * Alternar bot na conversa
+ */
+router.post('/conversas/:id/toggle-bot', async (req, res) => {
+  try {
+    const { ativo } = req.body;
+    const conversa = await chatServico.alternarBot(req.empresaId, req.params.id, ativo);
+
+    res.json({
+      mensagem: `Bot ${ativo ? 'ativado' : 'desativado'} com sucesso`,
+      conversa
+    });
+  } catch (erro) {
+    console.error('[Chat] Erro ao alternar bot:', erro);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
+/**
+ * POST /api/chat/conversas/:id/arquivar
+ * Arquivar conversa
+ */
+router.post('/conversas/:id/arquivar', async (req, res) => {
+  try {
+    const conversa = await chatServico.arquivarConversa(req.empresaId, req.params.id);
+
+    res.json({
+      mensagem: 'Conversa arquivada com sucesso',
+      conversa
+    });
+  } catch (erro) {
+    console.error('[Chat] Erro ao arquivar conversa:', erro);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
 // =====================================================
 // ADMINISTRAÇÃO DE CONVERSAS
 // =====================================================

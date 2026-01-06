@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS conversas_chat (
   nao_lidas INTEGER DEFAULT 0,
   total_mensagens INTEGER DEFAULT 0,
 
+  -- Suporte Avançado
+  bot_ativo BOOLEAN DEFAULT false,
+  etiquetas JSONB DEFAULT '[]',
+
   -- Timestamps
   ultima_mensagem_em TIMESTAMP,
   primeira_resposta_em TIMESTAMP,
@@ -114,6 +118,25 @@ CREATE TABLE IF NOT EXISTS logs_integracao (
   mensagem_erro TEXT,
 
   criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Agenda de Atendimentos/Reuniões
+CREATE TABLE IF NOT EXISTS agenda_atendimentos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+  conversa_id UUID REFERENCES conversas_chat(id) ON DELETE SET NULL,
+  contato_id UUID REFERENCES contatos(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES usuarios(id),
+  
+  titulo VARCHAR(200) NOT NULL,
+  descricao TEXT,
+  data_inicio TIMESTAMP NOT NULL,
+  data_fim TIMESTAMP,
+  
+  status VARCHAR(20) DEFAULT 'pendente', -- pendente, confirmado, cancelado, concluido
+  
+  criado_em TIMESTAMP DEFAULT NOW(),
+  atualizado_em TIMESTAMP DEFAULT NOW()
 );
 
 -- =====================================================

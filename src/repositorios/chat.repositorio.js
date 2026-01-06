@@ -172,7 +172,7 @@ async function listarConversas(empresaId, filtros = {}) {
  * Atualizar conversa
  */
 async function atualizarConversa(id, empresaId, dados) {
-  const camposPermitidos = ['status', 'atribuido_para', 'departamento'];
+  const camposPermitidos = ['status', 'atribuido_para', 'departamento', 'bot_ativo', 'etiquetas'];
 
   const camposAtualizar = [];
   const valores = [];
@@ -231,6 +231,36 @@ async function atribuirConversa(conversaId, empresaId, usuarioId, departamento =
   `;
 
   const resultado = await query(sql, valores);
+  return resultado.rows[0];
+}
+
+/**
+ * Arquivar conversa
+ */
+async function arquivarConversa(id, empresaId) {
+  const sql = `
+    UPDATE conversas_chat
+    SET status = 'arquivada', atualizado_em = NOW()
+    WHERE id = $1 AND empresa_id = $2
+    RETURNING *
+  `;
+
+  const resultado = await query(sql, [id, empresaId]);
+  return resultado.rows[0];
+}
+
+/**
+ * Alternar bot ativo na conversa
+ */
+async function alternarBot(id, empresaId, ativo) {
+  const sql = `
+    UPDATE conversas_chat
+    SET bot_ativo = $3, atualizado_em = NOW()
+    WHERE id = $1 AND empresa_id = $2
+    RETURNING *
+  `;
+
+  const resultado = await query(sql, [id, empresaId, ativo]);
   return resultado.rows[0];
 }
 
@@ -509,6 +539,8 @@ module.exports = {
   atribuirConversa,
   fecharConversa,
   reabrirConversa,
+  arquivarConversa,
+  alternarBot,
   incrementarNaoLidas,
   marcarComoLida,
   atualizarUltimaMensagem,

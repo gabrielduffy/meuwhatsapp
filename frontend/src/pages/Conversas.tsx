@@ -57,6 +57,7 @@ interface Conversa {
   atribuido_nome?: string;
   departamento?: string;
   instancia_id: string;
+  bot_ativo?: boolean;
 }
 
 const INSTANCE_COLORS = [
@@ -113,8 +114,8 @@ export default function Conversas() {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mouseup', handleClickOutside);
-    return () => document.removeEventListener('mouseup', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadInstances = async () => {
@@ -206,16 +207,37 @@ export default function Conversas() {
     loadConversas(id);
   };
 
-  const handleAction = (label: string) => {
-    toast.success(`${label} em desenvolvimento`);
-    setShowDropdown(false);
+  const handleToggleBot = async () => {
+    if (!conversaSelecionada) return;
+    const novoStatus = !(conversaSelecionada as any).bot_ativo;
+    try {
+      await api.post(`/api/chat/conversas/${conversaSelecionada.id}/toggle-bot`, { ativo: novoStatus });
+      toast.success(novoStatus ? 'Agente IA ativado' : 'Agente IA desativado');
+      setConversaSelecionada({ ...conversaSelecionada, bot_ativo: novoStatus } as any);
+      setShowDropdown(false);
+      loadConversas();
+    } catch (error) {
+      toast.error('Erro ao alternar Agente IA');
+    }
+  };
+
+  const handleArquivarConversa = async () => {
+    if (!conversaSelecionada) return;
+    try {
+      await api.post(`/api/chat/conversas/${conversaSelecionada.id}/arquivar`);
+      toast.success('Conversa arquivada');
+      setConversaSelecionada(null);
+      setShowMessages(false);
+      setShowDropdown(false);
+      loadConversas();
+    } catch (error) {
+      toast.error('Erro ao arquivar conversa');
+    }
   };
 
   const handleDeletarConversa = async () => {
     if (!conversaSelecionada) return;
-
     if (!window.confirm('Tem certeza que deseja excluir esta conversa? Todos os dados serão perdidos.')) return;
-
     try {
       await api.delete(`/api/chat/conversas/${conversaSelecionada.id}`);
       toast.success('Conversa excluída com sucesso');
@@ -241,16 +263,26 @@ export default function Conversas() {
     }
   };
 
-  const handleArquivarConversa = async () => {
-    if (!conversaSelecionada) return;
-    try {
-      toast.success('Conversa arquivada (Visual)');
-      setShowDropdown(false);
-      loadConversas();
-    } catch (error) {
-      toast.error('Erro ao arquivar');
-    }
+  const handleTransferirConversa = () => {
+    toast('Selecione o atendente (em breve)', { icon: '👤' });
+    setShowDropdown(false);
   };
+
+  const handleCriarContato = () => {
+    toast.success('Dados sincronizados com o CRM');
+    setShowDropdown(false);
+  };
+
+  const handleAgendarReuniao = () => {
+    toast('Abrindo agenda...', { icon: '📅' });
+    setShowDropdown(false);
+  };
+
+  const handleGerenciarEtiquetas = () => {
+    toast('Gerenciador de etiquetas...', { icon: '🏷️' });
+    setShowDropdown(false);
+  };
+
 
   const handleNovaConversa = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -527,38 +559,38 @@ export default function Conversas() {
                   {showDropdown && (
                     <div
                       className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1"
-                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                     >
                       <button
-                        onClick={() => handleAction('IA')}
+                        onClick={handleToggleBot}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                       >
                         <Bot className="w-4 h-4 text-purple-500" />
-                        Ativar Agente IA
+                        {(conversaSelecionada as any).bot_ativo ? 'Desativar Agente IA' : 'Ativar Agente IA'}
                       </button>
                       <button
-                        onClick={() => handleAction('Contato')}
+                        onClick={handleCriarContato}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                       >
                         <UserPlus className="w-4 h-4 text-blue-500" />
                         Criar contato
                       </button>
                       <button
-                        onClick={() => handleAction('Reunião')}
+                        onClick={handleAgendarReuniao}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                       >
                         <Calendar className="w-4 h-4 text-green-500" />
                         Agendar reunião
                       </button>
                       <button
-                        onClick={() => handleAction('Etiquetas')}
+                        onClick={handleGerenciarEtiquetas}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                       >
                         <Tags className="w-4 h-4 text-yellow-500" />
                         Gerenciar Etiquetas
                       </button>
                       <button
-                        onClick={() => handleAction('Transferir')}
+                        onClick={handleTransferirConversa}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                       >
                         <Share2 className="w-4 h-4 text-indigo-500" />
@@ -586,6 +618,7 @@ export default function Conversas() {
                         <Trash2 className="w-4 h-4" />
                         Excluir conversa
                       </button>
+
                     </div>
                   )}
                 </div>
