@@ -495,6 +495,15 @@ export default function Conversas() {
                     </div>
                   )}
                 </div>
+
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-gray-900 dark:text-white truncate">
+                      {conversa.contato_nome}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(conversa.ultima_mensagem_em || conversa.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1">
@@ -512,344 +521,343 @@ export default function Conversas() {
                     </button>
                   </div>
                 </div>
-      </button>
-      ))
+              </button>
+            ))
           )}
-    </div>
-      </div >
-
-    {/* Main Chat Area */ }
-    < div className = {`flex-1 flex flex-col bg-white dark:bg-gray-950 ${!showMessages ? 'hidden md:flex' : 'flex'}`
-}>
-  {!conversaSelecionada ? (
-    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 dark:bg-gray-950">
-      <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-6">
-        <MessageCircle className="w-10 h-10 text-purple-600 dark:text-purple-500" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecione uma conversa</h3>
-      <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-        Escolha um contato na lista ao lado para ver as mensagens e responder.
-      </p>
-    </div>
-  ) : (
-    <>
-      {/* Chat Header */}
-      <div className="h-[72px] px-4 md:px-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowMessages(false)}
-            className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">
-            {conversaSelecionada.contato_nome?.charAt(0)}
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white leading-tight">
-              {conversaSelecionada.contato_nome}
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{conversaSelecionada.contato_telefone}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowDetalhes(!showDetalhes)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-            <User className="w-5 h-5" />
-          </button>
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
-
-            {showDropdown && (
-              <div
-                className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1"
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <button
-                  onMouseDown={handleToggleBot}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <Bot className="w-4 h-4 text-purple-500" />
-                  {(conversaSelecionada as any).bot_ativo ? 'Desativar Agente IA' : 'Ativar Agente IA'}
-                </button>
-                <button
-                  onMouseDown={handleCriarContato}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4 text-blue-500" />
-                  Criar contato
-                </button>
-                <button
-                  onMouseDown={handleAgendarReuniao}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <Calendar className="w-4 h-4 text-green-500" />
-                  Agendar reunião
-                </button>
-                <button
-                  onMouseDown={handleGerenciarEtiquetas}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <Tags className="w-4 h-4 text-yellow-500" />
-                  Gerenciar Etiquetas
-                </button>
-                <button
-                  onMouseDown={handleTransferirConversa}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <Share2 className="w-4 h-4 text-indigo-500" />
-                  Transferir
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
-                <button
-                  onMouseDown={handleFecharConversa}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  Fechar conversa
-                </button>
-                <button
-                  onMouseDown={handleArquivarConversa}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <Archive className="w-4 h-4 text-orange-500" />
-                  Arquivar
-                </button>
-                <button
-                  onMouseDown={() => handleDeletarConversa()}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Excluir conversa
-                </button>
-
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gray-50/30 dark:bg-gray-950/30">
-        {mensagens.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.direcao === 'enviada' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] md:max-w-[70%] p-3 rounded-2xl shadow-sm ${msg.direcao === 'enviada'
-                ? 'bg-purple-600 text-white rounded-tr-none'
-                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700 rounded-tl-none'
-                }`}
-            >
-              <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>
-              <div className={`flex items-center gap-1 mt-1 ${msg.direcao === 'enviada' ? 'justify-end' : 'justify-start'}`}>
-                <span className={`text-[10px] ${msg.direcao === 'enviada' ? 'text-purple-100' : 'text-gray-400'}`}>
-                  {new Date(msg.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                {msg.direcao === 'enviada' && (
-                  <span className="text-purple-100">
-                    {msg.status === 'enviando' ? <Clock className="w-3 h-3" /> : (msg.status === 'lida' ? <CheckCheck className="w-3 h-3 text-white" /> : <Check className="w-3 h-3" />)}
-                  </span>
-                )}
+      {/* Main Chat Area */}
+      <div className={`flex-1 flex flex-col bg-white dark:bg-gray-950 ${!showMessages ? 'hidden md:flex' : 'flex'}`}>
+        {!conversaSelecionada ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 dark:bg-gray-950">
+            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-6">
+              <MessageCircle className="w-10 h-10 text-purple-600 dark:text-purple-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecione uma conversa</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+              Escolha um contato na lista ao lado para ver as mensagens e responder.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Chat Header */}
+            <div className="h-[72px] px-4 md:px-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-10">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowMessages(false)}
+                  className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">
+                  {conversaSelecionada.contato_nome?.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white leading-tight">
+                    {conversaSelecionada.contato_nome}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{conversaSelecionada.contato_telefone}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowDetalhes(!showDetalhes)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                  <User className="w-5 h-5" />
+                </button>
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+
+                  {showDropdown && (
+                    <div
+                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onMouseDown={handleToggleBot}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <Bot className="w-4 h-4 text-purple-500" />
+                        {(conversaSelecionada as any).bot_ativo ? 'Desativar Agente IA' : 'Ativar Agente IA'}
+                      </button>
+                      <button
+                        onMouseDown={handleCriarContato}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <UserPlus className="w-4 h-4 text-blue-500" />
+                        Criar contato
+                      </button>
+                      <button
+                        onMouseDown={handleAgendarReuniao}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <Calendar className="w-4 h-4 text-green-500" />
+                        Agendar reunião
+                      </button>
+                      <button
+                        onMouseDown={handleGerenciarEtiquetas}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <Tags className="w-4 h-4 text-yellow-500" />
+                        Gerenciar Etiquetas
+                      </button>
+                      <button
+                        onMouseDown={handleTransferirConversa}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <Share2 className="w-4 h-4 text-indigo-500" />
+                        Transferir
+                      </button>
+                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                      <button
+                        onMouseDown={handleFecharConversa}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        Fechar conversa
+                      </button>
+                      <button
+                        onMouseDown={handleArquivarConversa}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <Archive className="w-4 h-4 text-orange-500" />
+                        Arquivar
+                      </button>
+                      <button
+                        onMouseDown={() => handleDeletarConversa()}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Excluir conversa
+                      </button>
+
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input Area */}
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <form onSubmit={handleEnviar} className="flex items-end gap-2 md:gap-4 max-w-6xl mx-auto">
-          <button type="button" className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
-            <Smile className="w-6 h-6" />
-          </button>
-          <button type="button" className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
-            <Paperclip className="w-6 h-6" />
-          </button>
-          <div className="flex-1 relative">
-            <textarea
-              rows={1}
-              value={novaMensagem}
-              onChange={(e) => setNovaMensagem(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleEnviar(e);
-                }
-              }}
-              placeholder="Sua mensagem..."
-              className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-purple-500 transition-all resize-none max-h-32"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={!novaMensagem.trim()}
-            className="p-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white rounded-2xl shadow-lg shadow-purple-500/20 transition-all active:scale-95"
-          >
-            <Send className="w-5 h-5 text-white" />
-          </button>
-        </form>
-      </div>
-    </>
-  )}
-      </div >
-
-  {/* Details Panel */ }
-{
-  showDetalhes && conversaSelecionada && (
-    <div className="w-80 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-y-auto hidden lg:block">
-      <div className="p-6">
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-3xl mb-4">
-            {conversaSelecionada.contato_nome?.charAt(0)}
-          </div>
-          <h4 className="text-lg font-bold text-gray-900 dark:text-white">{conversaSelecionada.contato_nome}</h4>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{conversaSelecionada.contato_telefone}</p>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Informações</h5>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <span>{conversaSelecionada.email || 'Não informado'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                <Briefcase className="w-4 h-4 text-gray-400" />
-                <span>{conversaSelecionada.empresa || 'Não informada'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span>Iniciado: {new Date(conversaSelecionada.criado_em).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Departamento</h5>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-              {conversaSelecionada.departamento || 'Geral'}
-            </span>
-          </div>
-
-          <div>
-            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Etiquetas</h5>
-            <div className="flex flex-wrap gap-2">
-              {conversaSelecionada.etiquetas?.map((tag, i) => (
-                <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-[10px] text-gray-600 dark:text-gray-400">
-                  {tag}
-                </span>
-              )) || <span className="text-xs text-gray-400">Sem etiquetas</span>}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-{/* New Conversation Modal */ }
-{
-  showNovaConversa && (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-600">
-              <Phone className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Nova Conversa no WhatsApp</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Envie uma mensagem para iniciar uma nova conversa</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowNovaConversa(false)}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleNovaConversa} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              Instância WhatsApp *
-            </label>
-            <select
-              required
-              value={novaConversaData.instancia}
-              onChange={(e) => setNovaConversaData({ ...novaConversaData, instancia: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none appearance-none"
-            >
-              <option value="">Selecione uma instância</option>
-              {instances.filter(i => i.isConnected).map(inst => (
-                <option key={inst.instanceName} value={inst.instanceName}>{inst.instanceName}</option>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gray-50/30 dark:bg-gray-950/30">
+              {mensagens.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.direcao === 'enviada' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] md:max-w-[70%] p-3 rounded-2xl shadow-sm ${msg.direcao === 'enviada'
+                      ? 'bg-purple-600 text-white rounded-tr-none'
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700 rounded-tl-none'
+                      }`}
+                  >
+                    <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>
+                    <div className={`flex items-center gap-1 mt-1 ${msg.direcao === 'enviada' ? 'justify-end' : 'justify-start'}`}>
+                      <span className={`text-[10px] ${msg.direcao === 'enviada' ? 'text-purple-100' : 'text-gray-400'}`}>
+                        {new Date(msg.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {msg.direcao === 'enviada' && (
+                        <span className="text-purple-100">
+                          {msg.status === 'enviando' ? <Clock className="w-3 h-3" /> : (msg.status === 'lida' ? <CheckCheck className="w-3 h-3 text-white" /> : <Check className="w-3 h-3" />)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
-            </select>
-          </div>
+              <div ref={messagesEndRef} />
+            </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              Número de Telefone *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="5511999999999"
-              value={novaConversaData.numero}
-              onChange={(e) => setNovaConversaData({ ...novaConversaData, numero: e.target.value.replace(/\D/g, '') })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none"
-            />
-            <p className="mt-1.5 text-[10px] text-gray-500">Formato: DDI + DDD + Número (ex: 5511999999999 para Brasil)</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              Mensagem *
-            </label>
-            <textarea
-              required
-              rows={4}
-              placeholder="Digite sua mensagem inicial..."
-              value={novaConversaData.mensagem}
-              onChange={(e) => setNovaConversaData({ ...novaConversaData, mensagem: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none resize-none"
-            />
-            <p className="mt-1.5 text-[10px] text-gray-500 font-medium">Esta será a primeira mensagem da conversa</p>
-          </div>
-
-          <div className="pt-2 flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowNovaConversa(false)}
-              className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={enviandoNova}
-              className="flex-2 flex-[2] py-3 px-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 shadow-lg shadow-purple-500/25 transition-all active:scale-95 disabled:opacity-50"
-            >
-              {enviandoNova ? 'Enviando...' : 'Enviar Mensagem'}
-            </button>
-          </div>
-        </form>
+            {/* Input Area */}
+            <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <form onSubmit={handleEnviar} className="flex items-end gap-2 md:gap-4 max-w-6xl mx-auto">
+                <button type="button" className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
+                  <Smile className="w-6 h-6" />
+                </button>
+                <button type="button" className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
+                  <Paperclip className="w-6 h-6" />
+                </button>
+                <div className="flex-1 relative">
+                  <textarea
+                    rows={1}
+                    value={novaMensagem}
+                    onChange={(e) => setNovaMensagem(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleEnviar(e);
+                      }
+                    }}
+                    placeholder="Sua mensagem..."
+                    className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-purple-500 transition-all resize-none max-h-32"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!novaMensagem.trim()}
+                  className="p-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white rounded-2xl shadow-lg shadow-purple-500/20 transition-all active:scale-95"
+                >
+                  <Send className="w-5 h-5 text-white" />
+                </button>
+              </form>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Details Panel */}
+      {
+        showDetalhes && conversaSelecionada && (
+          <div className="w-80 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-y-auto hidden lg:block">
+            <div className="p-6">
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-24 h-24 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-3xl mb-4">
+                  {conversaSelecionada.contato_nome?.charAt(0)}
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white">{conversaSelecionada.contato_nome}</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{conversaSelecionada.contato_telefone}</p>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Informações</h5>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span>{conversaSelecionada.email || 'Não informado'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                      <Briefcase className="w-4 h-4 text-gray-400" />
+                      <span>{conversaSelecionada.empresa || 'Não informada'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span>Iniciado: {new Date(conversaSelecionada.criado_em).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Departamento</h5>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                    {conversaSelecionada.departamento || 'Geral'}
+                  </span>
+                </div>
+
+                <div>
+                  <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Etiquetas</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {conversaSelecionada.etiquetas?.map((tag, i) => (
+                      <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-[10px] text-gray-600 dark:text-gray-400">
+                        {tag}
+                      </span>
+                    )) || <span className="text-xs text-gray-400">Sem etiquetas</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* New Conversation Modal */}
+      {
+        showNovaConversa && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-600">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Nova Conversa no WhatsApp</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Envie uma mensagem para iniciar uma nova conversa</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowNovaConversa(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleNovaConversa} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Instância WhatsApp *
+                  </label>
+                  <select
+                    required
+                    value={novaConversaData.instancia}
+                    onChange={(e) => setNovaConversaData({ ...novaConversaData, instancia: e.target.value })}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none appearance-none"
+                  >
+                    <option value="">Selecione uma instância</option>
+                    {instances.filter(i => i.isConnected).map(inst => (
+                      <option key={inst.instanceName} value={inst.instanceName}>{inst.instanceName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Número de Telefone *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="5511999999999"
+                    value={novaConversaData.numero}
+                    onChange={(e) => setNovaConversaData({ ...novaConversaData, numero: e.target.value.replace(/\D/g, '') })}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none"
+                  />
+                  <p className="mt-1.5 text-[10px] text-gray-500">Formato: DDI + DDD + Número (ex: 5511999999999 para Brasil)</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Mensagem *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Digite sua mensagem inicial..."
+                    value={novaConversaData.mensagem}
+                    onChange={(e) => setNovaConversaData({ ...novaConversaData, mensagem: e.target.value })}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-purple-500 transition-all text-sm outline-none resize-none"
+                  />
+                  <p className="mt-1.5 text-[10px] text-gray-500 font-medium">Esta será a primeira mensagem da conversa</p>
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowNovaConversa(false)}
+                    className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={enviandoNova}
+                    className="flex-2 flex-[2] py-3 px-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 shadow-lg shadow-purple-500/25 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {enviandoNova ? 'Enviando...' : 'Enviar Mensagem'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
     </div>
-  )
-}
-    </div >
   );
 }
