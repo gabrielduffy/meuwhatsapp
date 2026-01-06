@@ -46,7 +46,7 @@ export default function Integracoes() {
   const carregarIntegracoes = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/integracoes');
+      const response = await api.get('/api/integracoes');
       setIntegracoes(response.data.integracoes || []);
     } catch (error: any) {
       toast.error('Erro ao carregar integrações');
@@ -58,7 +58,7 @@ export default function Integracoes() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/integracoes', {
+      await api.post('/api/integracoes', {
         ...formData,
         headers: JSON.parse(formData.headers),
       });
@@ -73,7 +73,7 @@ export default function Integracoes() {
   const handleToggle = async (integracao: Integracao) => {
     try {
       const endpoint = integracao.ativo ? 'desativar' : 'ativar';
-      await api.post(`/integracoes/${integracao.id}/${endpoint}`);
+      await api.post(`/api/integracoes/${integracao.id}/${endpoint}`);
       toast.success(`Integração ${integracao.ativo ? 'desativada' : 'ativada'}!`);
       await carregarIntegracoes();
     } catch (error: any) {
@@ -83,7 +83,7 @@ export default function Integracoes() {
 
   const handleTest = async (integracao: Integracao) => {
     try {
-      await api.post(`/integracoes/${integracao.id}/testar`);
+      await api.post(`/api/integracoes/${integracao.id}/testar`);
       toast.success('Teste realizado com sucesso!');
     } catch (error: any) {
       toast.error(error.response?.data?.erro || 'Erro ao testar integração');
@@ -94,7 +94,7 @@ export default function Integracoes() {
     if (!confirm(`Deletar integração "${integracao.nome}"?`)) return;
 
     try {
-      await api.delete(`/integracoes/${integracao.id}`);
+      await api.delete(`/api/integracoes/${integracao.id}`);
       toast.success('Integração deletada!');
       await carregarIntegracoes();
     } catch (error: any) {
@@ -147,14 +147,12 @@ export default function Integracoes() {
               <Card variant="gradient">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${
-                      integracao.ativo
+                    <div className={`p-3 rounded-lg ${integracao.ativo
                         ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
                         : 'bg-white/5'
-                    }`}>
-                      <Webhook className={`w-6 h-6 ${
-                        integracao.ativo ? 'text-purple-300' : 'text-white/40'
-                      }`} />
+                      }`}>
+                      <Webhook className={`w-6 h-6 ${integracao.ativo ? 'text-purple-300' : 'text-white/40'
+                        }`} />
                     </div>
                     <div>
                       <h3 className="font-bold text-white">{integracao.nome}</h3>

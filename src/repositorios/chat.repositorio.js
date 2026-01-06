@@ -45,7 +45,8 @@ async function buscarConversaPorId(id, empresaId = null) {
     SELECT c.*,
            ct.nome as contato_nome,
            ct.telefone as contato_telefone,
-           ct.email as contato_email,
+           ct.email as email,
+           ct.empresa as empresa,
            u.nome as atribuido_nome,
            u.email as atribuido_email
     FROM conversas_chat c
@@ -72,6 +73,8 @@ async function buscarConversaPorContato(contatoId, empresaId, status = 'aberta')
     SELECT c.*,
            ct.nome as contato_nome,
            ct.telefone as contato_telefone,
+           ct.email as email,
+           ct.empresa as empresa,
            u.nome as atribuido_nome
     FROM conversas_chat c
     LEFT JOIN contatos ct ON c.contato_id = ct.id
@@ -93,6 +96,8 @@ async function listarConversas(empresaId, filtros = {}) {
     SELECT c.*,
            ct.nome as contato_nome,
            ct.telefone as contato_telefone,
+           ct.email as email,
+           ct.empresa as empresa,
            u.nome as atribuido_nome
     FROM conversas_chat c
     LEFT JOIN contatos ct ON c.contato_id = ct.id

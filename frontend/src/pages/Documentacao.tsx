@@ -61,7 +61,7 @@ const ENDPOINTS = {
     instances: [
         {
             method: 'GET',
-            path: '/instance/qr/{instanceName}',
+            path: '/instance/{instanceName}/qrcode',
             title: 'Obter QR Code',
             description: 'Retorna o QR Code atual da instância em base64 para conexão.',
             params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],
@@ -69,7 +69,7 @@ const ENDPOINTS = {
         },
         {
             method: 'POST',
-            path: '/instance/logout/{instanceName}',
+            path: '/instance/{instanceName}/logout',
             title: 'Desconectar WhatsApp',
             description: 'Realiza o logout da conta do WhatsApp, mas mantém a instância configurada.',
             params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],

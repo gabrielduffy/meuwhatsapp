@@ -66,7 +66,7 @@ export default function AgentesIA() {
   const carregarAgentes = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/agentes-ia');
+      const response = await api.get('/api/agentes-ia');
       const agentesData = response.data.agentes || [];
       setAgentes(agentesData);
 
@@ -89,7 +89,7 @@ export default function AgentesIA() {
   const handleToggleStatus = async (agente: Agente) => {
     try {
       const endpoint = agente.ativo ? 'desativar' : 'ativar';
-      await api.post(`/agentes-ia/${agente.id}/${endpoint}`);
+      await api.post(`/api/agentes-ia/${agente.id}/${endpoint}`);
       toast.success(`Agente ${agente.ativo ? 'desativado' : 'ativado'} com sucesso!`);
       await carregarAgentes();
     } catch (error: any) {
@@ -101,7 +101,7 @@ export default function AgentesIA() {
     if (!confirm(`Tem certeza que deseja deletar o agente "${agente.nome}"?`)) return;
 
     try {
-      await api.delete(`/agentes-ia/${agente.id}`);
+      await api.delete(`/api/agentes-ia/${agente.id}`);
       toast.success('Agente deletado com sucesso!');
       await carregarAgentes();
     } catch (error: any) {
@@ -226,14 +226,12 @@ export default function AgentesIA() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${
-                      agente.ativo
-                        ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
-                        : 'bg-white/5'
-                    }`}>
-                      <Bot className={`w-6 h-6 ${
-                        agente.ativo ? 'text-purple-300' : 'text-white/40'
-                      }`} />
+                    <div className={`p-3 rounded-lg ${agente.ativo
+                      ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
+                      : 'bg-white/5'
+                      }`}>
+                      <Bot className={`w-6 h-6 ${agente.ativo ? 'text-purple-300' : 'text-white/40'
+                        }`} />
                     </div>
                     <div>
                       <h3 className="font-bold text-white">{agente.nome}</h3>
