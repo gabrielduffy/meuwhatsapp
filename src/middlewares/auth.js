@@ -54,7 +54,7 @@ async function instanceAuthMiddleware(req, res, next) {
     const { query } = require('../config/database');
     try {
       const userRes = await query(`
-        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status, e.max_instancias, e.max_usuarios
+        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status
         FROM usuarios u
         LEFT JOIN empresas e ON u.empresa_id = e.id
         WHERE u.api_token = $1 AND u.ativo = true
@@ -116,7 +116,7 @@ async function instanceAuthMiddleware(req, res, next) {
     try {
       const trimmedKey = apiKey.trim();
       const userRes = await query(`
-        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status, e.max_instancias, e.max_usuarios
+        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status
         FROM usuarios u
         LEFT JOIN empresas e ON u.empresa_id = e.id
         WHERE u.api_token = $1 AND u.ativo = true
@@ -139,8 +139,8 @@ async function instanceAuthMiddleware(req, res, next) {
           nome: usuario.emp_nome,
           plano_id: usuario.plano_id,
           status: usuario.emp_status,
-          max_instancias: usuario.max_instancias || 5,
-          max_usuarios: usuario.max_usuarios || 10
+          max_instancias: 5,
+          max_usuarios: 10
         };
 
         return next();
