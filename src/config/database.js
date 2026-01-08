@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 
 // Conexão PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://whatsbenemax:@412Trocar@postgres:5432/whatsbenemax',
+  connectionString: process.env.DATABASE_URL || 'postgresql://whatsbenemax:%40412Trocar@postgres:5432/whatsbenemax',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20, // Máximo de conexões no pool
   idleTimeoutMillis: 30000,

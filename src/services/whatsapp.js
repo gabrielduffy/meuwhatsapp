@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, delay } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, delay, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
@@ -43,9 +43,10 @@ async function getEmpresaPadraoId() {
 // Diretório para sessões
 const SESSIONS_DIR = process.env.SESSIONS_DIR || './sessions';
 const DATA_DIR = process.env.DATA_DIR || './data';
+const UPLOADS_DIR = process.env.UPLOAD_DIR || './uploads';
 
 // Garantir que os diretórios existem
-[SESSIONS_DIR, DATA_DIR].forEach(dir => {
+[SESSIONS_DIR, DATA_DIR, UPLOADS_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -152,6 +153,8 @@ async function createInstance(instanceName, options = {}) {
   const instanceToken = options.token || uuidv4();
 
   // Inicializar objeto da instância
+  const empresaId = options.empresaId || await getEmpresaPadraoId();
+
   instances[instanceName] = {
     socket,
     qrCode: null,
@@ -161,6 +164,7 @@ async function createInstance(instanceName, options = {}) {
     user: null,
     proxy: options.proxy || null,
     token: instanceToken,
+    empresaId, // Guardar em memória para acesso rápido
     createdAt: new Date().toISOString(),
     lastActivity: new Date().toISOString()
   };
@@ -171,7 +175,6 @@ async function createInstance(instanceName, options = {}) {
 
   // Salvar no banco (SaaS / Multi-tenant) para persistência robusta
   try {
-    const empresaId = options.empresaId || await getEmpresaPadraoId();
     await query(`
       INSERT INTO instances (instance_name, token, empresa_id, status)
       VALUES ($1, $2, $3, $4)
@@ -283,156 +286,174 @@ async function createInstance(instanceName, options = {}) {
   socket.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify' && type !== 'append') return;
 
-    const empresaId = await getEmpresaPadraoId();
-
     for (const message of messages) {
+      if (!message.message) continue;
+
+      const empresaId = instances[instanceName].empresaId;
       instances[instanceName].lastActivity = new Date().toISOString();
 
-      // Processar persistência no Chat
-      if (empresaId) {
+      const isFromMe = message.key.fromMe;
+      const remoteJid = message.key.remoteJid;
+
+      const realMessage = getMessageBody(message);
+      const msgType = getMessageType(message);
+      const msgText = extractText(message);
+
+      // Processar Mídia se houver
+      let midiaUrl = null;
+      let midiaTipo = null;
+      let midiaNomeArquivo = null;
+
+      const mediaTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'];
+      if (mediaTypes.includes(msgType)) {
         try {
-          const isFromMe = message.key.fromMe;
-          const remoteJid = message.key.remoteJid;
-          const msgText = extractText(message);
-          const msgType = getMessageType(message);
+          console.log(`[${instanceName}] Baixando mídia type: ${msgType}...`);
+          const buffer = await downloadMediaMessage(message, 'buffer', {}, { logger });
 
-          // Preparar dados
-          const dados = {
-            contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
-            contatoNome: message.pushName || remoteJid.split('@')[0],
-            whatsappMensagemId: message.key.id,
-            tipoMensagem: msgType || 'text',
-            conteudo: msgText || '',
-            midiaUrl: null, // TODO: Processar download de mídia
-            status: isFromMe ? 'enviada' : 'recebida',
-            direcao: isFromMe ? 'enviada' : 'recebida',
-            metadados: { raw: message }
-          };
+          const extension = {
+            imageMessage: 'png',
+            videoMessage: 'mp4',
+            audioMessage: 'ogg',
+            documentMessage: 'bin',
+            stickerMessage: 'webp'
+          }[msgType] || 'bin';
 
-          // Usar o serviço de chat para persistir
-          // Nota: chatServico.receberMensagem força 'recebida'. 
-          // Precisamos de um método mais genérico ou chamar repositorios direto.
-          // Por simplicidade, vou chamar receberMensagem e ajustar ele depois ou criar um wrapper aqui.
-          // Para 'enviada', vamos ter que adaptar o chatServico ou chamar direto o repo se o serviço for rígido.
+          const fileName = `${instanceName}_${message.key.id}_${Date.now()}.${extension}`;
+          const fullPath = path.join(UPLOADS_DIR, fileName);
 
-          // Vamos usar uma lógica customizada aqui que chama o receberMensagem mas passamos "direcao" se o serviço suportar, 
-          // Ou melhor: Vamos injetar direto no banco se o serviço for limitado,
-          // MAS o ideal é usar o serviço. Vou assumir que o usuário quer ver as recebidas principalmente.
+          fs.writeFileSync(fullPath, buffer);
+          midiaUrl = `/uploads/${fileName}`;
+          midiaTipo = msgType.replace('Message', '');
+          midiaNomeArquivo = realMessage[msgType]?.fileName || fileName;
 
-          if (!isFromMe) {
-            await chatServico.receberMensagem(empresaId, instanceName, dados);
-          } else {
-            // Para enviadas via celular, também queremos salvar
-            // Passamos direcao: 'enviada' para o serviço registrar corretamente
-            await chatServico.receberMensagem(empresaId, instanceName, { ...dados, direcao: 'enviada' });
-          }
-
+          console.log(`[${instanceName}] ✓ Mídia salva em: ${midiaUrl}`);
         } catch (err) {
-          console.error(`[${instanceName}] Erro ao persistir mensagem chat:`, err.message);
-          // Log de Debug DB
-          query('INSERT INTO debug_logs (area, mensagem, detalhes) VALUES ($1, $2, $3)',
-            ['whatsapp_listener', err.message, JSON.stringify({ instanceName, stack: err.stack })]
-          ).catch(e => console.error('Erro ao salvar log debug:', e));
+          console.error(`[${instanceName}] ❌ Erro ao baixar mídia ou msg aninhada:`, err.message);
         }
       }
 
+      const isGroup = remoteJid.endsWith('@g.us');
+      let contatoNome = message.pushName || remoteJid.split('@')[0];
+
+      // Se for grupo, tentar pegar o nome do grupo do cache
+      if (isGroup) {
+        try {
+          const groupMeta = instances[instanceName].socket.groupMetadata ? await instances[instanceName].socket.groupMetadata(remoteJid).catch(() => null) : null;
+          if (groupMeta?.subject) {
+            contatoNome = groupMeta.subject;
+          }
+        } catch (e) {
+          // Fallback silencioso
+        }
+      }
+
+      // Preparar dados para o Chat
+      const dadosChat = {
+        contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
+        contatoNome,
+        whatsappMensagemId: message.key.id,
+        tipoMensagem: midiaTipo || 'texto',
+        conteudo: msgText || (midiaTipo ? `[Mídia: ${midiaTipo}]` : ''),
+        midiaUrl,
+        midiaTipo,
+        midiaNomeArquivo,
+        status: isFromMe ? 'enviada' : 'recebida',
+        direcao: isFromMe ? 'enviada' : 'recebida',
+        metadados: {
+          raw: message,
+          fromParticipant: isGroup ? message.key.participant : null,
+          senderName: message.pushName
+        }
+      };
+
+      // Persistir no Banco via ChatService
+      if (empresaId) {
+        try {
+          await chatServico.receberMensagem(empresaId, instanceName, dadosChat);
+        } catch (err) {
+          console.error(`[${instanceName}] Erro ao persistir no chat:`, err.message);
+        }
+      }
+
+      // Preparar Webhook Payload
       const messageData = {
         event: 'message',
         instanceName,
         data: {
+          ...dadosChat,
           key: message.key,
-          from: message.key.remoteJid,
-          fromMe: message.key.fromMe,
-          pushName: message.pushName,
-          message: message.message,
-          messageType: getMessageType(message),
-          text: extractText(message),
           timestamp: message.messageTimestamp,
-          isGroup: message.key.remoteJid?.endsWith('@g.us'),
+          isGroup: remoteJid?.endsWith('@g.us'),
           participant: message.key.participant
         }
       };
 
-      if (!message.key.fromMe) {
-        console.log(`[${instanceName}] Nova mensagem de ${message.key.remoteJid}`);
+      // Disparar Webhook
+      sendWebhook(instanceName, messageData);
 
-        // Incrementar contador de mensagens recebidas
+      // Agente IA (apenas para recebidas e se não for de grupo para não floodar)
+      if (!isFromMe && !remoteJid.endsWith('@g.us')) {
         incrementMetric(instanceName, 'received');
 
-        const text = extractText(message);
-
-        // 1. Tentar Agente IA (SaaS)
-        let processedByAI = false;
-        if (empresaId && text) {
+        // Lógica de IA...
+        if (empresaId && msgText) {
           try {
-            // Import lazy para evitar circular dependencies se houver
-            const agenteIAServico = require('../servicos/agente-ia.servico');
             const agenteIARepo = require('../repositorios/agente-ia.repositorio');
-
+            const agenteIAServico = require('../servicos/agente-ia.servico');
             const agente = await agenteIARepo.buscarPorInstancia(instanceName, empresaId);
 
             if (agente && agente.ativo) {
-              console.log(`[${instanceName}] Agente IA ativo encontrado: ${agente.nome}`);
-
-              // Simular digitando
-              await socket.sendPresenceUpdate('composing', message.key.remoteJid);
-
-              // Processar mensagem
-              const resultadoIA = await agenteIAServico.processarMensagem(agente.id, empresaId, text, {
-                nomeContato: message.pushName || 'Cliente',
-                // TODO: Injetar histórico de mensagens aqui para contexto
+              await socket.sendPresenceUpdate('composing', remoteJid);
+              const result = await agenteIAServico.processarMensagem(agente.id, empresaId, msgText, {
+                nomeContato: message.pushName || 'Cliente'
               });
 
-              if (resultadoIA && resultadoIA.resposta) {
-                // Enviar resposta
-                const sentMsg = await socket.sendMessage(message.key.remoteJid, { text: resultadoIA.resposta });
-
-                // Persistir resposta da IA
+              if (result?.resposta) {
+                const sentMsg = await socket.sendMessage(remoteJid, { text: result.resposta });
                 await chatServico.receberMensagem(empresaId, instanceName, {
-                  contatoTelefone: message.key.remoteJid.replace('@s.whatsapp.net', ''),
+                  contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
                   contatoNome: message.pushName,
                   whatsappMensagemId: sentMsg.key.id,
                   tipoMensagem: 'texto',
-                  conteudo: resultadoIA.resposta,
+                  conteudo: result.resposta,
                   direcao: 'enviada',
-                  status: 'enviada',
-                  metadados: {
-                    agenteId: agente.id,
-                    modelo: resultadoIA.modelo,
-                    tokens: resultadoIA.tokens_usados
-                  }
+                  status: 'enviada'
                 });
-
-                processedByAI = true;
               }
-
-              await socket.sendPresenceUpdate('paused', message.key.remoteJid);
             }
-          } catch (aiErr) {
-            console.error(`[${instanceName}] Erro ao processar Agente IA:`, aiErr.message);
-          }
-        }
-
-        // 2. Auto-responder Legado (JSON) - Fallback
-        if (!processedByAI && text) {
-          handleIncomingMessage(instanceName, message.key.remoteJid, text).catch(err => {
-            console.error(`[${instanceName}] Erro no auto-responder legado:`, err.message);
-          });
+          } catch (e) { console.error('Erro IA:', e.message); }
         }
       }
-
-      sendWebhook(instanceName, messageData);
     }
   });
 
-  // Status de mensagem
-  socket.ev.on('messages.update', (updates) => {
+  // Status de mensagem (entregue, lida, etc)
+  socket.ev.on('messages.update', async (updates) => {
     for (const update of updates) {
+      // Notificar Webhook
       sendWebhook(instanceName, {
         event: 'message.update',
         instanceName,
         data: update
       });
+
+      // Se houver status novo, atualizar no chat interno
+      if (update.update?.status && update.key?.id) {
+        try {
+          const statusMap = {
+            2: 'enviada',   // Sended
+            3: 'entregue',  // Delivered
+            4: 'lida',      // Read
+            5: 'lida'       // Played? (audio)
+          };
+          const novoStatus = statusMap[update.update.status];
+          if (novoStatus && instances[instanceName].empresaId) {
+            await chatServico.atualizarStatusMensagem(instances[instanceName].empresaId, update.key.id, novoStatus);
+          }
+        } catch (e) {
+          console.error(`[${instanceName}] Erro ao atualizar status:`, e.message);
+        }
+      }
     }
   });
 
@@ -1372,16 +1393,37 @@ function formatJid(number) {
   return `${cleaned}@s.whatsapp.net`;
 }
 
+/**
+ * Extrai o corpo real da mensagem, lidando com aninhamento (view-once, ephemeral, etc)
+ */
+function getMessageBody(message) {
+  if (!message || !message.message) return null;
+
+  let msg = message.message;
+
+  // Desembrulhar tipos comuns de containers
+  while (msg.viewOnceMessage || msg.viewOnceMessageV2 || msg.ephemeralMessage || msg.documentWithCaptionMessage || msg.editMessage) {
+    msg = msg.viewOnceMessage?.message ||
+      msg.viewOnceMessageV2?.message ||
+      msg.ephemeralMessage?.message ||
+      msg.documentWithCaptionMessage?.message ||
+      msg.editMessage?.message ||
+      msg;
+  }
+
+  return msg;
+}
+
 function getMessageType(message) {
-  if (!message.message) return 'unknown';
-  const types = Object.keys(message.message);
+  const msg = getMessageBody(message);
+  if (!msg) return 'unknown';
+  const types = Object.keys(msg);
   return types[0] || 'unknown';
 }
 
 function extractText(message) {
-  if (!message.message) return null;
-
-  const msg = message.message;
+  const msg = getMessageBody(message);
+  if (!msg) return null;
 
   if (msg.conversation) return msg.conversation;
   if (msg.extendedTextMessage?.text) return msg.extendedTextMessage.text;
@@ -1390,6 +1432,10 @@ function extractText(message) {
   if (msg.documentMessage?.caption) return msg.documentMessage.caption;
   if (msg.buttonsResponseMessage?.selectedButtonId) return msg.buttonsResponseMessage.selectedButtonId;
   if (msg.listResponseMessage?.singleSelectReply?.selectedRowId) return msg.listResponseMessage.singleSelectReply.selectedRowId;
+  if (msg.templateButtonReplyMessage?.selectedId) return msg.templateButtonReplyMessage.selectedId;
+
+  // Polls
+  if (msg.pollCreationMessage?.name) return `[Votação: ${msg.pollCreationMessage.name}]`;
 
   return null;
 }

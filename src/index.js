@@ -110,8 +110,16 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 1. Static Files (Prioridade máxima para evitar interferência de middlewares)
 const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
+const uploadsPath = path.resolve(__dirname, '../uploads');
+
+// Garantir que a pasta de uploads existe
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
+
 logger.info(`Configurando express.static em: ${frontendDistPath}`);
 app.use(express.static(frontendDistPath));
+app.use('/uploads', express.static(uploadsPath));
 
 // 2. Middlewares de Segurança e CORS
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -176,6 +184,27 @@ app.get('/api/debug-full', async (req, res) => {
   } catch (e) { results.modules.error = e.message; }
 
   res.json(results);
+});
+
+app.get('/api/debug-detail-db', async (req, res) => {
+  try {
+    const { query } = require('./config/database');
+    const empresas = await query('SELECT * FROM empresas');
+    const instances = await query('SELECT * FROM instances');
+    const conversasCount = await query('SELECT COUNT(*) FROM conversas');
+    const mensagensCount = await query('SELECT COUNT(*) FROM mensagens');
+
+    res.json({
+      empresas: empresas.rows,
+      instances: instances.rows,
+      counts: {
+        conversas: conversasCount.rows[0].count,
+        mensagens: mensagensCount.rows[0].count
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Log de todas as requisições (apenas em desenvolvimento ou para rotas críticas de debug)

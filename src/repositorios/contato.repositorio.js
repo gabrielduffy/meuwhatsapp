@@ -71,17 +71,15 @@ async function buscarPorId(id, empresaId = null) {
  * Buscar contato por telefone
  */
 async function buscarPorTelefone(telefone, empresaId) {
-  // Limpar telefone (remover caracteres especiais)
-  const telefoneLimpo = telefone.replace(/\D/g, '');
+  // Se for um grupo, não limpamos os caracteres não-numéricos (e.g. @g.us)
+  const isGroup = telefone.includes('@g.us');
+  const telefoneBusca = isGroup ? telefone : telefone.replace(/\D/g, '');
 
-  const sql = `
-    SELECT * FROM contatos
-    WHERE empresa_id = $1
-    AND REPLACE(REPLACE(REPLACE(telefone, '-', ''), '(', ''), ')', '') = $2
-    LIMIT 1
-  `;
+  const sql = isGroup
+    ? `SELECT * FROM contatos WHERE empresa_id = $1 AND telefone = $2 LIMIT 1`
+    : `SELECT * FROM contatos WHERE empresa_id = $1 AND REPLACE(REPLACE(REPLACE(telefone, '-', ''), '(', ''), ')', '') = $2 LIMIT 1`;
 
-  const resultado = await query(sql, [empresaId, telefoneLimpo]);
+  const resultado = await query(sql, [empresaId, telefoneBusca]);
   return resultado.rows[0];
 }
 
