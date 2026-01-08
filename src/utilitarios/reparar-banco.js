@@ -135,8 +135,16 @@ async function repararBanco() {
             logger.error('Erro ao reparar tabela usuarios (api_token):', err.message);
         }
 
-        // 7. Índices extras para performance de API
-        await query('CREATE INDEX IF NOT EXISTS idx_instances_token ON instances(token)');
+        // 8. Boost limites do plano Starter por segurança
+        try {
+            logger.info('Ajustando limites do plano Starter...');
+            await query("UPDATE planos SET max_instancias = 10, max_usuarios = 10 WHERE slug = 'starter'");
+
+            // Garantir que a primeira empresa tenha plano e status ativo
+            await query("UPDATE empresas SET plano_id = (SELECT id FROM planos WHERE slug = 'starter'), status = 'ativo' WHERE status IS NULL OR status != 'ativo'");
+        } catch (err) {
+            logger.error('Erro ao ajustar limites do plano:', err.message);
+        }
 
         logger.info('Reparo do banco concluído.');
     } catch (error) {

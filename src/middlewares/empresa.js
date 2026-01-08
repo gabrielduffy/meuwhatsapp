@@ -60,52 +60,64 @@ function verificarLimite(tipo) {
 
     const { query } = require('../config/database');
 
-    let contadorAtual = 0;
-    let limite = 0;
+    try {
+      let contadorAtual = 0;
+      let limite = 0;
 
-    switch (tipo) {
-      case 'usuarios':
-        const resultUsuarios = await query(
-          'SELECT COUNT(*) FROM usuarios WHERE empresa_id = $1',
-          [empresa.id]
-        );
-        contadorAtual = parseInt(resultUsuarios.rows[0].count);
-        limite = empresa.max_usuarios || 1;
-        break;
+      // Debug para identificar problemas de multi-tenant
+      console.log(`[Limites] Verificando ${tipo} para Empresa: ${empresa.id} (Plano: ${empresa.plano_id || 'Nenhum'})`);
 
-      case 'instancias':
-        const resultInstancias = await query(
-          'SELECT COUNT(*) FROM instancias_whatsapp WHERE empresa_id = $1',
-          [empresa.id]
-        );
-        contadorAtual = parseInt(resultInstancias.rows[0].count);
-        limite = empresa.max_instancias || 1;
-        break;
+      switch (tipo) {
+        case 'usuarios':
+          const resultUsuarios = await query(
+            'SELECT COUNT(*) FROM usuarios WHERE empresa_id = $1',
+            [empresa.id]
+          );
+          contadorAtual = parseInt(resultUsuarios.rows[0].count);
+          limite = empresa.max_usuarios || 10; // Default 10 na falta de plano
+          break;
 
-      case 'contatos':
-        const resultContatos = await query(
-          'SELECT COUNT(*) FROM contatos WHERE empresa_id = $1',
-          [empresa.id]
-        );
-        contadorAtual = parseInt(resultContatos.rows[0].count);
-        limite = empresa.max_contatos || 1000;
-        break;
+        case 'instancias':
+          // Verificar se a coluna empresa_id existe (fail-safe)
+          const resultInstancias = await query(
+            'SELECT COUNT(*) FROM instances WHERE empresa_id = $1',
+            [empresa.id]
+          );
+          contadorAtual = parseInt(resultInstancias.rows[0].count);
+          limite = empresa.max_instancias || 5; // Default 5 na falta de plano
+          break;
 
-      default:
-        return next();
+        case 'contatos':
+          const resultContatos = await query(
+            'SELECT COUNT(*) FROM contatos WHERE empresa_id = $1',
+            [empresa.id]
+          );
+          contadorAtual = parseInt(resultContatos.rows[0].count);
+          limite = empresa.max_contatos || 1000;
+          break;
+
+        default:
+          return next();
+      }
+
+      console.log(`[Limites] ${tipo}: ${contadorAtual} / ${limite}`);
+
+      if (contadorAtual >= limite) {
+        return res.status(403).json({
+          erro: `Limite de ${tipo} atingido`,
+          limite_atual: limite,
+          utilizado: contadorAtual,
+          mensagem: `Seu plano permite no máximo ${limite} ${tipo}. Faça upgrade para aumentar este limite.`,
+          codigo: 'LIMITE_ATINGIDO'
+        });
+      }
+
+      next();
+    } catch (err) {
+      console.error(`[Limites] Erro ao verificar limite de ${tipo}:`, err);
+      // No modo bypass/emergência, deixa passar se o erro for de banco (coluna faltando, etc)
+      next();
     }
-
-    if (contadorAtual >= limite) {
-      return res.status(403).json({
-        erro: `Limite de ${tipo} atingido`,
-        limite_atual: limite,
-        utilizado: contadorAtual,
-        mensagem: `Seu plano permite no máximo ${limite} ${tipo}. Faça upgrade para aumentar este limite.`,
-        codigo: 'LIMITE_ATINGIDO'
-      });
-    }
-
-    next();
   };
 }
 

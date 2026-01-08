@@ -47,8 +47,10 @@ router.post('/create', verificarLimite('instancias'), async (req, res) => {
 
     // Simplified creation process
     const result = await whatsapp.createInstance(instanceName, {
+      ...req.body, // Pass all body options if needed
       markOnline: true,
-      browser: 'Chrome'
+      browser: 'Chrome',
+      empresaId: req.empresaId || req.empresa?.id
     });
 
     res.json({
