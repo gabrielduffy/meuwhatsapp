@@ -49,30 +49,69 @@ async function instanceAuthMiddleware(req, res, next) {
   // 1. Verificar se é um token Bearer (JWT) vindo do Dashboard
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const { autenticarMiddleware } = require('./autenticacao');
-    // Reutiliza a lógica do middleware de autenticação oficial
     return autenticarMiddleware(req, res, next);
   }
 
-  // 2. Verificar API Key global (Admin/Externo)
-  if (apiKey && apiKey === API_KEY) {
-    const requestedEmpresaId = req.headers['x-empresa-id'];
+  // 2. Verificar API Key (Pode ser Global Admin OU Pessoal do Usuário)
+  if (apiKey) {
     const { query } = require('../config/database');
 
+    // 2a. Verificar se é a API Key Master (Admin)
+    const MASTER_KEY = process.env.API_KEY || 'sua-chave-secreta-aqui';
+    if (apiKey === MASTER_KEY) {
+      const requestedEmpresaId = req.headers['x-empresa-id'];
+      try {
+        let sql = 'SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1';
+        let params = [];
+        if (requestedEmpresaId) {
+          sql = 'SELECT * FROM empresas WHERE id = $1';
+          params = [requestedEmpresaId];
+        }
+        const dbRes = await query(sql, params);
+        if (dbRes.rows.length > 0) {
+          req.empresa = dbRes.rows[0];
+          req.empresaId = req.empresa.id;
+        }
+        return next();
+      } catch (e) {
+        return next();
+      }
+    }
+
+    // 2b. SE NÃO FOR A MASTER, verificar se é um Token Pessoal de Usuário
     try {
-      let sql = 'SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1';
-      let params = [];
-      if (requestedEmpresaId) {
-        sql = 'SELECT * FROM empresas WHERE id = $1';
-        params = [requestedEmpresaId];
+      const userRes = await query(`
+        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status, e.max_instancias, e.max_usuarios
+        FROM usuarios u
+        LEFT JOIN empresas e ON u.empresa_id = e.id
+        WHERE u.api_token = $1 AND u.ativo = true
+      `, [apiKey]);
+
+      if (userRes.rows.length > 0) {
+        const usuario = userRes.rows[0];
+
+        // Se a empresa estiver inativa, barrar (exceto para admin se for o caso)
+        if (usuario.empresa_id && usuario.emp_status !== 'ativo') {
+          return res.status(403).json({ error: 'Empresa inativa' });
+        }
+
+        req.usuario = usuario;
+        req.usuarioId = usuario.id;
+        req.empresaId = usuario.empresa_id;
+        req.empresa = {
+          id: usuario.empresa_id,
+          nome: usuario.emp_nome,
+          plano_id: usuario.plano_id,
+          status: usuario.emp_status,
+          max_instancias: usuario.max_instancias,
+          max_usuarios: usuario.max_usuarios
+        };
+
+        console.log(`[Auth] Token pessoal usado por: ${usuario.nome} (${usuario.emp_nome || 'Sem Empresa'})`);
+        return next();
       }
-      const dbRes = await query(sql, params);
-      if (dbRes.rows.length > 0) {
-        req.empresa = dbRes.rows[0];
-        req.empresaId = req.empresa.id;
-      }
-      return next();
-    } catch (e) {
-      return next();
+    } catch (err) {
+      console.error('[Auth] Erro ao validar token pessoal:', err);
     }
   }
 
@@ -88,7 +127,7 @@ async function instanceAuthMiddleware(req, res, next) {
   return res.status(401).json({
     success: false,
     error: 'Não autorizado',
-    message: 'Forneça uma API Key válida, Instance Token ou esteja logado.'
+    message: 'Forneça uma API Key válida (Master ou Pessoal), Instance Token ou esteja logado.'
   });
 }
 
