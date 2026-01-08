@@ -6,7 +6,6 @@
 const path = require('path');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const config = require('./env');
 
 const swaggerOptions = {
   definition: {
@@ -44,79 +43,79 @@ const swaggerOptions = {
     license: {
       name: 'Proprietary',
       url: 'https://whatsbenemax.com/terms'
-    }
-  },
-  servers: [
-    {
-      url: 'https://meuwhatsapp-meuwhatsapp.ax5glv.easypanel.host',
-      description: 'Servidor Easypanel (Atual)'
     },
-    {
-      url: 'https://api.whatsbenemax.com',
-      description: 'Produção Principal'
-    },
-    {
-      url: 'http://localhost:3000',
-      description: 'Desenvolvimento Local'
-    }
-  ],
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Token JWT obtido através do endpoint /api/auth/login'
+    servers: [
+      {
+        url: 'https://meuwhatsapp-meuwhatsapp.ax5glv.easypanel.host',
+        description: 'Servidor Easypanel (Atual)'
       },
-      apiKey: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'X-API-Key',
-        description: 'Chave de API para rotas legadas (definida no arquivo .env)'
+      {
+        url: 'https://api.whatsbenemax.com',
+        description: 'Produção Principal'
+      },
+      {
+        url: 'http://localhost:3000',
+        description: 'Desenvolvimento Local'
       }
-    },
-    responses: {
-      UnauthorizedError: {
-        description: 'Token ausente ou inválido',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                success: { type: 'boolean', example: false },
-                error: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'string', example: 'INVALID_TOKEN' },
-                    message: { type: 'string', example: 'Token inválido' }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Token JWT obtido através do endpoint /api/auth/login'
+        },
+        apiKey: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'X-API-Key',
+          description: 'Chave de API para rotas legadas (definida no arquivo .env)'
+        }
+      },
+      responses: {
+        UnauthorizedError: {
+          description: 'Token ausente ou inválido',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'INVALID_TOKEN' },
+                      message: { type: 'string', example: 'Token inválido' }
+                    }
                   }
                 }
               }
             }
           }
-        }
-      },
-      ValidationError: {
-        description: 'Dados de entrada inválidos',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                success: { type: 'boolean', example: false },
-                error: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'string', example: 'VALIDATION_ERROR' },
-                    message: { type: 'string', example: 'Dados inválidos' },
-                    details: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          field: { type: 'string' },
-                          message: { type: 'string' },
-                          code: { type: 'string' }
+        },
+        ValidationError: {
+          description: 'Dados de entrada inválidos',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'VALIDATION_ERROR' },
+                      message: { type: 'string', example: 'Dados inválidos' },
+                      details: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            field: { type: 'string' },
+                            message: { type: 'string' },
+                            code: { type: 'string' }
+                          }
                         }
                       }
                     }
@@ -125,21 +124,41 @@ const swaggerOptions = {
               }
             }
           }
-        }
-      },
-      NotFoundError: {
-        description: 'Recurso não encontrado',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                success: { type: 'boolean', example: false },
-                error: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'string', example: 'NOT_FOUND' },
-                    message: { type: 'string', example: 'Recurso não encontrado' }
+        },
+        NotFoundError: {
+          description: 'Recurso não encontrado',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'NOT_FOUND' },
+                      message: { type: 'string', example: 'Recurso não encontrado' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        InternalError: {
+          description: 'Erro interno do servidor',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'INTERNAL_ERROR' },
+                      message: { type: 'string', example: 'Erro interno do servidor' }
+                    }
                   }
                 }
               }
@@ -147,60 +166,40 @@ const swaggerOptions = {
           }
         }
       },
-      InternalError: {
-        description: 'Erro interno do servidor',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                success: { type: 'boolean', example: false },
-                error: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'string', example: 'INTERNAL_ERROR' },
-                    message: { type: 'string', example: 'Erro interno do servidor' }
-                  }
-                }
-              }
-            }
+      schemas: {
+        Usuario: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'João Silva' },
+            email: { type: 'string', format: 'email', example: 'joao@example.com' },
+            funcao: {
+              type: 'string',
+              enum: ['administrador', 'empresa', 'usuario', 'afiliado'],
+              example: 'usuario'
+            },
+            ativo: { type: 'boolean', example: true },
+            empresa_id: { type: 'integer', example: 1 },
+            criado_em: { type: 'string', format: 'date-time' },
+            atualizado_em: { type: 'string', format: 'date-time' }
           }
-        }
-      }
-    },
-    schemas: {
-      Usuario: {
-        type: 'object',
-        properties: {
-          id: { type: 'integer', example: 1 },
-          nome: { type: 'string', example: 'João Silva' },
-          email: { type: 'string', format: 'email', example: 'joao@example.com' },
-          funcao: {
-            type: 'string',
-            enum: ['administrador', 'empresa', 'usuario', 'afiliado'],
-            example: 'usuario'
-          },
-          ativo: { type: 'boolean', example: true },
-          empresa_id: { type: 'integer', example: 1 },
-          criado_em: { type: 'string', format: 'date-time' },
-          atualizado_em: { type: 'string', format: 'date-time' }
-        }
-      },
-      Empresa: {
-        type: 'object',
-        properties: {
-          id: { type: 'integer', example: 1 },
-          nome: { type: 'string', example: 'Empresa XYZ' },
-          email: { type: 'string', format: 'email' },
-          telefone: { type: 'string', example: '5511999999999' },
-          documento: { type: 'string', example: '12345678901234' },
-          status: {
-            type: 'string',
-            enum: ['ativo', 'trial', 'inativo', 'bloqueado'],
-            example: 'ativo'
-          },
-          whitelabel_ativo: { type: 'boolean', example: false },
-          criado_em: { type: 'string', format: 'date-time' }
+        },
+        Empresa: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'Empresa XYZ' },
+            email: { type: 'string', format: 'email' },
+            telefone: { type: 'string', example: '5511999999999' },
+            documento: { type: 'string', example: '12345678901234' },
+            status: {
+              type: 'string',
+              enum: ['ativo', 'trial', 'inativo', 'bloqueado'],
+              example: 'ativo'
+            },
+            whitelabel_ativo: { type: 'boolean', example: false },
+            criado_em: { type: 'string', format: 'date-time' }
+          }
         }
       }
     },

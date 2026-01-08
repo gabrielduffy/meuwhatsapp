@@ -160,9 +160,9 @@ async function createInstance(instanceName, options = {}) {
       try {
         const qrBase64 = await QRCode.toDataURL(qr);
         instances[instanceName].qrCodeBase64 = qrBase64;
-        console.log(`[${instanceName}] QR Code convertido para Base64 com sucesso.`);
+        console.log(`[${instanceName}] ✓ QR Code convertido para Base64 com sucesso. Pronto para exibição.`);
       } catch (err) {
-        console.error(`[${instanceName}] Erro ao gerar QR base64:`, err);
+        console.error(`[${instanceName}] ❌ Erro ao gerar QR base64:`, err);
       }
 
       sendWebhook(instanceName, {

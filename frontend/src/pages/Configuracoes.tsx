@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell,
@@ -32,6 +32,42 @@ export default function Configuracoes() {
     confirmacao: ''
   });
   const [loadingSenha, setLoadingSenha] = useState(false);
+
+  const [apiToken, setApiToken] = useState('');
+  const [loadingToken, setLoadingToken] = useState(false);
+
+  useEffect(() => {
+    loadApiToken();
+  }, []);
+
+  const loadApiToken = async () => {
+    try {
+      const response = await api.get('/api/usuarios/me/token');
+      setApiToken(response.data.token);
+    } catch (error) {
+      console.error('Erro ao carregar token:', error);
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!confirm('Tem certeza? O token antigo parará de funcionar imediatamente.')) return;
+
+    setLoadingToken(true);
+    try {
+      const response = await api.post('/api/usuarios/me/token');
+      setApiToken(response.data.token);
+      toast.success('Token regenerado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao regenerar token');
+    } finally {
+      setLoadingToken(false);
+    }
+  };
+
+  const handleCopyToken = () => {
+    navigator.clipboard.writeText(apiToken);
+    toast.success('Token copiado!');
+  };
 
   const handleSaveNotifications = () => {
     toast.success('Configurações de notificações salvas!');
@@ -229,6 +265,33 @@ export default function Configuracoes() {
                       <Badge variant="warning" className="mt-2">Em breve</Badge>
                     </div>
                   </div>
+                </div>
+
+                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-white flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-purple-400" />
+                      Meu Token de API
+                    </p>
+                    <button
+                      onClick={handleRegenerateToken}
+                      disabled={loadingToken}
+                      className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors uppercase font-bold tracking-wider"
+                    >
+                      Regenerar
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-black/40 rounded-lg px-3 py-2 font-mono text-xs text-purple-300 break-all border border-white/5">
+                      {apiToken || 'Carregando...'}
+                    </div>
+                    <Button variant="glass" size="sm" onClick={handleCopyToken}>
+                      Copiar
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-white/40 mt-2">
+                    Use este token para autenticar suas requisições via <code className="text-purple-400">X-API-Key</code>.
+                  </p>
                 </div>
 
                 <div className="p-4 bg-white/5 rounded-lg">

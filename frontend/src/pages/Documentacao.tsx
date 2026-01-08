@@ -73,7 +73,15 @@ const ENDPOINTS = {
             title: 'Desconectar WhatsApp',
             description: 'Realiza o logout da conta do WhatsApp, mas mantém a instância configurada.',
             params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],
-            response: `{ "status": "success" }`
+            response: `{ "success": true, "message": "Logout realizado" }`
+        },
+        {
+            method: 'DELETE',
+            path: '/instance/{instanceName}',
+            title: 'Deletar Instância',
+            description: 'Remove completamente a instância do servidor, deletando arquivos de sessão e configurações.',
+            params: [{ name: 'instanceName', type: 'string', desc: 'Nome único da sua conexão' }],
+            response: `{ "success": true, "message": "Instância deletada" }`
         }
     ],
     messages: [
@@ -139,14 +147,32 @@ const ENDPOINTS = {
         {
             method: 'POST',
             path: '/webhook/set',
-            title: 'Receber Mensagens em Tempo Real',
-            description: 'Configure sua URL para receber mensagens de texto, imagens e status de leitura.',
+            title: 'Configurar Webhook',
+            description: 'Define a URL que receberá os eventos da instância. Similar ao configWebhook da Mega API.',
             body: `{
   "instanceName": "Producao",
   "url": "https://api.seu-sistema.com/whats-webhook",
-  "events": ["messages.upsert", "messages.update", "connection.update"]
+  "events": ["message", "connection", "message.update"]
 }`,
-            response: `{ "success": true }`
+            response: `{ "success": true, "message": "Webhook configurado" }`
+        },
+        {
+            method: 'PAYLOAD',
+            path: 'Estrutura do Evento: Mensagem',
+            title: 'Webhook: Nova Mensagem',
+            description: 'Exemplo de payload enviado para sua URL quando uma nova mensagem é recebida.',
+            body: `{
+  "event": "message",
+  "instanceName": "instancia_01",
+  "data": {
+    "key": { "remoteJid": "5511999999999@s.whatsapp.net", "fromMe": false, "id": "ABC123" },
+    "pushName": "Nome do Cliente",
+    "messageType": "conversation",
+    "text": "Olá, tudo bem?",
+    "timestamp": 1672531200
+  }
+}`,
+            response: `Status: 200 OK`
         }
     ]
 };
@@ -209,7 +235,7 @@ export default function Documentacao() {
 
                 <div className="p-4 border-t border-gray-800">
                     <div className="bg-gray-800/50 p-3 rounded text-xs text-gray-400">
-                        <p className="font-semibold text-gray-300 mb-1">Seu Token de Acesso</p>
+                        <p className="font-semibold text-gray-300 mb-1">Seu Token de API</p>
                         {userToken ? (
                             <div className="relative group cursor-pointer" onClick={handleCopyToken}>
                                 <code className="block mt-1 bg-black/30 p-2 rounded text-cyan-400 truncate text-[10px] break-all">
@@ -222,7 +248,7 @@ export default function Documentacao() {
                         ) : (
                             <p className="text-[10px] text-red-400">Faça login para ver o token</p>
                         )}
-                        <p className="mt-2 text-[10px] text-gray-500">Header: <span className="font-mono text-purple-300">Authorization: Bearer [TOKEN]</span></p>
+                        <p className="mt-2 text-[10px] text-gray-500">Header sugerido: <span className="font-mono text-purple-300">X-API-Key: [TOKEN]</span></p>
                     </div>
                 </div>
             </div>
