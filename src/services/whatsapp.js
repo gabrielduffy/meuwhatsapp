@@ -59,7 +59,7 @@ async function createInstance(instanceName, options = {}) {
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
-  let version = [2, 3000, 1015901307]; // Fallback para uma versão estável
+  let version = [2, 2323, 4]; // Versão estável reconhecida pelo WhatsApp Web
   try {
     const fetched = await fetchLatestBaileysVersion();
     version = fetched.version;
@@ -98,11 +98,12 @@ async function createInstance(instanceName, options = {}) {
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: ['Ubuntu', 'Chrome', '131.0.6778.204'], // Identificação mais moderna para evitar travamento no "Conectando"
-    connectTimeoutMs: 90000, // Aumentado para 90s para maior estabilidade
+    browser: ['Mac OS', 'Safari', '17.0'], // Identificação clássica e estável para pareamento rápido
+    connectTimeoutMs: 120000, // Aumentado para 120s para conexões em redes instáveis ou sync pesado
     defaultQueryTimeoutMs: 60000,
-    keepAliveIntervalMs: 15000, // Ajustado para 15s para manter socket vivo
-    retryRequestDelayMs: 500
+    keepAliveIntervalMs: 30000, // 30s para manter o túnel estável
+    retryRequestDelayMs: 2000,
+    shouldIgnoreJid: (jid) => jid?.includes('@broadcast') || jid?.includes('@newsletter') // Ignorar broadcast para acelerar sync inicial
   };
 
   if (agent) {
