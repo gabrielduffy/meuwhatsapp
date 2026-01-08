@@ -141,6 +141,13 @@ async function createInstance(instanceName, options = {}) {
   console.log(`[${instanceName}] Inicializando socket do Baileys...`);
   const socket = makeWASocket(socketConfig);
 
+  // Configurar Webhook se fornecido nas opções (comum no Lovable)
+  if (options.webhookUrl || options.webhook) {
+    const url = options.webhookUrl || options.webhook;
+    console.log(`[${instanceName}] 🔗 Configurando webhook automático: ${url}`);
+    setWebhook(instanceName, url, options.webhookEvents || ['all']);
+  }
+
   // Gerar token único para a instância se não existir
   const instanceToken = options.token || uuidv4();
 
@@ -1328,8 +1335,11 @@ async function sendWebhook(instanceName, data) {
 
   const payload = {
     ...data,
+    instanceName,
     timestamp: new Date().toISOString()
   };
+
+  console.log(`[Webhook] Enviando evento '${data.event}' para: ${webhook.url}`);
 
   // Se webhook avançado está configurado, usar retry automático
   if (isAdvancedEnabled) {
@@ -1338,20 +1348,11 @@ async function sendWebhook(instanceName, data) {
       console.error(`[${instanceName}] Erro no webhook avançado:`, err.message);
     });
   } else {
-    // Método básico (sem retry)
-    try {
-      const response = await fetch(webhook.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        console.error(`[${instanceName}] Webhook falhou: ${response.status}`);
-      }
-    } catch (error) {
-      console.error(`[${instanceName}] Erro no webhook:`, error.message);
-    }
+    // Método básico usando axios
+    const axios = require('axios');
+    axios.post(webhook.url, payload, { timeout: 15000 })
+      .then(res => console.log(`[Webhook] ✓ Sucesso (${instanceName}): ${res.status}`))
+      .catch(err => console.error(`[Webhook] ❌ Falha (${instanceName}): ${err.message}`));
   }
 }
 

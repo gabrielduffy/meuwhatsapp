@@ -85,7 +85,9 @@ router.get('/list', (req, res) => {
   // Converter objeto { nome: dados } para array [ { instanceName: nome, ...dados } ]
   const instancesList = Object.entries(instancesObj).map(([name, data]) => ({
     instanceName: name,
-    ...data
+    status: data.status || (data.isConnected ? 'connected' : 'disconnected'),
+    isConnected: data.isConnected,
+    user: data.user
   }));
   res.json(instancesList);
 });
@@ -198,6 +200,7 @@ router.get('/:instanceName/status', (req, res) => {
   res.json({
     instanceName,
     isConnected: instance.isConnected,
+    status: instance.status || (instance.isConnected ? 'connected' : 'disconnected'),
     user: instance.user || null,
     proxy: instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
     createdAt: instance.createdAt,
