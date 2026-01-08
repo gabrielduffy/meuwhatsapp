@@ -80,15 +80,17 @@ async function instanceAuthMiddleware(req, res, next) {
 
     // 2b. SE NÃO FOR A MASTER, verificar se é um Token Pessoal de Usuário
     try {
+      const trimmedKey = apiKey.trim();
       const userRes = await query(`
         SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status, e.max_instancias, e.max_usuarios
         FROM usuarios u
         LEFT JOIN empresas e ON u.empresa_id = e.id
         WHERE u.api_token = $1 AND u.ativo = true
-      `, [apiKey]);
+      `, [trimmedKey]);
 
       if (userRes.rows.length > 0) {
         const usuario = userRes.rows[0];
+        console.log(`[Auth Debug] Token pessoal vlido para: ${usuario.nome}`);
 
         // Se a empresa estiver inativa, barrar (exceto para admin se for o caso)
         if (usuario.empresa_id && usuario.emp_status !== 'ativo') {
@@ -103,15 +105,16 @@ async function instanceAuthMiddleware(req, res, next) {
           nome: usuario.emp_nome,
           plano_id: usuario.plano_id,
           status: usuario.emp_status,
-          max_instancias: usuario.max_instancias,
-          max_usuarios: usuario.max_usuarios
+          max_instancias: usuario.max_instancias || 5,
+          max_usuarios: usuario.max_usuarios || 10
         };
 
-        console.log(`[Auth] Token pessoal usado por: ${usuario.nome} (${usuario.emp_nome || 'Sem Empresa'})`);
         return next();
+      } else {
+        console.warn(`[Auth Debug] Token no encontrado: ${trimmedKey.substring(0, 5)}...`);
       }
     } catch (err) {
-      console.error('[Auth] Erro ao validar token pessoal:', err);
+      console.error('[Auth Debug] Erro ao validar token:', err);
     }
   }
 
