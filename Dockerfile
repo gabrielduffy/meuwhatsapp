@@ -1,30 +1,35 @@
-FROM node:20-alpine
-
-# Instalar git (necessário para Baileys)
-RUN apk add --no-cache git
-
-# Diretório de trabalho
-WORKDIR /app
-
-# Copiar package.json do backend
-COPY package*.json ./
-
-# Instalar dependências do backend
-RUN npm install --omit=dev
-
-# Copiar código fonte
-COPY . .
-
-# Instalar dependências e build do frontend
+# Estágio 1: Build do Frontend
+FROM node:20-alpine AS build-frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
+# Configuração para maior resiliência em redes instáveis
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
 RUN npm install
+COPY frontend/ .
 RUN npm run build
 
-# Voltar para diretório raiz
+# Estágio 2: Setup do Backend e Imagem Final
+FROM node:20-alpine
+RUN apk add --no-cache git
+
 WORKDIR /app
 
-# Criar diretórios
+# Instalar dependências do backend primeiro (melhor caching)
+COPY package*.json ./
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000
+RUN npm install --omit=dev
+
+# Copiar código do backend
+COPY . .
+
+# Copiar build do frontend do Estágio 1 para a pasta dist/public do backend
+# Se o seu backend serve o frontend da pasta 'public', ajuste o destino
+COPY --from=build-frontend /app/frontend/dist /app/frontend/dist
+
+# Criar diretórios necessários
 RUN mkdir -p /app/sessions /app/data
 
 # Expor porta
@@ -34,6 +39,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV SESSIONS_DIR=/app/sessions
 ENV DATA_DIR=/app/data
+ENV NODE_ENV=production
 
 # Iniciar aplicação
 CMD ["node", "src/index.js"]
