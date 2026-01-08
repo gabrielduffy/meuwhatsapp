@@ -98,7 +98,7 @@ async function createInstance(instanceName, options = {}) {
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: ['Ubuntu', 'Chrome', '120.0.6099.109'], // Identificação mais moderna e estável
+    browser: ['Ubuntu', 'Chrome', '131.0.6778.204'], // Identificação mais moderna para evitar travamento no "Conectando"
     connectTimeoutMs: 90000, // Aumentado para 90s para maior estabilidade
     defaultQueryTimeoutMs: 60000,
     keepAliveIntervalMs: 15000, // Ajustado para 15s para manter socket vivo
