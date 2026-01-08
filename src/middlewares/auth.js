@@ -39,42 +39,44 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// Autenticação por instância (API Key OU Instance Token)
-function instanceAuthMiddleware(req, res, next) {
+// Autenticação por instância (API Key OU Instance Token OU JWT)
+async function instanceAuthMiddleware(req, res, next) {
+  const authHeader = req.headers['authorization'];
   const apiKey = req.headers['x-api-key'] || req.query.apikey;
   const instanceToken = req.headers['x-instance-token'] || req.query.instancetoken;
   const instanceName = req.params.instanceName || req.body?.instanceName;
 
-  // 1. Verificar API Key global (Admin)
+  // 1. Verificar se é um token Bearer (JWT) vindo do Dashboard
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const { autenticarMiddleware } = require('./autenticacao');
+    // Reutiliza a lógica do middleware de autenticação oficial
+    return autenticarMiddleware(req, res, next);
+  }
+
+  // 2. Verificar API Key global (Admin/Externo)
   if (apiKey && apiKey === API_KEY) {
-    // Para Admin, vamos tentar injetar a ÚLTIMA empresa para respeitar limites no modo demo/admin
-    // Se o header X-Empresa-ID for enviado, usamos ele.
     const requestedEmpresaId = req.headers['x-empresa-id'];
     const { query } = require('../config/database');
 
-    // Injetar empresa de forma assíncrona antes de seguir
-    (async () => {
-      try {
-        let sql = 'SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1';
-        let params = [];
-        if (requestedEmpresaId) {
-          sql = 'SELECT * FROM empresas WHERE id = $1';
-          params = [requestedEmpresaId];
-        }
-        const res = await query(sql, params);
-        if (res.rows.length > 0) {
-          req.empresa = res.rows[0];
-          req.empresaId = req.empresa.id;
-        }
-        next();
-      } catch (e) {
-        next();
+    try {
+      let sql = 'SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1';
+      let params = [];
+      if (requestedEmpresaId) {
+        sql = 'SELECT * FROM empresas WHERE id = $1';
+        params = [requestedEmpresaId];
       }
-    })();
-    return;
+      const dbRes = await query(sql, params);
+      if (dbRes.rows.length > 0) {
+        req.empresa = dbRes.rows[0];
+        req.empresaId = req.empresa.id;
+      }
+      return next();
+    } catch (e) {
+      return next();
+    }
   }
 
-  // 2. Se não for admin, verificar se tem Token de Instância válido para esta instância
+  // 3. Verificar Token de Instância (Legado)
   if (instanceName && instanceToken) {
     const validToken = instanceTokens[instanceName];
     if (validToken && validToken === instanceToken) {
@@ -82,11 +84,11 @@ function instanceAuthMiddleware(req, res, next) {
     }
   }
 
-  // 3. Se nenhum for válido
+  // 4. Se nenhum for válido
   return res.status(401).json({
     success: false,
     error: 'Não autorizado',
-    message: 'Forneça uma API Key válida ou o Instance Token correto.'
+    message: 'Forneça uma API Key válida, Instance Token ou esteja logado.'
   });
 }
 

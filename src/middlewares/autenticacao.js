@@ -40,9 +40,10 @@ async function autenticarMiddleware(req, res, next) {
           req.usuario = usuarioRes.rows[0];
           req.usuarioId = req.usuario.id;
         } else {
-          // Mock user se não houver usuários
-          req.usuario = { id: '0000-demo', nome: 'Demo User', empresa_id: req.empresaId };
-          req.usuarioId = '0000-demo';
+          // Mock user se não houver usuários (FORMATO UUID VÁLIDO)
+          const demoUuid = '00000000-0000-0000-0000-000000000000';
+          req.usuario = { id: demoUuid, nome: 'Demo User', empresa_id: req.empresaId };
+          req.usuarioId = demoUuid;
         }
         return next();
       }
