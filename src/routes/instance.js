@@ -120,15 +120,24 @@ router.get('/:instanceName/qrcode', (req, res) => {
     console.log(`[QR Debug] Servindo QR Code Base64 como imagem para '${instanceName}'.`);
     const base64Data = instance.qrCodeBase64.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
+
+    // CORS e Headers agressivos para o Lovable
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     return res.send(buffer);
   } else if (format === 'image' && instance.qrCode) {
-    // Se tiver QR mas não o base64 (raro), gerar agora
     console.log(`[QR Debug] Gerando QR Code imagem on-the-fly para '${instanceName}'.`);
     const QRCode = require('qrcode');
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
     QRCode.toBuffer(instance.qrCode, (err, buffer) => {
       if (err) return res.status(500).send('Erro ao gerar imagem');
-      res.setHeader('Content-Type', 'image/png');
       res.send(buffer);
     });
     return;
