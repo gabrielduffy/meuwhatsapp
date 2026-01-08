@@ -63,7 +63,10 @@ const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 // ==================== FUNÇÕES DE INSTÂNCIA ====================
 
-async function createInstance(instanceName, options = {}) {
+async function createInstance(instanceNameRaw, options = {}) {
+  const instanceName = instanceNameRaw ? instanceNameRaw.trim() : null;
+  if (!instanceName) throw new Error('Nome da instância é obrigatório');
+
   console.log(`[${instanceName}] Criando instância...`);
 
   const sessionPath = path.join(SESSIONS_DIR, instanceName);
@@ -171,6 +174,7 @@ async function createInstance(instanceName, options = {}) {
     proxy: options.proxy || null,
     token: instanceToken,
     empresaId, // Guardar em memória para acesso rápido
+    webhookUrl: options.webhookUrl || options.webhook || null, // Guardar para persistência em restarts
     createdAt: new Date().toISOString(),
     lastActivity: new Date().toISOString()
   };
@@ -182,11 +186,15 @@ async function createInstance(instanceName, options = {}) {
   // Salvar no banco (SaaS / Multi-tenant) para persistência robusta
   try {
     await query(`
-      INSERT INTO instances (instance_name, token, empresa_id, status)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO instances (instance_name, token, empresa_id, status, webhook_url, proxy_config)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (instance_name) DO UPDATE 
-      SET token = EXCLUDED.token, status = EXCLUDED.status, updated_at = NOW()
-    `, [instanceName, instanceToken, empresaId, 'connecting']);
+      SET token = EXCLUDED.token, 
+          status = EXCLUDED.status, 
+          webhook_url = COALESCE(EXCLUDED.webhook_url, instances.webhook_url),
+          proxy_config = COALESCE(EXCLUDED.proxy_config, instances.proxy_config),
+          updated_at = NOW()
+    `, [instanceName, instanceToken, empresaId, 'connecting', options.webhookUrl || options.webhook, options.proxy ? JSON.stringify(options.proxy) : null]);
   } catch (err) {
     console.warn(`[${instanceName}] Falha ao persistir no banco (ignorado):`, err.message);
   }
@@ -573,8 +581,18 @@ async function getPairingCode(instanceName, phoneNumber) {
   }
 }
 
-function getInstance(instanceName) {
-  return instances[instanceName] || null;
+function getInstance(instanceNameRaw) {
+  if (!instanceNameRaw) return null;
+  const instanceName = instanceNameRaw.trim();
+
+  // Try exact match first
+  if (instances[instanceName]) return instances[instanceName];
+
+  // Fallback to case-insensitive search
+  const nameLower = instanceName.toLowerCase();
+  const foundName = Object.keys(instances).find(k => k.toLowerCase() === nameLower);
+
+  return foundName ? instances[foundName] : null;
 }
 
 function getAllInstances() {
@@ -642,7 +660,9 @@ async function restartInstance(instanceName) {
 
   const options = {
     proxy: instance.proxy,
-    token: instance.token
+    token: instance.token,
+    webhookUrl: instance.webhookUrl,
+    empresaId: instance.empresaId
   };
 
   // Se estiver desconectado, vamos limpar a pasta por segurança para forçar novo QR
@@ -1345,12 +1365,27 @@ async function getBusinessProfile(instanceName, remoteJid) {
 // ==================== WEBHOOKS ====================
 
 function setWebhook(instanceName, webhookUrl, events = []) {
+  const eventsList = events.length > 0 ? events : ['all'];
   webhooks[instanceName] = {
     url: webhookUrl,
-    events: events.length > 0 ? events : ['all'],
+    events: eventsList,
     createdAt: new Date().toISOString()
   };
+
+  // Atualizar também no objeto da instância em memória se existir
+  const instance = instances[instanceName];
+  if (instance) {
+    instance.webhookUrl = webhookUrl;
+  }
+
+  // Persistir no arquivo JSON legado
   saveWebhooks();
+
+  // Persistir no Banco de Dados (SaaS)
+  query('UPDATE instances SET webhook_url = $1, webhook_events = $2, updated_at = NOW() WHERE instance_name = $3',
+    [webhookUrl, JSON.stringify(eventsList), instanceName])
+    .catch(e => console.error(`[Webhook] Erro ao persistir no banco para ${instanceName}:`, e.message));
+
   return { success: true };
 }
 

@@ -13,14 +13,29 @@ async function getEmpresaPadraoId() {
   } catch (e) { return null; }
 }
 
-// Helper para validar request
-function validateMessageRequest(req, res, fields = ['instanceName', 'to']) {
-  for (const field of fields) {
-    if (!req.body[field]) {
-      res.status(400).json({ error: `${field} é obrigatório` });
-      return false;
-    }
+// Helper para validar request com suporte a aliases (compatibilidade Lovable/Evolution)
+function validateMessageRequest(req, res) {
+  // Alias de mapeamento
+  const body = req.body;
+
+  // Normalizar instanceName
+  req.instanceName = body.instanceName || body.instance || body.instance_name;
+  // Normalizar destinatário
+  req.to = body.to || body.number || body.chatId || body.remoteJid;
+  // Normalizar conteúdo
+  req.text = body.text || body.body || body.content || body.message;
+  // Normalizar opções
+  req.options = body.options || {};
+
+  if (!req.instanceName) {
+    res.status(400).json({ success: false, error: 'instanceName ou instance é obrigatório' });
+    return false;
   }
+  if (!req.to) {
+    res.status(400).json({ success: false, error: 'to ou number é obrigatório' });
+    return false;
+  }
+
   return true;
 }
 
@@ -49,10 +64,10 @@ function validateMessageRequest(req, res, fields = ['instanceName', 'to']) {
  */
 router.post('/send-text', messageLimiter, async (req, res) => {
   try {
-    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'text'])) return;
+    if (!validateMessageRequest(req, res)) return;
+    if (!req.text) return res.status(400).json({ success: false, error: 'text ou body é obrigatório' });
 
-    const { instanceName, to, text, options } = req.body;
-    const result = await whatsapp.sendText(instanceName, to, text, options || {});
+    const result = await whatsapp.sendText(req.instanceName, req.to, req.text, req.options);
 
     // Persistir mensagem enviada
     try {
@@ -74,7 +89,7 @@ router.post('/send-text', messageLimiter, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -110,7 +125,7 @@ router.post('/send-image', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendImage(instanceName, to, imageUrl, caption, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -146,7 +161,7 @@ router.post('/send-document', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendDocument(instanceName, to, documentUrl, fileName, mimetype, caption, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -180,7 +195,7 @@ router.post('/send-audio', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendAudio(instanceName, to, audioUrl, ptt !== false, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -214,7 +229,7 @@ router.post('/send-video', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendVideo(instanceName, to, videoUrl, caption, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -247,7 +262,7 @@ router.post('/send-sticker', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendSticker(instanceName, to, stickerUrl, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -283,7 +298,7 @@ router.post('/send-location', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendLocation(instanceName, to, latitude, longitude, name, address, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -317,7 +332,7 @@ router.post('/send-contact', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendContact(instanceName, to, contactName, contactNumber, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -352,7 +367,7 @@ router.post('/send-poll', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendPoll(instanceName, to, name, values, selectableCount, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -393,7 +408,7 @@ router.post('/send-buttons', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendButtons(instanceName, to, text, buttons, footer, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -442,7 +457,7 @@ router.post('/send-list', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendList(instanceName, to, title, description, buttonText, sections, footer, options || {});
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -476,7 +491,7 @@ router.post('/send-reaction', messageLimiter, async (req, res) => {
     const result = await whatsapp.sendReaction(instanceName, to, messageId, emoji);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -509,7 +524,7 @@ router.post('/forward', messageLimiter, async (req, res) => {
     const result = await whatsapp.forwardMessage(instanceName, to, message);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -543,7 +558,7 @@ router.post('/delete', async (req, res) => {
     const result = await whatsapp.deleteMessage(instanceName, remoteJid, messageId, forEveryone !== false);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -576,7 +591,7 @@ router.post('/mark-read', async (req, res) => {
     const result = await whatsapp.markAsRead(instanceName, remoteJid, messageIds);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

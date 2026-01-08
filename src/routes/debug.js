@@ -23,6 +23,19 @@ router.get('/db', async (req, res) => {
     }
 });
 
+router.get('/instances', (req, res) => {
+    try {
+        const whatsapp = require('../services/whatsapp');
+        const instances = whatsapp.getAllInstances();
+        res.json({
+            total: Object.keys(instances).length,
+            instances
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/message', async (req, res) => {
     try {
         const chatServico = require('../servicos/chat.servico');
