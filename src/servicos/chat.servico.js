@@ -21,7 +21,10 @@ function configurarSocketIO(socketIO) {
  */
 function emitirParaEmpresa(empresaId, evento, dados) {
   if (io) {
+    console.log(`[Socket] Emitindo '${evento}' para empresa:${empresaId}`);
     io.to(`empresa:${empresaId}`).emit(evento, dados);
+  } else {
+    console.warn('[Socket] tentou emitir mas io está nulo');
   }
 }
 
@@ -30,6 +33,7 @@ function emitirParaEmpresa(empresaId, evento, dados) {
  */
 function emitirParaConversa(conversaId, evento, dados) {
   if (io) {
+    console.log(`[Socket] Emitindo '${evento}' para conversa:${conversaId}`);
     io.to(`conversa:${conversaId}`).emit(evento, dados);
   }
 }

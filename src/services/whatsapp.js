@@ -28,14 +28,20 @@ const { query } = require('../config/database');
 
 async function getEmpresaPadraoId() {
   try {
-    // Cache simples em memória poderia ser usado aqui
-    // Modificado para pegar a ÚLTIMA empresa criada (assume-se que seja a do usuário atual em single-tenant)
-    const res = await query('SELECT id FROM empresas ORDER BY criado_em DESC LIMIT 1');
+    // Buscar a empresa mais recente (fallback single-tenant)
+    let res = await query('SELECT id FROM empresas WHERE status = \'ativo\' ORDER BY criado_em DESC LIMIT 1');
+    if (res.rows.length === 0) {
+      res = await query('SELECT id FROM empresas ORDER BY criado_em DESC LIMIT 1');
+    }
     const id = res.rows[0]?.id;
-    if (id) console.log('[WhatsApp] Empresa padrão detectada:', id);
+    if (id) {
+      console.log(`[Empresa] Resolvido ID: ${id}`);
+    } else {
+      console.warn('[Empresa] ⚠️ Nenhuma empresa encontrada no banco!');
+    }
     return id;
   } catch (e) {
-    console.error('Erro ao buscar empresa padrao:', e);
+    console.error('[Empresa] ❌ Erro ao buscar:', e);
     return null;
   }
 }
@@ -289,7 +295,15 @@ async function createInstance(instanceName, options = {}) {
     for (const message of messages) {
       if (!message.message) continue;
 
-      const empresaId = instances[instanceName].empresaId;
+      let empresaId = instances[instanceName]?.empresaId;
+
+      // Fallback: se não tiver empresa_id em memória, tenta recuperar agora
+      if (!empresaId) {
+        console.warn(`[${instanceName}] ⚠️ empresaId está nulo. Tentando recuperar...`);
+        empresaId = await getEmpresaPadraoId();
+        if (instances[instanceName]) instances[instanceName].empresaId = empresaId;
+      }
+
       instances[instanceName].lastActivity = new Date().toISOString();
 
       const isFromMe = message.key.fromMe;
@@ -318,15 +332,23 @@ async function createInstance(instanceName, options = {}) {
             stickerMessage: 'webp'
           }[msgType] || 'bin';
 
+          const ptType = {
+            imageMessage: 'imagem',
+            videoMessage: 'video',
+            audioMessage: 'audio',
+            documentMessage: 'documento',
+            stickerMessage: 'sticker'
+          }[msgType] || 'texto';
+
           const fileName = `${instanceName}_${message.key.id}_${Date.now()}.${extension}`;
           const fullPath = path.join(UPLOADS_DIR, fileName);
 
           fs.writeFileSync(fullPath, buffer);
           midiaUrl = `/uploads/${fileName}`;
-          midiaTipo = msgType.replace('Message', '');
+          midiaTipo = ptType; // 'imagem', 'video', etc
           midiaNomeArquivo = realMessage[msgType]?.fileName || fileName;
 
-          console.log(`[${instanceName}] ✓ Mídia salva em: ${midiaUrl}`);
+          console.log(`[${instanceName}] ✓ Mídia salva em: ${midiaUrl} Tipo: ${midiaTipo}`);
         } catch (err) {
           console.error(`[${instanceName}] ❌ Erro ao baixar mídia ou msg aninhada:`, err.message);
         }
@@ -347,7 +369,7 @@ async function createInstance(instanceName, options = {}) {
         }
       }
 
-      // Preparar dados para o Chat
+      // Preparar dados para o Chat (Garantir tipos em Português para o Repo)
       const dadosChat = {
         contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
         contatoNome,

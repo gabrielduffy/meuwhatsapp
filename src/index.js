@@ -189,19 +189,37 @@ app.get('/api/debug-full', async (req, res) => {
 app.get('/api/debug-detail-db', async (req, res) => {
   try {
     const { query } = require('./config/database');
-    const empresas = await query('SELECT * FROM empresas');
-    const instances = await query('SELECT * FROM instances');
-    const conversasCount = await query('SELECT COUNT(*) FROM conversas');
-    const mensagensCount = await query('SELECT COUNT(*) FROM mensagens');
+    const empresas = await query('SELECT id, nome, status FROM empresas');
+    const instancesRes = await query('SELECT instance_name, token, empresa_id, status FROM instances');
+    const counts = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM conversas_chat) as conversas,
+        (SELECT COUNT(*) FROM mensagens_chat) as mensagens,
+        (SELECT COUNT(*) FROM contatos) as contatos
+    `);
 
     res.json({
       empresas: empresas.rows,
-      instances: instances.rows,
-      counts: {
-        conversas: conversasCount.rows[0].count,
-        mensagens: mensagensCount.rows[0].count
-      }
+      instances: instancesRes.rows,
+      counts: counts.rows[0],
+      serverTime: new Date().toISOString()
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/debug-messages', async (req, res) => {
+  try {
+    const { query } = require('./config/database');
+    const msgs = await query(`
+      SELECT m.*, c.instancia_id as inst 
+      FROM mensagens_chat m 
+      LEFT JOIN conversas_chat c ON m.conversa_id = c.id 
+      ORDER BY m.criado_em DESC 
+      LIMIT 20
+    `);
+    res.json(msgs.rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
