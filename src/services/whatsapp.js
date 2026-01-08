@@ -43,8 +43,8 @@ const DATA_DIR = process.env.DATA_DIR || './data';
   }
 });
 
-// Logger silencioso
-const logger = pino({ level: 'silent' });
+// Logger principal (pode ser configurado via env)
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 // ==================== FUNÇÕES DE INSTÂNCIA ====================
 
@@ -58,7 +58,15 @@ async function createInstance(instanceName, options = {}) {
   }
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const { version } = await fetchLatestBaileysVersion();
+
+  let version = [2, 3000, 1015901307]; // Fallback para uma versão estável
+  try {
+    const fetched = await fetchLatestBaileysVersion();
+    version = fetched.version;
+    console.log(`[${instanceName}] Baileys v${version.join('.')} detectada.`);
+  } catch (err) {
+    console.warn(`[${instanceName}] Falha ao buscar versão do Baileys, usando fallback:`, err.message);
+  }
 
   // Configurar proxy se fornecido
   let agent = undefined;
@@ -90,7 +98,7 @@ async function createInstance(instanceName, options = {}) {
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: options.browser || ['WhatsApp API', 'Chrome', '10.0.0'], // Browser mais genérico
+    browser: ['Ubuntu', 'Chrome', '20.0.04'], // Identificação mais estável
     connectTimeoutMs: 90000, // Aumentado para 90s para maior estabilidade
     defaultQueryTimeoutMs: 60000,
     keepAliveIntervalMs: 15000, // Ajustado para 15s para manter socket vivo
@@ -228,6 +236,21 @@ async function createInstance(instanceName, options = {}) {
       // Persistir status no banco
       query('UPDATE instances SET status = $1, updated_at = NOW() WHERE instance_name = $2',
         ['disconnected', instanceName]).catch(e => console.error('Erro ao salvar status logout no banco:', e.message));
+
+      const needsCleanup =
+        statusCode === 401 ||
+        statusCode === 403 ||
+        statusCode === 440 || // Session expired
+        errorMsg.includes('Stream Errored') ||
+        errorMsg.includes('not authorized');
+
+      if (needsCleanup) {
+        console.warn(`[${instanceName}] 🧹 Sessão corrompida detectada (${statusCode}). Limpando arquivos para permitir novo QR Code...`);
+        const sessionPath = path.join(SESSIONS_DIR, instanceName);
+        if (fs.existsSync(sessionPath)) {
+          fs.rmSync(sessionPath, { recursive: true, force: true });
+        }
+      }
 
       if (shouldReconnect) {
         const reconnectDelay = 5000;
@@ -580,11 +603,27 @@ async function restartInstance(instanceName) {
     token: instance.token
   };
 
-  if (instance.socket) {
-    instance.socket.end();
+  // Se estiver desconectado, vamos limpar a pasta por segurança para forçar novo QR
+  if (!instance.isConnected) {
+    console.log(`[${instanceName}] 🛠️ Auto-reparo agressivo: Limpando sessão para forçar novo QR.`);
+    const sessionPath = path.join(SESSIONS_DIR, instanceName);
+    if (fs.existsSync(sessionPath)) {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+    }
   }
 
-  await delay(2000);
+  if (instance.socket) {
+    try {
+      instance.socket.end();
+    } catch (e) { }
+  }
+
+  // Limpar objeto em memória para garantir reinicialização limpa
+  instances[instanceName].qrCode = null;
+  instances[instanceName].qrCodeBase64 = null;
+  instances[instanceName].status = 'connecting';
+
+  await delay(1000);
   return createInstance(instanceName, options);
 }
 

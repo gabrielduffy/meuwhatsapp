@@ -152,19 +152,14 @@ export default function Instancias() {
   // OBTER QR CODE
   // ========================================
 
-  const fetchQRCode = async (instanceName: string) => {
+  const fetchQRCode = useCallback(async (instanceName: string) => {
     try {
       const { data } = await api.get(`/instance/${instanceName}/qrcode`);
 
       if (data.status === 'connected') {
-        toast.success('Instância já está conectada!');
+        toast.success('Instância conectada com sucesso!');
         setShowQRModal(false);
         loadInstances();
-        return;
-      }
-
-      if (data.status === 'waiting') {
-        toast('Aguardando geração do QR Code...', { icon: '⏳' });
         return;
       }
 
@@ -177,23 +172,31 @@ export default function Instancias() {
     } catch (error: any) {
       console.error('Erro ao buscar QR Code:', error);
     }
-  };
+  }, [loadInstances]);
 
-  const openQRModal = async (instance: Instance) => {
+  // Efeito para polling do QR Code
+  useEffect(() => {
+    let interval: any;
+
+    if (showQRModal && selectedInstance) {
+      // Busca inicial
+      fetchQRCode(selectedInstance.instanceName);
+
+      // Inicia polling
+      interval = setInterval(() => {
+        fetchQRCode(selectedInstance.instanceName);
+      }, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showQRModal, selectedInstance, fetchQRCode]);
+
+  const openQRModal = (instance: Instance) => {
     setSelectedInstance(instance);
     setShowQRModal(true);
     setQrCodeData(null);
-
-    // Buscar QR Code imediatamente
-    await fetchQRCode(instance.instanceName);
-
-    // Atualizar QR Code a cada 5 segundos
-    const interval = setInterval(() => {
-      fetchQRCode(instance.instanceName);
-    }, 5000);
-
-    // Limpar intervalo quando fechar o modal
-    return () => clearInterval(interval);
   };
 
   // ========================================
@@ -626,10 +629,15 @@ export default function Instancias() {
 
               {/* QR Code Display */}
               <div className="space-y-4">
-                {!qrCodeData ? (
+                {!qrCodeData || qrCodeData.status === 'waiting' ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="w-12 h-12 text-purple-500 animate-spin mb-4" />
-                    <p className="text-white/60">Gerando QR Code...</p>
+                    <p className="text-white font-medium">Gerando QR Code...</p>
+                    <p className="text-white/40 text-xs mt-2 text-center px-8">
+                      {qrCodeData?.status === 'waiting'
+                        ? 'O servidor está iniciando o WhatsApp. Isso pode levar até 30 segundos.'
+                        : 'Solicitando dados ao servidor...'}
+                    </p>
                   </div>
                 ) : qrCodeData.status === 'connected' ? (
                   <div className="flex flex-col items-center justify-center py-12">
@@ -689,23 +697,32 @@ export default function Instancias() {
                 )}
               </div>
 
-              {/* Botões */}
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-col gap-3 mt-6">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowQRModal(false);
+                      setQrCodeData(null);
+                    }}
+                    className="flex-1 px-6 py-3 bg-white/5 text-white/80 rounded-lg hover:bg-white/10 transition-colors font-medium text-sm"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    onClick={() => fetchQRCode(selectedInstance.instanceName)}
+                    className="flex-1 px-6 py-3 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Verificar
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => {
-                    setShowQRModal(false);
-                    setQrCodeData(null);
-                  }}
-                  className="flex-1 px-6 py-3 bg-white/5 text-white/80 rounded-lg hover:bg-white/10 transition-colors font-medium"
+                  onClick={() => handleRestartInstance(selectedInstance.instanceName)}
+                  className="w-full px-6 py-3 bg-red-600/10 text-red-500 rounded-lg hover:bg-red-600/20 transition-colors font-medium text-xs flex items-center justify-center gap-2 border border-red-500/20"
                 >
-                  Fechar
-                </button>
-                <button
-                  onClick={() => fetchQRCode(selectedInstance.instanceName)}
-                  className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Atualizar QR
+                  <RefreshCw className="w-3 h-3 text-red-500" />
+                  Não gera? Forçar Reinicialização Limpa
                 </button>
               </div>
             </motion.div>
