@@ -14,14 +14,20 @@ const { sendWebhookWithRetry, isEventTypeEnabled } = require('./webhook-advanced
 const instances = {};
 const webhooks = {};
 const instanceTokens = {};
+const recentEvents = []; // Cache para debug de eventos recentes
 
-// Exportar funções básicas cedo para evitar undefined em circular dependencies
-module.exports = {
-  instances,
-  instanceTokens,
-  getInstance: (name) => instances[name],
-  getAllInstances: () => instances
-};
+function addRecentEvent(instanceName, event, data) {
+  recentEvents.unshift({
+    timestamp: new Date().toISOString(),
+    instanceName,
+    event,
+    dataPreview: typeof data === 'object' ? { ...data, metadados: undefined, raw: undefined } : data
+  });
+  if (recentEvents.length > 100) recentEvents.pop();
+}
+
+// Socket.io instance reference
+let io = null;
 
 const chatServico = require('../servicos/chat.servico');
 const { query } = require('../config/database');
@@ -226,6 +232,8 @@ async function createInstance(instanceNameRaw, options = {}) {
         console.error(`[${instanceName}] ❌ Erro ao gerar QR base64:`, err);
       }
 
+      addRecentEvent(instanceName, 'qrcode', { qr });
+
       sendWebhook(instanceName, {
         event: 'qrcode',
         qrcode: qr,
@@ -251,6 +259,8 @@ async function createInstance(instanceNameRaw, options = {}) {
       instances[instanceName].pairingCode = null;
       instances[instanceName].user = socket.user;
       instances[instanceName].lastActivity = new Date().toISOString();
+
+      addRecentEvent(instanceName, 'connection_open', { user: socket.user });
 
       // Forçar atualização do estado no banco imediatamente
       try {
@@ -420,6 +430,13 @@ async function createInstance(instanceNameRaw, options = {}) {
 
       // Disparar Webhook
       sendWebhook(instanceName, messageData);
+
+      addRecentEvent(instanceName, 'message_received', {
+        id: message.key.id,
+        text: msgText,
+        from: remoteJid,
+        isFromMe
+      });
 
       // Agente IA (apenas para recebidas e se não for de grupo para não floodar)
       if (!isFromMe && !remoteJid.endsWith('@g.us')) {
@@ -595,6 +612,10 @@ function getInstance(instanceNameRaw) {
   return foundName ? instances[foundName] : null;
 }
 
+function getRecentEvents() {
+  return recentEvents;
+}
+
 function getAllInstances() {
   const result = {};
   for (const [name, instance] of Object.entries(instances)) {
@@ -604,6 +625,7 @@ function getAllInstances() {
       hasQrCode: !!instance.qrCode,
       hasPairingCode: !!instance.pairingCode,
       proxy: instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
+      webhookUrl: instance.webhookUrl || webhooks[name]?.url || null,
       createdAt: instance.createdAt,
       lastActivity: instance.lastActivity
     };
@@ -1490,11 +1512,13 @@ function extractText(message) {
   if (msg.buttonsResponseMessage?.selectedButtonId) return msg.buttonsResponseMessage.selectedButtonId;
   if (msg.listResponseMessage?.singleSelectReply?.selectedRowId) return msg.listResponseMessage.singleSelectReply.selectedRowId;
   if (msg.templateButtonReplyMessage?.selectedId) return msg.templateButtonReplyMessage.selectedId;
+  if (msg.interactiveResponseMessage?.body?.text) return msg.interactiveResponseMessage.body.text;
 
   // Polls
   if (msg.pollCreationMessage?.name) return `[Votação: ${msg.pollCreationMessage.name}]`;
 
-  return null;
+  // Fallback para qualquer campo que contenha texto
+  return msg.text || msg.caption || null;
 }
 
 function saveWebhooks() {
@@ -1562,50 +1586,33 @@ function setRejectCalls(instanceName, reject = true) {
   throw new Error('Instância não encontrada');
 }
 
-Object.assign(module.exports, {
-  // Instância
+module.exports = {
+  instances,
+  instanceTokens,
+  webhooks,
   createInstance,
+  getInstance,
+  getAllInstances,
+  getRecentEvents,
   deleteInstance,
-  logoutInstance,
   restartInstance,
-  getPairingCode,
-  loadExistingSessions,
-  setRejectCalls,
-
-  // Mensagens
+  logoutInstance,
   sendText,
   sendImage,
-  sendDocument,
   sendAudio,
   sendVideo,
+  sendDocument,
   sendSticker,
   sendLocation,
   sendContact,
+  sendPoll,
   sendButtons,
   sendList,
-  sendPoll,
   sendReaction,
   forwardMessage,
   deleteMessage,
   markAsRead,
-
-  // Presença
   updatePresence,
-  setProfileStatus,
-  setProfileName,
-  setProfilePicture,
-
-  // Grupos
-  createGroup,
-  getGroups,
-  getGroupInfo,
-  getGroupInviteCode,
-  revokeGroupInvite,
-  joinGroupByCode,
-  leaveGroup,
-  updateGroupParticipants,
-  updateGroupSettings,
-  updateGroupSubject,
   updateGroupDescription,
   updateGroupPicture,
 
@@ -1628,5 +1635,8 @@ Object.assign(module.exports, {
   setWebhook,
   getWebhook,
   deleteWebhook,
-  sendWebhook
-});
+  sendWebhook,
+  setRejectCalls,
+  loadExistingSessions,
+  configurarSocketIO
+};

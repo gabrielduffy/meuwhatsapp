@@ -36,6 +36,15 @@ router.get('/instances', (req, res) => {
     }
 });
 
+router.get('/events', (req, res) => {
+    try {
+        const whatsapp = require('../services/whatsapp');
+        res.json(whatsapp.getRecentEvents ? whatsapp.getRecentEvents() : []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/message', async (req, res) => {
     try {
         const chatServico = require('../servicos/chat.servico');
