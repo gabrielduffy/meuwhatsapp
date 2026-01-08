@@ -105,15 +105,33 @@ router.get('/:instanceName/qrcode', (req, res) => {
   }
 
   if (!instance.qrCode) {
+    if (format === 'image') {
+      console.log(`[QR Debug] QR Code solicitado como imagem para '${instanceName}', mas ainda não está pronto.`);
+      // Retornar um pixel transparente 1x1 para não quebrar a imagem no frontend
+      const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+      res.setHeader('Content-Type', 'image/png');
+      return res.send(transparentPixel);
+    }
     return res.json({ status: 'waiting', message: 'QR Code ainda não gerado, aguarde...' });
   }
 
   // Retornar como imagem se solicitado
   if (format === 'image' && instance.qrCodeBase64) {
+    console.log(`[QR Debug] Servindo QR Code Base64 como imagem para '${instanceName}'.`);
     const base64Data = instance.qrCodeBase64.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     res.setHeader('Content-Type', 'image/png');
     return res.send(buffer);
+  } else if (format === 'image' && instance.qrCode) {
+    // Se tiver QR mas não o base64 (raro), gerar agora
+    console.log(`[QR Debug] Gerando QR Code imagem on-the-fly para '${instanceName}'.`);
+    const QRCode = require('qrcode');
+    QRCode.toBuffer(instance.qrCode, (err, buffer) => {
+      if (err) return res.status(500).send('Erro ao gerar imagem');
+      res.setHeader('Content-Type', 'image/png');
+      res.send(buffer);
+    });
+    return;
   }
 
   res.json({
