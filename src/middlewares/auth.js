@@ -46,13 +46,47 @@ async function instanceAuthMiddleware(req, res, next) {
   const instanceToken = req.headers['x-instance-token'] || req.query.instancetoken;
   const instanceName = req.params.instanceName || req.body?.instanceName;
 
-  // 1. Verificar se é um token Bearer (JWT) vindo do Dashboard
+  // 1. Verificar se é um token vindo no header Authorization
   if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+
+    // Tenta validar como Token Pessoal primeiro (compatibilidade com integrações externas tipo Lovable)
+    const { query } = require('../config/database');
+    try {
+      const userRes = await query(`
+        SELECT u.*, e.id as emp_id, e.nome as emp_nome, e.plano_id, e.status as emp_status, e.max_instancias, e.max_usuarios
+        FROM usuarios u
+        LEFT JOIN empresas e ON u.empresa_id = e.id
+        WHERE u.api_token = $1 AND u.ativo = true
+      `, [token.trim()]);
+
+      if (userRes.rows.length > 0) {
+        const usuario = userRes.rows[0];
+        console.log(`[Auth Debug] Token Pessoal aceito via Bearer: ${usuario.nome}`);
+
+        req.usuario = usuario;
+        req.usuarioId = usuario.id;
+        req.empresaId = usuario.empresa_id;
+        req.empresa = {
+          id: usuario.empresa_id,
+          nome: usuario.emp_nome,
+          plano_id: usuario.plano_id,
+          status: usuario.emp_status,
+          max_instancias: usuario.max_instancias || 5,
+          max_usuarios: usuario.max_usuarios || 10
+        };
+        return next();
+      }
+    } catch (err) {
+      console.error('[Auth Debug] Erro ao validar Bearer como Token Pessoal:', err);
+    }
+
+    // Se não for um token pessoal, tenta validar como JWT do Dashboard
     const { autenticarMiddleware } = require('./autenticacao');
     return autenticarMiddleware(req, res, next);
   }
 
-  // 2. Verificar API Key (Pode ser Global Admin OU Pessoal do Usuário)
+  // 2. Verificar API Key (X-API-Key)
   if (apiKey) {
     const { query } = require('../config/database');
 
