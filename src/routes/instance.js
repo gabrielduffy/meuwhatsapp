@@ -5,6 +5,8 @@ const { validateInstance, requireConnected } = require('../middlewares/auth');
 const whatsapp = require('../services/whatsapp');
 const webhookAdvanced = require('../services/webhook-advanced');
 
+const { verificarLimite } = require('../middlewares/empresa');
+
 /**
  * @swagger
  * /instance/create:
@@ -28,7 +30,7 @@ const webhookAdvanced = require('../services/webhook-advanced');
  *       200:
  *         description: Instância criada ou inicializada
  */
-router.post('/create', async (req, res) => {
+router.post('/create', verificarLimite('instancias'), async (req, res) => {
   try {
     const { instanceName, proxy, token, markOnline, browser, webhookUrl, webhookConfig } = req.body;
     console.log(`[API] Criando instância: ${instanceName} (Webhook: ${webhookUrl || 'Nenhum'})`);

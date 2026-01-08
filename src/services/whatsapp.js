@@ -91,10 +91,10 @@ async function createInstance(instanceName, options = {}) {
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
     browser: options.browser || ['WhatsApp API', 'Chrome', '10.0.0'], // Browser mais genérico
-    connectTimeoutMs: 60000,
+    connectTimeoutMs: 90000, // Aumentado para 90s para maior estabilidade
     defaultQueryTimeoutMs: 60000,
-    keepAliveIntervalMs: 10000,
-    retryRequestDelayMs: 250
+    keepAliveIntervalMs: 15000, // Ajustado para 15s para manter socket vivo
+    retryRequestDelayMs: 500
   };
 
   if (agent) {
@@ -231,9 +231,15 @@ async function createInstance(instanceName, options = {}) {
 
       if (shouldReconnect) {
         const reconnectDelay = 5000;
-        console.log(`[${instanceName}] Agendando reconexão em ${reconnectDelay}ms...`);
-        setTimeout(() => {
-          console.log(`[${instanceName}] Tentando reconectar agora...`);
+        console.log(`[${instanceName}] 🔄 Link caído! Agendando reparo automático em ${reconnectDelay}ms...`);
+
+        // Evitar múltiplos loops de reconexão
+        if (instances[instanceName].reconnectTimer) {
+          clearTimeout(instances[instanceName].reconnectTimer);
+        }
+
+        instances[instanceName].reconnectTimer = setTimeout(() => {
+          console.log(`[${instanceName}] 🛠️ Iniciando auto-reparo da instância...`);
           createInstance(instanceName, options);
         }, reconnectDelay);
       } else {

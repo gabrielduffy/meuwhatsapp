@@ -202,6 +202,54 @@ router.post('/:id/disparar', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/integracoes/test-webhook
+ * Testador genérico de URL
+ */
+router.post('/test-webhook', async (req, res) => {
+  try {
+    const { url, payload, headers } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ erro: 'URL é obrigatória' });
+    }
+
+    const axios = require('axios');
+    const inicio = Date.now();
+
+    try {
+      const response = await axios({
+        method: 'POST',
+        url,
+        data: payload || { test: true, message: 'Teste do WhatsBenemax' },
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'WhatsBenemax-Webhook-Tester/1.0',
+          ...headers
+        },
+        timeout: 10000
+      });
+
+      res.json({
+        sucesso: true,
+        tempo: `${Date.now() - inicio}ms`,
+        status: response.status,
+        dados: response.data
+      });
+    } catch (e) {
+      res.status(400).json({
+        sucesso: false,
+        tempo: `${Date.now() - inicio}ms`,
+        erro: e.message,
+        status: e.response?.status,
+        dados: e.response?.data
+      });
+    }
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
 // =====================================================
 // LOGS
 // =====================================================

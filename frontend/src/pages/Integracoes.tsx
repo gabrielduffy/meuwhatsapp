@@ -7,6 +7,9 @@ import {
   Trash2,
   TestTube,
   Link as LinkIcon,
+  Send,
+  Code,
+  Layout
 } from 'lucide-react';
 import api from '../services/api';
 import Button from '../components/ui/Button';
@@ -32,12 +35,14 @@ export default function Integracoes() {
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    nome: '',
-    tipo: 'webhook',
-    url: '',
-    metodo: 'POST',
     headers: '{}',
   });
+  const [testWebhookData, setTestWebhookData] = useState({
+    url: '',
+    payload: '{\n  "event": "message",\n  "instance": "teste",\n  "data": {\n    "text": "Teste de Webhook"\n  }\n}',
+  });
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
 
   useEffect(() => {
     carregarIntegracoes();
@@ -102,6 +107,29 @@ export default function Integracoes() {
     }
   };
 
+  const executeGenericTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const response = await api.post('/api/integracoes/test-webhook', {
+        url: testWebhookData.url,
+        payload: JSON.parse(testWebhookData.payload)
+      });
+      setTestResult(response.data);
+      if (response.data.sucesso) {
+        toast.success('Webhook enviado com sucesso!');
+      } else {
+        toast.error('Ocorreu um erro na resposta do servidor');
+      }
+    } catch (error: any) {
+      setTestResult(error.response?.data || { erro: error.message });
+      toast.error('Erro ao conectar com o servidor de teste');
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -148,8 +176,8 @@ export default function Integracoes() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className={`p-3 rounded-lg ${integracao.ativo
-                        ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
-                        : 'bg-white/5'
+                      ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30'
+                      : 'bg-white/5'
                       }`}>
                       <Webhook className={`w-6 h-6 ${integracao.ativo ? 'text-purple-300' : 'text-white/40'
                         }`} />
@@ -204,6 +232,75 @@ export default function Integracoes() {
           ))}
         </div>
       )}
+
+      {/* Webhook Tester Section */}
+      <div className="mt-12">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-cyan-600/20 rounded-lg">
+            <TestTube className="w-6 h-6 text-cyan-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Simulador de Webhook</h2>
+            <p className="text-white/60">Teste a recepção de dados no seu servidor sem enviar mensagens reais</p>
+          </div>
+        </div>
+
+        <Card variant="glass">
+          <form onSubmit={executeGenericTest} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Input
+                label="URL do seu Webhook"
+                placeholder="https://seu-servidor.com/webhook"
+                value={testWebhookData.url}
+                onChange={(e) => setTestWebhookData({ ...testWebhookData, url: e.target.value })}
+                required
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">Payload JSON (Corpo)</label>
+                <textarea
+                  className="w-full h-48 px-4 py-3 bg-black/20 border-2 border-white/10 rounded-lg text-cyan-300 font-mono text-sm focus:outline-none focus:border-cyan-500/50"
+                  value={testWebhookData.payload}
+                  onChange={(e) => setTestWebhookData({ ...testWebhookData, payload: e.target.value })}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="neon"
+                className="w-full"
+                loading={testLoading}
+                icon={<Send className="w-4 h-4" />}
+              >
+                Enviar Webhook de Teste
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-white/80">Resultado do Teste</label>
+              <div className={`w-full h-[300px] rounded-lg border-2 p-4 font-mono text-sm overflow-auto ${!testResult ? 'bg-black/20 border-white/5 flex items-center justify-center' :
+                  testResult.sucesso ? 'bg-green-500/5 border-green-500/20 text-green-400' : 'bg-red-500/5 border-red-500/20 text-red-400'
+                }`}>
+                {testResult ? (
+                  <pre>{JSON.stringify(testResult, null, 2)}</pre>
+                ) : (
+                  <div className="text-center text-white/20">
+                    <Layout className="w-12 h-12 mx-auto mb-2 opacity-10" />
+                    <p>Aguardando execução do teste...</p>
+                  </div>
+                )}
+              </div>
+
+              {testResult && (
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-white/40">Latência: <span className="text-white/80">{testResult.tempo}</span></span>
+                  <span className="text-white/40">Status: <span className={testResult.status < 300 ? 'text-green-400' : 'text-red-400'}>{testResult.status}</span></span>
+                </div>
+              )}
+            </div>
+          </form>
+        </Card>
+      </div>
 
       {/* Create Modal */}
       <Modal

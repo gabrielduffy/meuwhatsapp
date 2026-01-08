@@ -240,12 +240,12 @@ export default function Instancias() {
 
   const handleRestartInstance = async (instanceName: string) => {
     try {
-      toast('Reiniciando instância...', { icon: '🔄' });
+      toast('Iniciando auto-reparo...', { icon: '🛠️' });
       await api.post(`/instance/${instanceName}/restart`);
-      toast.success('Instância reiniciada!');
+      toast.success('Instância reparada com sucesso!');
       loadInstances();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Erro ao reiniciar');
+      toast.error(error.response?.data?.error || 'Erro ao realizar reparo');
       console.error('Erro ao reiniciar instância:', error);
     }
   };
@@ -501,7 +501,7 @@ export default function Instancias() {
                     className="flex items-center justify-center gap-2 px-3 py-2 bg-cyan-600/20 text-cyan-400 rounded-lg hover:bg-cyan-600/30 transition-colors text-sm font-medium"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Reiniciar
+                    Auto-Reparo
                   </button>
 
                   <button

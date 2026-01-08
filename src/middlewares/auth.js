@@ -47,7 +47,31 @@ function instanceAuthMiddleware(req, res, next) {
 
   // 1. Verificar API Key global (Admin)
   if (apiKey && apiKey === API_KEY) {
-    return next();
+    // Para Admin, vamos tentar injetar a ÚLTIMA empresa para respeitar limites no modo demo/admin
+    // Se o header X-Empresa-ID for enviado, usamos ele.
+    const requestedEmpresaId = req.headers['x-empresa-id'];
+    const { query } = require('../config/database');
+
+    // Injetar empresa de forma assíncrona antes de seguir
+    (async () => {
+      try {
+        let sql = 'SELECT * FROM empresas ORDER BY criado_em DESC LIMIT 1';
+        let params = [];
+        if (requestedEmpresaId) {
+          sql = 'SELECT * FROM empresas WHERE id = $1';
+          params = [requestedEmpresaId];
+        }
+        const res = await query(sql, params);
+        if (res.rows.length > 0) {
+          req.empresa = res.rows[0];
+          req.empresaId = req.empresa.id;
+        }
+        next();
+      } catch (e) {
+        next();
+      }
+    })();
+    return;
   }
 
   // 2. Se não for admin, verificar se tem Token de Instância válido para esta instância
