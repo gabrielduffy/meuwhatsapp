@@ -178,13 +178,16 @@ app.get('/api/debug-full', async (req, res) => {
   res.json(results);
 });
 
-// Log de todas as requisições (apenas em desenvolvimento)
-if (config.nodeEnv !== 'production') {
-  app.use((req, res, next) => {
+// Log de todas as requisições (apenas em desenvolvimento ou para rotas críticas de debug)
+app.use((req, res, next) => {
+  if (req.url.includes('/qrcode')) {
+    console.log(`[PEDIDO QR CODE] ${req.method} ${req.url} - Referer: ${req.headers.referer || 'N/A'}`);
+  }
+  if (config.nodeEnv !== 'production') {
     logger.debug(`${req.method} ${req.url}`);
-    next();
-  });
-}
+  }
+  next();
+});
 
 // White Label - detectar domínio customizado
 // Skip for assets and static files
@@ -212,6 +215,10 @@ app.use((req, res, next) => {
   // 1. PUBLIC ROUTES - NO AUTH (MUST BE FIRST)
   // Essential for QR Code display in external frontends (Lovable) and diagnostic tools
   if (path.includes('/qrcode') || path.includes('/setup-demo') || path.includes('/repair-db')) {
+    // Adicionar headers de CORS específicos para garantir exibição livre
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
     return next();
   }
 
