@@ -98,7 +98,7 @@ async function createInstance(instanceName, options = {}) {
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: ['Ubuntu', 'Chrome', '20.0.04'], // Identificação mais estável
+    browser: ['Ubuntu', 'Chrome', '120.0.6099.109'], // Identificação mais moderna e estável
     connectTimeoutMs: 90000, // Aumentado para 90s para maior estabilidade
     defaultQueryTimeoutMs: 60000,
     keepAliveIntervalMs: 15000, // Ajustado para 15s para manter socket vivo
@@ -608,13 +608,19 @@ async function restartInstance(instanceName) {
     console.log(`[${instanceName}] 🛠️ Auto-reparo agressivo: Limpando sessão para forçar novo QR.`);
     const sessionPath = path.join(SESSIONS_DIR, instanceName);
     if (fs.existsSync(sessionPath)) {
-      fs.rmSync(sessionPath, { recursive: true, force: true });
+      try {
+        fs.rmSync(sessionPath, { recursive: true, force: true });
+        console.log(`[${instanceName}] 📂 Pasta de sessão deletada com sucesso.`);
+      } catch (err) {
+        console.error(`[${instanceName}] ❌ Erro ao deletar pasta de sessão:`, err.message);
+      }
     }
   }
 
   if (instance.socket) {
     try {
       instance.socket.end();
+      console.log(`[${instanceName}] 🔌 Socket antigo encerrado.`);
     } catch (e) { }
   }
 

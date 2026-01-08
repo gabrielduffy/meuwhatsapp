@@ -53,6 +53,16 @@ router.post('/message', async (req, res) => {
     }
 });
 
+router.get('/repair-db', async (req, res) => {
+    try {
+        const { repararBanco } = require('../utilitarios/reparar-banco');
+        await repararBanco();
+        res.json({ success: true, message: 'Reparo do banco de dados executado com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message, stack: error.stack });
+    }
+});
+
 router.get('/logs', async (req, res) => {
     try {
         const { query } = require('../config/database');

@@ -160,7 +160,8 @@ router.get('/me/token', async (req, res) => {
 
     res.json({ token: usuario.api_token });
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    console.error('[Usuários] Erro ao buscar token:', erro);
+    res.status(500).json({ erro: erro.message, stack: erro.stack });
   }
 });
 
@@ -182,7 +183,8 @@ router.post('/me/token', async (req, res) => {
     await usuarioRepo.atualizar(req.usuarioId, { api_token: token });
     res.json({ token, mensagem: 'Token regenerado com sucesso' });
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    console.error('[Usuários] Erro ao regenerar token:', erro);
+    res.status(500).json({ erro: erro.message, stack: erro.stack });
   }
 });
 
