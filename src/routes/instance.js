@@ -124,6 +124,7 @@ router.get('/:instanceName/qrcode', (req, res) => {
     // CORS e Headers agressivos para o Lovable
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -135,6 +136,7 @@ router.get('/:instanceName/qrcode', (req, res) => {
 
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     QRCode.toBuffer(instance.qrCode, (err, buffer) => {
       if (err) return res.status(500).send('Erro ao gerar imagem');
