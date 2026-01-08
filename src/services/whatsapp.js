@@ -15,6 +15,14 @@ const instances = {};
 const webhooks = {};
 const instanceTokens = {};
 
+// Exportar funções básicas cedo para evitar undefined em circular dependencies
+module.exports = {
+  instances,
+  instanceTokens,
+  getInstance: (name) => instances[name],
+  getAllInstances: () => instances
+};
+
 const chatServico = require('../servicos/chat.servico');
 const { query } = require('../config/database');
 
@@ -59,7 +67,7 @@ async function createInstance(instanceName, options = {}) {
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
-  let version = [2, 2323, 4]; // Versão estável reconhecida pelo WhatsApp Web
+  let version = [2, 3000, 1017531287]; // Fallback para uma versão estável e recente (2.3xxx)
   try {
     const fetched = await fetchLatestBaileysVersion();
     version = fetched.version;
@@ -90,20 +98,40 @@ async function createInstance(instanceName, options = {}) {
   const socketConfig = {
     version,
     logger: socketLogger,
-    printQRInTerminal: true, // Habilitar para ver logs no container
     auth: {
       creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, logger)
+      keys: state.keys // Usar state.keys diretamente para evitar problemas de cache no pareamento inicial
     },
+    printQRInTerminal: true,
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: ['Mac OS', 'Safari', '17.0'], // Identificação clássica e estável para pareamento rápido
-    connectTimeoutMs: 120000, // Aumentado para 120s para conexões em redes instáveis ou sync pesado
-    defaultQueryTimeoutMs: 60000,
-    keepAliveIntervalMs: 30000, // 30s para manter o túnel estável
+    browser: ['Windows', 'Chrome', '125.0.0.0'], // Identificação extremamente comum e segura
+    connectTimeoutMs: 120000,
+    defaultQueryTimeoutMs: 120000,
+    keepAliveIntervalMs: 10000,
     retryRequestDelayMs: 2000,
-    shouldIgnoreJid: (jid) => jid?.includes('@broadcast') || jid?.includes('@newsletter') // Ignorar broadcast para acelerar sync inicial
+    patchMessageBeforeSending: (message) => {
+      const requiresPatch = !!(
+        message.buttonsMessage ||
+        message.templateMessage ||
+        message.listMessage
+      );
+      if (requiresPatch) {
+        message = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2
+              },
+              ...message
+            }
+          }
+        };
+      }
+      return message;
+    }
   };
 
   if (agent) {
@@ -186,12 +214,12 @@ async function createInstance(instanceName, options = {}) {
     }
 
     if (connection === 'connecting') {
-      console.log(`[${instanceName}] Conectando...`);
+      console.log(`[${instanceName}] 🔥 Iniciando negociação (handshake)...`);
       instances[instanceName].status = 'connecting';
     }
 
     if (connection === 'open') {
-      console.log(`[${instanceName}] ✓ CONEXÃO ESTABELECIDA!`);
+      console.log(`[${instanceName}] ✅ INSTÂNCIA CONECTADA E PRONTA!`);
       instances[instanceName].isConnected = true;
       instances[instanceName].status = 'connected';
       instances[instanceName].qrCode = null;
@@ -200,80 +228,43 @@ async function createInstance(instanceName, options = {}) {
       instances[instanceName].user = socket.user;
       instances[instanceName].lastActivity = new Date().toISOString();
 
-      // Atualizar métricas de conexão
-      updateConnectionStatus(instanceName, 'connected');
+      // Forçar atualização do estado no banco imediatamente
+      try {
+        await query('UPDATE instances SET status = $1, phone_number = $2, qr_code = NULL, last_connected_at = NOW(), updated_at = NOW() WHERE instance_name = $3',
+          ['connected', socket.user?.id?.split(':')[0], instanceName]);
+      } catch (e) {
+        console.error(`[${instanceName}] Erro ao salvar status conectado:`, e.message);
+      }
 
       sendWebhook(instanceName, {
         event: 'connection',
         status: 'connected',
         user: socket.user
       });
-
-      // Persistir status no banco
-      query('UPDATE instances SET status = $1, phone_number = $2, qr_code = NULL, last_connected_at = NOW(), updated_at = NOW() WHERE instance_name = $3',
-        ['connected', socket.user?.id?.split(':')[0], instanceName]).catch(e => console.error('Erro ao salvar status no banco:', e.message));
     }
 
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-      const errorMsg = lastDisconnect?.error?.message || 'Erro desconhecido';
+      const errorMsg = lastDisconnect?.error?.message || 'Conexão encerrada';
 
-      console.error(`[${instanceName}] ❌ Conexão fechada. Status: ${statusCode}. Erro: ${errorMsg}. Reconectar: ${shouldReconnect}`);
+      console.error(`[${instanceName}] ❌ Falha na conexão. Código: ${statusCode}. Erro: ${errorMsg}`);
 
       instances[instanceName].isConnected = false;
-      instances[instanceName].status = 'disconnected';
+      instances[instanceName].status = shouldReconnect ? 'reconnecting' : 'disconnected';
 
-      // Atualizar métricas de conexão
-      updateConnectionStatus(instanceName, 'disconnected');
-
-      sendWebhook(instanceName, {
-        event: 'connection',
-        status: 'disconnected',
-        statusCode,
-        willReconnect: shouldReconnect
-      });
-
-      // Persistir status no banco
-      query('UPDATE instances SET status = $1, updated_at = NOW() WHERE instance_name = $2',
-        ['disconnected', instanceName]).catch(e => console.error('Erro ao salvar status logout no banco:', e.message));
-
-      const needsCleanup =
-        statusCode === 401 ||
-        statusCode === 403 ||
-        statusCode === 440 || // Session expired
-        errorMsg.includes('Stream Errored') ||
-        errorMsg.includes('not authorized');
-
-      if (needsCleanup) {
-        console.warn(`[${instanceName}] 🧹 Sessão corrompida detectada (${statusCode}). Limpando arquivos para permitir novo QR Code...`);
-        const sessionPath = path.join(SESSIONS_DIR, instanceName);
+      // Limpar cache se for erro de autenticação (401)
+      if (statusCode === 401 || statusCode === 403 || errorMsg.includes('authorized')) {
+        console.warn(`[${instanceName}] 🧹 Autenticação falhou. Limpando sessão para recomeçar...`);
         if (fs.existsSync(sessionPath)) {
           fs.rmSync(sessionPath, { recursive: true, force: true });
         }
       }
 
       if (shouldReconnect) {
-        const reconnectDelay = 5000;
-        console.log(`[${instanceName}] 🔄 Link caído! Agendando reparo automático em ${reconnectDelay}ms...`);
-
-        // Evitar múltiplos loops de reconexão
-        if (instances[instanceName].reconnectTimer) {
-          clearTimeout(instances[instanceName].reconnectTimer);
-        }
-
-        instances[instanceName].reconnectTimer = setTimeout(() => {
-          console.log(`[${instanceName}] 🛠️ Iniciando auto-reparo da instância...`);
-          createInstance(instanceName, options);
-        }, reconnectDelay);
-      } else {
-        console.warn(`[${instanceName}] Desconectado permanentemente (Logout). Limpando sessão.`);
-        sendWebhook(instanceName, {
-          event: 'connection',
-          status: 'logged_out'
-        });
-        // Opcional: Auto-delete session?
-        // deleteInstance(instanceName); 
+        const delayMs = 5000;
+        console.log(`[${instanceName}] 🔄 Tentando reconectar em ${delayMs}ms...`);
+        setTimeout(() => createInstance(instanceName, options), delayMs);
       }
     }
   });
@@ -1467,18 +1458,15 @@ function setRejectCalls(instanceName, reject = true) {
   throw new Error('Instância não encontrada');
 }
 
-module.exports = {
+Object.assign(module.exports, {
   // Instância
   createInstance,
-  getInstance,
-  getAllInstances,
   deleteInstance,
   logoutInstance,
   restartInstance,
   getPairingCode,
   loadExistingSessions,
   setRejectCalls,
-  instanceTokens,
 
   // Mensagens
   sendText,
@@ -1537,4 +1525,4 @@ module.exports = {
   getWebhook,
   deleteWebhook,
   sendWebhook
-};
+});
