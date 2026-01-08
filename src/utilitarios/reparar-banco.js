@@ -118,6 +118,26 @@ async function repararBanco() {
             logger.error('Erro ao reparar tabela instances:', err.message);
         }
 
+        // 6. Garantir api_token em usuarios
+        try {
+            const res = await query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'usuarios' AND column_name = 'api_token'
+            `);
+
+            if (res.rows.length === 0) {
+                logger.info('Adicionando coluna usuarios.api_token...');
+                await query('ALTER TABLE usuarios ADD COLUMN api_token VARCHAR(255)');
+                await query('CREATE INDEX IF NOT EXISTS idx_usuarios_api_token ON usuarios(api_token)');
+            }
+        } catch (err) {
+            logger.error('Erro ao reparar tabela usuarios (api_token):', err.message);
+        }
+
+        // 7. Índices extras para performance de API
+        await query('CREATE INDEX IF NOT EXISTS idx_instances_token ON instances(token)');
+
         logger.info('Reparo do banco concluído.');
     } catch (error) {
         logger.error('Erro crítico no reparo do banco:', error.message);

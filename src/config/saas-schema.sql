@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
   -- Preferências
   preferencias JSONB DEFAULT '{"tema": "claro", "idioma": "pt-BR", "notificacoes": true}',
+  api_token VARCHAR(255),
 
   ultimo_login_em TIMESTAMP,
   criado_em TIMESTAMP DEFAULT NOW(),
