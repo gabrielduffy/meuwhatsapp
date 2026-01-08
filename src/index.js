@@ -209,28 +209,28 @@ const legacyApiPrefixes = [
 app.use((req, res, next) => {
   const path = req.path;
 
-  // 1. Verificar se é um asset estático ou rota pública básica
-  if (publicPaths.some(p => path === p || path.startsWith(p))) {
-    return next();
-  }
-
-  // 2. Verificar se é uma rota SaaS (elas têm sua própria autenticação JWT interna)
-  if (path.startsWith('/api/')) {
-    return next();
-  }
-
-  // 3. Verificar se é uma rota legado que requer API Key
-  // EXCEÇÃO: Permitir rotas essenciais para exibição (QR Code) e modo demo funcionarem sem cabeçalhos complexos
+  // 1. PUBLIC ROUTES - NO AUTH (MUST BE FIRST)
+  // Essential for QR Code display in external frontends (Lovable) and diagnostic tools
   if (path.includes('/qrcode') || path.includes('/setup-demo') || path.includes('/repair-db')) {
     return next();
   }
 
+  // 2. Static Assets & Public Basic Routes
+  if (publicPaths.some(p => path === p || path.startsWith(p))) {
+    return next();
+  }
+
+  // 3. SaaS API Routes (Internal JWT Auth)
+  if (path.startsWith('/api/')) {
+    return next();
+  }
+
+  // 4. Legacy API Routes (X-API-Key or Bearer Token)
   if (legacyApiPrefixes.some(p => path.startsWith(p))) {
     return instanceAuthMiddleware(req, res, next);
   }
 
-  // 4. Se for qualquer outra coisa (provavelmente rota do React Router), deixar passar
-  // O fallback app.get('*') lá embaixo entregará o index.html
+  // 5. Fallback for React Router
   next();
 });
 
