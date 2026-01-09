@@ -87,7 +87,12 @@ router.get('/list', (req, res) => {
     instanceName: name,
     status: data.status || (data.isConnected ? 'connected' : 'disconnected'),
     isConnected: data.isConnected,
-    user: data.user
+    user: data.user,
+    token: data.token,
+    webhookUrl: data.webhookUrl || null,
+    empresaId: data.empresaId || null,
+    createdAt: data.createdAt,
+    lastActivity: data.lastActivity
   }));
   res.json(instancesList);
 });
@@ -202,6 +207,9 @@ router.get('/:instanceName/status', (req, res) => {
     isConnected: instance.isConnected,
     status: instance.status || (instance.isConnected ? 'connected' : 'disconnected'),
     user: instance.user || null,
+    token: instance.token || null,
+    webhookUrl: instance.webhookUrl || null,
+    empresaId: instance.empresaId || null,
     proxy: instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
     createdAt: instance.createdAt,
     lastActivity: instance.lastActivity

@@ -420,7 +420,7 @@ async function createInstance(instanceNameRaw, options = {}) {
         }
       }
 
-      // Preparar Webhook Payload (Formato IDENTICO à Evolution API para Lovable)
+      // Preparar Webhook Payload (Formato Híbrido: Compatível com Evolution API v1, v2 e Mega API)
       const messageData = {
         event: isFromMe ? 'messages.sent' : 'messages.upsert',
         instance: instanceName,
@@ -429,6 +429,19 @@ async function createInstance(instanceNameRaw, options = {}) {
           instanceId: instanceName,
           instance_id: instanceName,
           instance: instanceName,
+          // Padrão Root (Evolution v1 / Mega)
+          key: {
+            remoteJid,
+            fromMe: isFromMe,
+            id: message.key.id,
+            participant: isGroup ? message.key.participant : undefined
+          },
+          message: message.message,
+          pushName: message.pushName,
+          messageTimestamp: message.messageTimestamp,
+          sender: remoteJid.split('@')[0],
+          fromMe: isFromMe,
+          // Padrão Array (Evolution v2)
           messages: [
             {
               key: {
@@ -442,14 +455,13 @@ async function createInstance(instanceNameRaw, options = {}) {
               messageTimestamp: message.messageTimestamp,
               sender: remoteJid.split('@')[0],
               fromMe: isFromMe,
-              status: isFromMe ? 2 : 1 // Evolution API standard status
+              status: isFromMe ? 2 : 1
             }
           ],
           type: 'notify',
           source: 'ios',
-          // Manter campos flat para compatibilidade
+          // Campos internos do nosso sistema (Flat)
           ...dadosChat,
-          fromMe: isFromMe,
           remoteJid
         }
       };
@@ -457,11 +469,11 @@ async function createInstance(instanceNameRaw, options = {}) {
       // Disparar Webhook (Padrão Lowercase)
       sendWebhook(instanceName, messageData);
 
-      // Fallback para Maiúsculas (Muito comum em sistemas legados ou Supabase templates)
+      // Fallback para Maiúsculas (Muito comum em Supabase Edge Functions)
       const upperEvent = (isFromMe ? 'messages.sent' : 'messages.upsert').toUpperCase().replace('.', '_');
       sendWebhook(instanceName, { ...messageData, event: upperEvent });
 
-      // Se for enviado, forçar um 'upsert' também (muitos sistemas só ouvem esse)
+      // Se for enviado, forçar um 'upsert' também como redundância
       if (isFromMe) {
         sendWebhook(instanceName, { ...messageData, event: 'messages.upsert' });
         sendWebhook(instanceName, { ...messageData, event: 'MESSAGES_UPSERT' });
@@ -1414,7 +1426,8 @@ async function getBusinessProfile(instanceName, remoteJid) {
 
 // ==================== WEBHOOKS ====================
 
-function setWebhook(instanceName, webhookUrl, events = []) {
+function setWebhook(instanceName, webhookUrlRaw, events = []) {
+  const webhookUrl = typeof webhookUrlRaw === 'object' ? webhookUrlRaw.url : webhookUrlRaw;
   const eventsList = events.length > 0 ? events : ['all'];
   webhooks[instanceName] = {
     url: webhookUrl,

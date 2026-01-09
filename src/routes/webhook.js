@@ -32,6 +32,7 @@ router.get('/:instanceName', (req, res) => {
 
     res.json({
       webhook,
+      webhookUrl: webhook?.url || '',
       advancedConfig
     });
   } catch (error) {
