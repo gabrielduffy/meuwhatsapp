@@ -420,31 +420,37 @@ async function createInstance(instanceNameRaw, options = {}) {
         }
       }
 
-      // Preparar Webhook Payload (Formato compatível com Evolution API / Lovable)
+      // Preparar Webhook Payload (Formato IDENTICO à Evolution API para Lovable)
       const messageData = {
         event: isFromMe ? 'messages.sent' : 'messages.upsert',
         instance: instanceName,
         owner: instanceName,
         data: {
+          instanceId: instanceName,
+          instance_id: instanceName,
+          instance: instanceName,
+          messages: [
+            {
+              key: {
+                remoteJid,
+                fromMe: isFromMe,
+                id: message.key.id,
+                participant: isGroup ? message.key.participant : undefined
+              },
+              message: message.message,
+              pushName: message.pushName,
+              messageTimestamp: message.messageTimestamp,
+              sender: remoteJid.split('@')[0],
+              fromMe: isFromMe,
+              status: isFromMe ? 2 : 1 // Evolution API standard status
+            }
+          ],
+          type: 'notify',
+          source: 'ios',
+          // Manter campos flat para compatibilidade
           ...dadosChat,
           fromMe: isFromMe,
-          remoteJid,
-          sender: remoteJid.split('@')[0], // Número limpo
-          key: {
-            remoteJid,
-            fromMe: isFromMe,
-            id: message.key.id,
-            participant: isGroup ? message.key.participant : undefined
-          },
-          message: message.message,
-          messageTimestamp: message.messageTimestamp,
-          pushName: message.pushName,
-          instanceId: instanceName,
-          instance_id: instanceName, // Outro alias comum
-          instance: instanceName,
-          source: 'ios',
-          isGroup,
-          type: 'notify'             // Característica da Evolution API
+          remoteJid
         }
       };
 
