@@ -424,6 +424,7 @@ async function createInstance(instanceNameRaw, options = {}) {
       const messageData = {
         event: isFromMe ? 'messages.sent' : 'messages.upsert',
         instance: instanceName,
+        owner: instanceName, // Alias common in some integrations
         data: {
           ...dadosChat,
           fromMe: isFromMe,
@@ -432,6 +433,9 @@ async function createInstance(instanceNameRaw, options = {}) {
           message: message.message,
           messageTimestamp: message.messageTimestamp,
           pushName: message.pushName,
+          instanceId: instanceName, // Alias Evolution API
+          instance: instanceName,   // Alias Evolution API
+          source: 'ios',            // Mock source Evolution API
           isGroup,
           participant: message.key.participant
         }
@@ -1438,7 +1442,16 @@ async function sendWebhook(instanceName, data) {
     ...data,
     instance: instanceName,
     instanceName,
+    apikey: instanceTokens[instanceName], // Incluir na payload pra garantir
     timestamp: new Date().toISOString()
+  };
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': instanceTokens[instanceName],
+    'X-API-Key': instanceTokens[instanceName],
+    'Authorization': `Bearer ${instanceTokens[instanceName]}`, // Alguns edge functions usam Bearer
+    'User-Agent': 'WhatsBenemax/2.1'
   };
 
   console.log(`[Webhook] Enviando evento '${data.event}' para: ${webhook.url}`);
@@ -1452,16 +1465,16 @@ async function sendWebhook(instanceName, data) {
   } else {
     // Método básico usando axios
     const axios = require('axios');
-    axios.post(webhook.url, payload, { timeout: 15000 })
+    axios.post(webhook.url, payload, { headers, timeout: 15000 })
       .then(res => {
         console.log(`[Webhook] ✓ Sucesso (${instanceName}): ${res.status}`);
         addRecentEvent(instanceName, 'webhook_success', { url: webhook.url, status: res.status });
       })
       .catch(err => {
         const status = err.response ? err.response.status : 'N/A';
-        const data = err.response ? JSON.stringify(err.response.data) : '';
-        console.error(`[Webhook] ❌ Falha (${instanceName}): ${status} - ${err.message} ${data}`);
-        addRecentEvent(instanceName, 'webhook_error', { url: webhook.url, error: err.message, status, response: data });
+        const errorData = err.response ? JSON.stringify(err.response.data) : '';
+        console.error(`[Webhook] ❌ Falha (${instanceName}): ${status} - ${err.message} ${errorData}`);
+        addRecentEvent(instanceName, 'webhook_error', { url: webhook.url, error: err.message, status, response: errorData });
       });
   }
 }
@@ -1611,6 +1624,7 @@ module.exports = {
   instanceTokens,
   webhooks,
   createInstance,
+  getPairingCode,
   getInstance,
   getAllInstances,
   getRecentEvents,
@@ -1633,6 +1647,21 @@ module.exports = {
   deleteMessage,
   markAsRead,
   updatePresence,
+  setProfileStatus,
+  setProfileName,
+  setProfilePicture,
+
+  // Grupos
+  createGroup,
+  getGroups,
+  getGroupInfo,
+  getGroupInviteCode,
+  revokeGroupInvite,
+  joinGroupByCode,
+  leaveGroup,
+  updateGroupParticipants,
+  updateGroupSettings,
+  updateGroupSubject,
   updateGroupDescription,
   updateGroupPicture,
 

@@ -183,6 +183,9 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'WhatsBenemax/2.1',
+          'apikey': instanceTokens[instanceName] || '',
+          'X-API-Key': instanceTokens[instanceName] || '',
+          'Authorization': instanceTokens[instanceName] ? `Bearer ${instanceTokens[instanceName]}` : '',
           ...headers
         },
         body: JSON.stringify(payload),
