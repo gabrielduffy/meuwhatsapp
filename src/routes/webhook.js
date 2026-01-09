@@ -30,13 +30,12 @@ router.get('/:instanceName', (req, res) => {
     const webhook = whatsapp.getWebhook(instanceName);
     const advancedConfig = webhookAdvanced.getWebhookConfig(instanceName);
 
-    // Retornar um objeto altamente redundante para ser compatível com QUALQUER versão do painel (Mega API, v1, v2)
+    // Retornar Strings puras para evitar [object Object] em componentes de Input
     const responseData = {
-      webhook: webhook || { url: '', events: ['all'] }, // Padrão v1/v2
-      webhookUrl: webhook?.url || '',                  // Padrão Flat
-      url: webhook?.url || '',                         // Padrão Mega API
+      webhook: webhook?.url || '',         // Texto puro para quem usa data.webhook
+      webhookUrl: webhook?.url || '',      // Texto puro para quem usa data.webhookUrl
+      url: webhook?.url || '',             // Texto puro para quem usa data.url
       events: webhook?.events || ['all'],
-      ...(webhook || {}),                              // Espalhado na raiz para garantir
       advancedConfig: advancedConfig || {}
     };
 

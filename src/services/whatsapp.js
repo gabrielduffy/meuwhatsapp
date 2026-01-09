@@ -421,50 +421,46 @@ async function createInstance(instanceNameRaw, options = {}) {
         }
       }
 
-      // Preparar Webhook Payload (Formato Híbrido: Compatível com Evolution API v1, v2 e Mega API)
+      // Preparar Webhook Payload (Formato ACHATADO: Requisito do Lovable/Supabase)
       const messageData = {
         event: isFromMe ? 'messages.sent' : 'messages.upsert',
+        instanceName: instanceName, // OBRIGATÓRIO para a Edge Function do Lovable
         instance: instanceName,
         owner: instanceName,
-        data: {
-          instanceId: instanceName,
-          instance_id: instanceName,
-          instance: instanceName,
-          // Padrão Root (Evolution v1 / Mega)
-          key: {
-            remoteJid,
-            fromMe: isFromMe,
-            id: message.key.id,
-            participant: isGroup ? message.key.participant : undefined
-          },
-          message: message.message,
-          pushName: message.pushName,
-          messageTimestamp: message.messageTimestamp,
-          sender: remoteJid.split('@')[0],
+        // Campos na RAIZ conforme requisitado pela análise do Lovable
+        key: {
+          remoteJid,
           fromMe: isFromMe,
-          // Padrão Array (Evolution v2)
-          messages: [
-            {
-              key: {
-                remoteJid,
-                fromMe: isFromMe,
-                id: message.key.id,
-                participant: isGroup ? message.key.participant : undefined
-              },
-              message: message.message,
-              pushName: message.pushName,
-              messageTimestamp: message.messageTimestamp,
-              sender: remoteJid.split('@')[0],
+          id: message.key.id,
+          participant: isGroup ? message.key.participant : undefined
+        },
+        message: message.message,
+        pushName: message.pushName,
+        messageTimestamp: message.messageTimestamp,
+        sender: remoteJid.split('@')[0],
+        fromMe: isFromMe,
+        remoteJid: remoteJid,
+        source: 'ios',
+        type: 'notify',
+        status: isFromMe ? 2 : 1,
+        // Manter o array de mensagens como redundância (Evolution v2)
+        messages: [
+          {
+            key: {
+              remoteJid,
               fromMe: isFromMe,
-              status: isFromMe ? 2 : 1
-            }
-          ],
-          type: 'notify',
-          source: 'ios',
-          // Campos internos do nosso sistema (Flat)
-          ...dadosChat,
-          remoteJid
-        }
+              id: message.key.id,
+              participant: isGroup ? message.key.participant : undefined
+            },
+            message: message.message,
+            pushName: message.pushName,
+            messageTimestamp: message.messageTimestamp,
+            fromMe: isFromMe,
+            status: isFromMe ? 2 : 1
+          }
+        ],
+        // Campos de compatibilidade adicionais
+        ...dadosChat
       };
 
       // Disparar Webhook (Padrão Lowercase)
