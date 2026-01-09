@@ -8,15 +8,15 @@ const webhookAdvanced = require('../services/webhook-advanced');
 // Configurar webhook (método básico)
 router.post('/set', (req, res) => {
   try {
-    const { instanceName, webhookUrl, events } = req.body;
+    const { instanceName, webhookUrl, url, webhook, events } = req.body;
+    // Tenta pegar a URL de qualquer um dos campos possíveis
+    const finalUrl = webhookUrl || url || (typeof webhook === 'object' ? webhook?.url : webhook);
 
-    if (!instanceName || !webhookUrl) {
+    if (!instanceName || !finalUrl) {
       return res.status(400).json({ error: 'instanceName e webhookUrl são obrigatórios' });
     }
 
-    // events: array de eventos para escutar
-    // ['all'] ou ['message', 'connection', 'qrcode', 'group.update', etc]
-    const result = whatsapp.setWebhook(instanceName, webhookUrl, events || ['all']);
+    const result = whatsapp.setWebhook(instanceName, finalUrl, events || ['all']);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -30,12 +30,17 @@ router.get('/:instanceName', (req, res) => {
     const webhook = whatsapp.getWebhook(instanceName);
     const advancedConfig = webhookAdvanced.getWebhookConfig(instanceName);
 
-    // Retornar um objeto plano para evitar [object Object] no frontend
-    res.json({
-      ...(webhook || {}),
-      webhookUrl: webhook?.url || '',
+    // Retornar um objeto altamente redundante para ser compatível com QUALQUER versão do painel (Mega API, v1, v2)
+    const responseData = {
+      webhook: webhook || { url: '', events: ['all'] }, // Padrão v1/v2
+      webhookUrl: webhook?.url || '',                  // Padrão Flat
+      url: webhook?.url || '',                         // Padrão Mega API
+      events: webhook?.events || ['all'],
+      ...(webhook || {}),                              // Espalhado na raiz para garantir
       advancedConfig: advancedConfig || {}
-    });
+    };
+
+    res.json(responseData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

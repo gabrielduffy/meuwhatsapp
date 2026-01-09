@@ -660,13 +660,14 @@ function getRecentEvents() {
 function getAllInstances() {
   const result = {};
   for (const [name, instance] of Object.entries(instances)) {
+    const nameLower = name.toLowerCase();
     result[name] = {
       isConnected: instance.isConnected,
       user: instance.user || null,
       hasQrCode: !!instance.qrCode,
       hasPairingCode: !!instance.pairingCode,
       proxy: instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
-      webhookUrl: instance.webhookUrl || webhooks[name]?.url || null,
+      webhookUrl: instance.webhookUrl || webhooks[nameLower]?.url || null,
       createdAt: instance.createdAt,
       lastActivity: instance.lastActivity
     };
@@ -1427,39 +1428,63 @@ async function getBusinessProfile(instanceName, remoteJid) {
 
 // ==================== WEBHOOKS ====================
 
-function setWebhook(instanceName, webhookUrlRaw, events = []) {
-  const webhookUrl = typeof webhookUrlRaw === 'object' ? webhookUrlRaw.url : webhookUrlRaw;
-  const eventsList = events.length > 0 ? events : ['all'];
-  webhooks[instanceName] = {
+function setWebhook(instanceNameRaw, webhookUrlRaw, events = []) {
+  const instanceName = (instanceNameRaw || '').trim();
+  if (!instanceName) return { error: 'Nome da instância é obrigatório' };
+
+  const nameLower = instanceName.toLowerCase();
+
+  // Extrair URL de qualquer formato enviado pelo frontend (Object ou String)
+  const webhookUrl = (webhookUrlRaw && typeof webhookUrlRaw === 'object')
+    ? (webhookUrlRaw.url || webhookUrlRaw.webhookUrl || webhookUrlRaw.webhook?.url)
+    : webhookUrlRaw;
+
+  if (!webhookUrl) return { error: 'URL do webhook é obrigatória' };
+
+  const eventsList = (events && events.length > 0) ? events : ['all'];
+
+  // 1. Salvar no cache global (Chave normalizada para evitar erros de case)
+  webhooks[nameLower] = {
     url: webhookUrl,
     events: eventsList,
     createdAt: new Date().toISOString()
   };
 
-  // Atualizar também no objeto da instância em memória se existir
-  const instance = instances[instanceName];
+  // 2. Vincular diretamente ao objeto da instância em memória (se existir)
+  const nameKey = Object.keys(instances).find(k => k.toLowerCase() === nameLower) || instanceName;
+  const instance = instances[nameKey];
   if (instance) {
     instance.webhookUrl = webhookUrl;
   }
 
-  // Persistir no arquivo JSON legado
+  // 3. Persistência em arquivo JSON
   saveWebhooks();
 
-  // Persistir no Banco de Dados (SaaS)
-  query('UPDATE instances SET webhook_url = $1, webhook_events = $2, updated_at = NOW() WHERE instance_name = $3',
-    [webhookUrl, JSON.stringify(eventsList), instanceName])
+  // 4. Persistência no Banco de Dados
+  query('UPDATE instances SET webhook_url = $1, webhook_events = $2, updated_at = NOW() WHERE LOWER(instance_name) = $3',
+    [webhookUrl, JSON.stringify(eventsList), nameLower])
     .catch(e => console.error(`[Webhook] Erro ao persistir no banco para ${instanceName}:`, e.message));
 
-  return { success: true };
+  console.log(`[${instanceName}] ✓ Webhook configurado e persistido: ${webhookUrl}`);
+  return { success: true, url: webhookUrl };
 }
 
-function getWebhook(instanceName) {
-  return webhooks[instanceName] || null;
+function getWebhook(instanceNameRaw) {
+  if (!instanceNameRaw) return null;
+  const nameLower = instanceNameRaw.trim().toLowerCase();
+  return webhooks[nameLower] || null;
 }
 
-function deleteWebhook(instanceName) {
-  delete webhooks[instanceName];
+function deleteWebhook(instanceNameRaw) {
+  if (!instanceNameRaw) return { success: false };
+  const nameLower = instanceNameRaw.trim().toLowerCase();
+
+  delete webhooks[nameLower];
   saveWebhooks();
+
+  query('UPDATE instances SET webhook_url = NULL WHERE LOWER(instance_name) = $1', [nameLower])
+    .catch(e => console.error(`[Webhook] Erro ao remover do banco:`, e.message));
+
   return { success: true };
 }
 
@@ -1591,7 +1616,11 @@ function loadWebhooks() {
   if (fs.existsSync(filePath)) {
     try {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      Object.assign(webhooks, data);
+      // Normalizar chaves para lowercase ao carregar
+      for (const [key, value] of Object.entries(data)) {
+        webhooks[key.toLowerCase()] = value;
+      }
+      console.log(`[Startup] ${Object.keys(webhooks).length} webhooks carregados.`);
     } catch (e) {
       console.error('Erro ao carregar webhooks:', e);
     }
