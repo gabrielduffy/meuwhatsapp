@@ -29,6 +29,11 @@ function addRecentEvent(instanceName, event, data) {
 // Socket.io instance reference
 let io = null;
 
+function configurarSocketIO(socketIO) {
+  io = socketIO;
+  console.log('[WhatsApp] Socket.io configurado');
+}
+
 const chatServico = require('../servicos/chat.servico');
 const { query } = require('../config/database');
 
