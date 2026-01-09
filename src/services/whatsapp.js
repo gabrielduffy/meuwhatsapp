@@ -1571,11 +1571,21 @@ async function loadExistingSessions() {
   for (const sessionName of sessions) {
     const sessionPath = path.join(SESSIONS_DIR, sessionName);
     if (fs.statSync(sessionPath).isDirectory()) {
-      console.log(`Carregando sessão existente: ${sessionName}`);
+      console.log(`[Startup] Carregando sessão existente: ${sessionName}`);
       try {
-        await createInstance(sessionName, { token: instanceTokens[sessionName] });
+        // Tentar carregar configurações do banco para esta instância
+        const res = await query('SELECT * FROM instances WHERE instance_name = $1', [sessionName]);
+        const dbConfig = res.rows[0];
+
+        const options = {
+          token: dbConfig?.token || instanceTokens[sessionName],
+          webhookUrl: dbConfig?.webhook_url,
+          empresaId: dbConfig?.empresa_id
+        };
+
+        await createInstance(sessionName, options);
       } catch (error) {
-        console.error(`Erro ao carregar sessão ${sessionName}:`, error);
+        console.error(`[Startup] Erro ao carregar sessão ${sessionName}:`, error.message);
       }
     }
   }
