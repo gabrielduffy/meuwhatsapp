@@ -68,25 +68,6 @@ router.post('/send-text', messageLimiter, async (req, res) => {
     if (!req.text) return res.status(400).json({ success: false, error: 'text ou body é obrigatório' });
 
     const result = await whatsapp.sendText(req.instanceName, req.to, req.text, req.options);
-
-    // Persistir mensagem enviada
-    try {
-      const empresaId = await getEmpresaPadraoId();
-      if (empresaId) {
-        await chatServico.receberMensagem(empresaId, instanceName, {
-          contatoTelefone: to,
-          contatoNome: to, // Melhoraria se o usuário passasse o nome
-          whatsappMensagemId: result.key?.id,
-          tipoMensagem: 'texto',
-          conteudo: text, // O conteúdo real enviado
-          direcao: 'enviada',
-          status: 'enviada'
-        });
-      }
-    } catch (persistErr) {
-      console.error('Erro ao salvar mensagem enviada:', persistErr);
-    }
-
     res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

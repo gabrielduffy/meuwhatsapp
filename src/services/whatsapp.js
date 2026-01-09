@@ -420,15 +420,19 @@ async function createInstance(instanceNameRaw, options = {}) {
         }
       }
 
-      // Preparar Webhook Payload
+      // Preparar Webhook Payload (Formato compatível com Evolution API / Lovable)
       const messageData = {
-        event: 'message',
-        instanceName,
+        event: isFromMe ? 'messages.sent' : 'messages.upsert',
+        instance: instanceName,
         data: {
           ...dadosChat,
+          fromMe: isFromMe,
+          remoteJid,
           key: message.key,
-          timestamp: message.messageTimestamp,
-          isGroup: remoteJid?.endsWith('@g.us'),
+          message: message.message,
+          messageTimestamp: message.messageTimestamp,
+          pushName: message.pushName,
+          isGroup,
           participant: message.key.participant
         }
       };
@@ -436,7 +440,7 @@ async function createInstance(instanceNameRaw, options = {}) {
       // Disparar Webhook
       sendWebhook(instanceName, messageData);
 
-      addRecentEvent(instanceName, 'message_received', {
+      addRecentEvent(instanceName, isFromMe ? 'message_sent' : 'message_received', {
         id: message.key.id,
         text: msgText,
         from: remoteJid,
@@ -461,16 +465,8 @@ async function createInstance(instanceNameRaw, options = {}) {
               });
 
               if (result?.resposta) {
-                const sentMsg = await socket.sendMessage(remoteJid, { text: result.resposta });
-                await chatServico.receberMensagem(empresaId, instanceName, {
-                  contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
-                  contatoNome: message.pushName,
-                  whatsappMensagemId: sentMsg.key.id,
-                  tipoMensagem: 'texto',
-                  conteudo: result.resposta,
-                  direcao: 'enviada',
-                  status: 'enviada'
-                });
+                // Apenas envia, o evento 'upsert' cuidará da persistência e webhooks
+                await socket.sendMessage(remoteJid, { text: result.resposta });
               }
             }
           } catch (e) { console.error('Erro IA:', e.message); }
@@ -1440,6 +1436,7 @@ async function sendWebhook(instanceName, data) {
 
   const payload = {
     ...data,
+    instance: instanceName,
     instanceName,
     timestamp: new Date().toISOString()
   };
@@ -1456,8 +1453,16 @@ async function sendWebhook(instanceName, data) {
     // Método básico usando axios
     const axios = require('axios');
     axios.post(webhook.url, payload, { timeout: 15000 })
-      .then(res => console.log(`[Webhook] ✓ Sucesso (${instanceName}): ${res.status}`))
-      .catch(err => console.error(`[Webhook] ❌ Falha (${instanceName}): ${err.message}`));
+      .then(res => {
+        console.log(`[Webhook] ✓ Sucesso (${instanceName}): ${res.status}`);
+        addRecentEvent(instanceName, 'webhook_success', { url: webhook.url, status: res.status });
+      })
+      .catch(err => {
+        const status = err.response ? err.response.status : 'N/A';
+        const data = err.response ? JSON.stringify(err.response.data) : '';
+        console.error(`[Webhook] ❌ Falha (${instanceName}): ${status} - ${err.message} ${data}`);
+        addRecentEvent(instanceName, 'webhook_error', { url: webhook.url, error: err.message, status, response: data });
+      });
   }
 }
 

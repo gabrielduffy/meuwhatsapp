@@ -369,6 +369,15 @@ async function criarMensagem(dados) {
     metadados = {}
   } = dados;
 
+  // Evitar duplicidade se já tiver ID do WhatsApp
+  if (whatsappMensagemId) {
+    const existing = await buscarMensagemPorWhatsAppId(whatsappMensagemId, empresaId);
+    if (existing) {
+      // Se já existe, apenas retornamos (evita duplicidade no UI)
+      return existing;
+    }
+  }
+
   const sql = `
     INSERT INTO mensagens_chat (
       conversa_id,
