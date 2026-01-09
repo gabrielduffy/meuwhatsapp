@@ -30,10 +30,11 @@ router.get('/:instanceName', (req, res) => {
     const webhook = whatsapp.getWebhook(instanceName);
     const advancedConfig = webhookAdvanced.getWebhookConfig(instanceName);
 
+    // Retornar um objeto plano para evitar [object Object] no frontend
     res.json({
-      webhook,
+      ...(webhook || {}),
       webhookUrl: webhook?.url || '',
-      advancedConfig
+      advancedConfig: advancedConfig || {}
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -162,18 +162,13 @@ async function createInstance(instanceNameRaw, options = {}) {
   console.log(`[${instanceName}] Inicializando socket do Baileys...`);
   const socket = makeWASocket(socketConfig);
 
-  // Configurar Webhook se fornecido nas opções (comum no Lovable)
-  if (options.webhookUrl || options.webhook) {
-    const url = options.webhookUrl || options.webhook;
-    console.log(`[${instanceName}] 🔗 Configurando webhook automático: ${url}`);
-    setWebhook(instanceName, url, options.webhookEvents || ['all']);
-  }
-
   // Gerar token único para a instância se não existir
   const instanceToken = options.token || uuidv4();
 
   // Inicializar objeto da instância
   const empresaId = options.empresaId || await getEmpresaPadraoId();
+  const rawUrl = options.webhookUrl || options.webhook || null;
+  const cleanUrl = (rawUrl && typeof rawUrl === 'object') ? rawUrl.url : rawUrl;
 
   instances[instanceName] = {
     socket,
@@ -184,11 +179,17 @@ async function createInstance(instanceNameRaw, options = {}) {
     user: null,
     proxy: options.proxy || null,
     token: instanceToken,
-    empresaId, // Guardar em memória para acesso rápido
-    webhookUrl: options.webhookUrl || options.webhook || null, // Guardar para persistência em restarts
+    empresaId,
+    webhookUrl: cleanUrl,
     createdAt: new Date().toISOString(),
     lastActivity: new Date().toISOString()
   };
+
+  // Configurar Webhook no serviço central (Garante persistência em cache e arquivo)
+  if (cleanUrl) {
+    console.log(`[${instanceName}] 🔗 Configurando webhook automático: ${cleanUrl}`);
+    setWebhook(instanceName, cleanUrl, options.webhookEvents || ['all']);
+  }
 
   // Salvar token em memória e arquivo
   instanceTokens[instanceName] = instanceToken;
