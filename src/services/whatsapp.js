@@ -424,25 +424,42 @@ async function createInstance(instanceNameRaw, options = {}) {
       const messageData = {
         event: isFromMe ? 'messages.sent' : 'messages.upsert',
         instance: instanceName,
-        owner: instanceName, // Alias common in some integrations
+        owner: instanceName,
         data: {
           ...dadosChat,
           fromMe: isFromMe,
           remoteJid,
-          key: message.key,
+          sender: remoteJid.split('@')[0], // Número limpo
+          key: {
+            remoteJid,
+            fromMe: isFromMe,
+            id: message.key.id,
+            participant: isGroup ? message.key.participant : undefined
+          },
           message: message.message,
           messageTimestamp: message.messageTimestamp,
           pushName: message.pushName,
-          instanceId: instanceName, // Alias Evolution API
-          instance: instanceName,   // Alias Evolution API
-          source: 'ios',            // Mock source Evolution API
+          instanceId: instanceName,
+          instance_id: instanceName, // Outro alias comum
+          instance: instanceName,
+          source: 'ios',
           isGroup,
-          participant: message.key.participant
+          type: 'notify'             // Característica da Evolution API
         }
       };
 
-      // Disparar Webhook
+      // Disparar Webhook (Padrão Lowercase)
       sendWebhook(instanceName, messageData);
+
+      // Fallback para Maiúsculas (Muito comum em sistemas legados ou Supabase templates)
+      const upperEvent = (isFromMe ? 'messages.sent' : 'messages.upsert').toUpperCase().replace('.', '_');
+      sendWebhook(instanceName, { ...messageData, event: upperEvent });
+
+      // Se for enviado, forçar um 'upsert' também (muitos sistemas só ouvem esse)
+      if (isFromMe) {
+        sendWebhook(instanceName, { ...messageData, event: 'messages.upsert' });
+        sendWebhook(instanceName, { ...messageData, event: 'MESSAGES_UPSERT' });
+      }
 
       addRecentEvent(instanceName, isFromMe ? 'message_sent' : 'message_received', {
         id: message.key.id,
