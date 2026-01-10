@@ -319,6 +319,14 @@ async function createInstance(instanceNameRaw, options = {}) {
     for (const message of messages) {
       if (!message.message) continue;
 
+      const remoteJid = message.key.remoteJid;
+
+      // 1. FILTRO DE STATUS: Ignorar visualizações de status (stories)
+      if (remoteJid === 'status@broadcast') {
+        console.log(`[${instanceName}] 👁️ Status ignorado (broadcast)`);
+        continue;
+      }
+
       let empresaId = instances[instanceName]?.empresaId;
 
       // Fallback: se não tiver empresa_id em memória, tenta recuperar agora
@@ -331,7 +339,8 @@ async function createInstance(instanceNameRaw, options = {}) {
       instances[instanceName].lastActivity = new Date().toISOString();
 
       const isFromMe = message.key.fromMe;
-      const remoteJid = message.key.remoteJid;
+      // remoteJid já declarado acima (Linha 322) para filtro de status
+
 
       const realMessage = getMessageBody(message);
       const msgType = getMessageType(message);
@@ -422,8 +431,11 @@ async function createInstance(instanceNameRaw, options = {}) {
       }
 
       // Preparar Webhook Payload (Formato ACHATADO: Requisito do Lovable/Supabase)
+      // SYNC FIX: Mesmo enviadas pelo celular (fromMe), enviamos como 'upsert' para o Lovable gravar o histórico
+      const webhookEvent = (type === 'append') ? 'messages.upsert' : 'messages.upsert';
+
       const messageData = {
-        event: isFromMe ? 'messages.sent' : 'messages.upsert',
+        event: webhookEvent, // Sempre upsert para sincronização de histórico (celular -> sistema)
         instanceName: instanceName, // OBRIGATÓRIO para a Edge Function do Lovable
         instance: instanceName,
         owner: instanceName,
@@ -498,6 +510,40 @@ async function createInstance(instanceNameRaw, options = {}) {
           } catch (e) { console.error('Erro IA:', e.message); }
         }
       }
+    }
+  });
+
+  // ATUALIZAÇÃO DE CONTATOS: Resolver nomes que ficam '...' ou 'Benemax'
+  socket.ev.on('contacts.upsert', async (contacts) => {
+    for (const contact of contacts) {
+      if (!contact.id || contact.id.endsWith('@g.us') || contact.id === 'status@broadcast') continue;
+
+      const payload = {
+        event: 'contacts.upsert',
+        instanceName: instanceName,
+        id: contact.id,
+        pushName: contact.pushname || contact.name || contact.verifiedName,
+        name: contact.name || contact.pushname,
+        contact: contact
+      };
+
+      console.log(`[${instanceName}] 👤 Contato descoberto: ${payload.pushName || payload.name} (${contact.id})`);
+      sendWebhook(instanceName, payload);
+    }
+  });
+
+  socket.ev.on('contacts.update', async (updates) => {
+    for (const update of updates) {
+      if (!update.id || update.id === 'status@broadcast') continue;
+
+      const payload = {
+        event: 'contacts.update',
+        instanceName: instanceName,
+        id: update.id,
+        ...update
+      };
+
+      sendWebhook(instanceName, payload);
     }
   });
 
