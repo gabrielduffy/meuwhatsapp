@@ -58,6 +58,13 @@ function verificarLimite(tipo) {
       return res.status(400).json({ erro: 'Empresa não identificada' });
     }
 
+    // BYPASS para administradores ou usuários específicos
+    const emailUsuario = req.usuario?.email || '';
+    if (req.usuario?.funcao === 'administrador' || emailUsuario.includes('gabriel.duffy')) {
+      console.log(`[Limites] 🛡️ Ignorando limites para ADMIN: ${emailUsuario}`);
+      return next();
+    }
+
     const { query } = require('../config/database');
 
     try {

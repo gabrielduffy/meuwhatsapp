@@ -80,80 +80,147 @@ router.post('/create', verificarLimite('instancias'), async (req, res) => {
  *       200:
  *         description: Lista de instâncias
  */
-router.get('/list', (req, res) => {
-  const instancesObj = whatsapp.getAllInstances();
-  // Converter objeto { nome: dados } para array [ { instanceName: nome, ...dados } ]
-  const instancesList = Object.entries(instancesObj).map(([name, data]) => ({
-    instanceName: name,
-    status: data.status || (data.isConnected ? 'connected' : 'disconnected'),
-    isConnected: data.isConnected,
-    user: data.user,
-    token: data.token,
-    webhookUrl: data.webhookUrl || null,
-    empresaId: data.empresaId || null,
-    createdAt: data.createdAt,
-    lastActivity: data.lastActivity
-  }));
-  res.json(instancesList);
+router.get('/list', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    const instancesObj = whatsapp.getAllInstances();
+
+    // Buscar todas as instâncias do banco (para pegar as criadas externamente)
+    const dbRes = await query('SELECT * FROM instances ORDER BY created_at DESC');
+    const dbInstances = dbRes.rows;
+
+    // Criar um set de nomes de instâncias em memória para facilitar mesclagem
+    const memoryNames = Object.keys(instancesObj);
+
+    // Lista final mesclada
+    const instancesList = [];
+
+    // 1. Adicionar instâncias do banco
+    dbInstances.forEach(dbInst => {
+      const name = dbInst.instance_name;
+      const memData = instancesObj[name] || {};
+
+      instancesList.push({
+        instanceName: name,
+        status: memData.status || (memData.isConnected ? 'connected' : 'disconnected'),
+        isConnected: memData.isConnected || false,
+        user: memData.user || null,
+        token: dbInst.token || memData.token,
+        webhookUrl: memData.webhookUrl || dbInst.webhook_url,
+        empresaId: dbInst.empresa_id,
+        createdAt: dbInst.created_at,
+        lastActivity: memData.lastActivity || dbInst.updated_at
+      });
+    });
+
+    // 2. Adicionar instâncias que estão em memória mas NÃO estão no banco (segurança)
+    memoryNames.forEach(name => {
+      if (!dbInstances.find(d => d.instance_name === name)) {
+        const memData = instancesObj[name];
+        instancesList.push({
+          instanceName: name,
+          status: memData.status || (memData.isConnected ? 'connected' : 'disconnected'),
+          isConnected: memData.isConnected || false,
+          user: memData.user,
+          token: memData.token,
+          webhookUrl: memData.webhookUrl,
+          empresaId: memData.empresaId,
+          createdAt: memData.createdAt,
+          lastActivity: memData.lastActivity
+        });
+      }
+    });
+
+    res.json(instancesList);
+  } catch (error) {
+    console.error('[API] Erro ao listar instâncias:', error);
+    res.status(500).json({ error: 'Erro ao listar instâncias' });
+  }
 });
 
 // Obter QR Code
-router.get('/:instanceName/qrcode', (req, res) => {
+router.get('/:instanceName/qrcode', async (req, res) => {
   const { instanceName } = req.params;
   const { format } = req.query;
-  const instance = whatsapp.getInstance(instanceName);
+  const isImageRequest = format === 'image';
 
+  let instance = whatsapp.getInstance(instanceName);
+
+  // Auto-recuperação do banco se não estiver em memória
   if (!instance) {
-    return res.status(404).json({ error: 'Instância não encontrada' });
+    try {
+      const { query } = require('../config/database');
+      const dbRes = await query('SELECT * FROM instances WHERE LOWER(instance_name) = LOWER($1)', [instanceName]);
+
+      if (dbRes.rows.length > 0) {
+        console.log(`[QR] Instância '${instanceName}' encontrada no banco. Inicializando auto-carregamento...`);
+        const dbInst = dbRes.rows[0];
+        await whatsapp.createInstance(dbInst.instance_name, {
+          token: dbInst.token || dbInst.instance_token,
+          webhookUrl: dbInst.webhook_url,
+          empresaId: dbInst.empresa_id,
+          proxy: dbInst.proxy_config ? JSON.parse(dbInst.proxy_config) : null
+        });
+
+        instance = whatsapp.getInstance(instanceName);
+      }
+    } catch (e) {
+      console.error(`[QR] Erro no auto-carregamento de '${instanceName}':`, e.message);
+    }
   }
 
-  if (instance.isConnected) {
-    return res.json({ status: 'connected', message: 'Já conectado', user: instance.user });
-  }
-
-  if (!instance.qrCode) {
-    if (format === 'image') {
-      console.log(`[QR Debug] QR Code solicitado como imagem para '${instanceName}', mas ainda não está pronto.`);
-      // Retornar um pixel transparente 1x1 para não quebrar a imagem no frontend
+  // Se for pedido imagem e não achamos a instância, envia pixel transparente em vez de JSON 404
+  if (!instance) {
+    if (isImageRequest) {
       const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
       res.setHeader('Content-Type', 'image/png');
       return res.send(transparentPixel);
     }
-    return res.json({ status: 'waiting', message: 'QR Code ainda não gerado, aguarde...' });
+    return res.status(404).json({ error: 'Instância não encontrada' });
   }
 
-  // Retornar como imagem se solicitado
-  if (format === 'image' && instance.qrCodeBase64) {
-    console.log(`[QR Debug] Servindo QR Code Base64 como imagem para '${instanceName}'.`);
-    const base64Data = instance.qrCodeBase64.replace(/^data:image\/png;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // CORS e Headers agressivos para o Lovable
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-
-    return res.send(buffer);
-  } else if (format === 'image' && instance.qrCode) {
-    console.log(`[QR Debug] Gerando QR Code imagem on-the-fly para '${instanceName}'.`);
-    const QRCode = require('qrcode');
-
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-
-    QRCode.toBuffer(instance.qrCode, (err, buffer) => {
-      if (err) return res.status(500).send('Erro ao gerar imagem');
-      res.send(buffer);
-    });
-    return;
+  // Se já estiver conectado e pedir imagem, retorna um status visual amigável ou pixel
+  if (instance.isConnected) {
+    if (isImageRequest) {
+      // Opcional: retornar uma imagem de "Conectado" ou pixel transparente
+      const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+      res.setHeader('Content-Type', 'image/png');
+      return res.send(transparentPixel);
+    }
+    return res.json({ status: 'connected', message: 'Já conectado', user: instance.user });
   }
 
+  // Tratamento do QR Code como Imagem
+  if (isImageRequest) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    if (instance.qrCodeBase64) {
+      const base64Data = instance.qrCodeBase64.replace(/^data:image\/png;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      res.setHeader('Content-Type', 'image/png');
+      return res.send(buffer);
+    }
+
+    if (instance.qrCode) {
+      const QRCode = require('qrcode');
+      res.setHeader('Content-Type', 'image/png');
+      return QRCode.toBuffer(instance.qrCode, (err, buffer) => {
+        if (err) return res.send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'));
+        res.send(buffer);
+      });
+    }
+
+    // Fallback final: Pixel transparente enquanto aguarda o QR
+    const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+    res.setHeader('Content-Type', 'image/png');
+    return res.send(transparentPixel);
+  }
+
+  // Resposta padrão JSON para quem não pediu format=image
   res.json({
-    status: 'pending',
+    status: instance.qrCode ? 'pending' : 'waiting',
     qrcode: instance.qrCode,
     qrcodeBase64: instance.qrCodeBase64,
     pairingCode: instance.pairingCode
