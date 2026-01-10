@@ -261,37 +261,53 @@ router.post('/:instanceName/pairing-code', async (req, res) => {
  *       200:
  *         description: Status da instância
  */
-router.get('/:instanceName/status', (req, res) => {
-  const { instanceName } = req.params;
-  const instance = whatsapp.getInstance(instanceName);
+router.get('/:instanceName/status', async (req, res) => {
+  try {
+    const { instanceName } = req.params;
+    const { query } = require('../config/database');
+    const instance = whatsapp.getInstance(instanceName);
 
-  if (!instance) {
-    return res.status(404).json({ error: 'Instância não encontrada' });
+    // Buscar no banco para pegar campos persistentes (que podem não estar em memória)
+    const dbRes = await query('SELECT token, webhook_url, empresa_id, created_at, updated_at FROM instances WHERE LOWER(instance_name) = LOWER($1)', [instanceName]);
+    const dbInst = dbRes.rows[0];
+
+    if (!instance && !dbInst) {
+      return res.status(404).json({ error: 'Instância não encontrada' });
+    }
+
+    res.json({
+      instanceName,
+      isConnected: instance ? instance.isConnected : false,
+      status: instance ? (instance.status || (instance.isConnected ? 'connected' : 'disconnected')) : 'disconnected',
+      user: instance ? instance.user : null,
+      token: dbInst ? dbInst.token : (instance ? instance.token : null),
+      webhookUrl: dbInst ? dbInst.webhook_url : (instance ? instance.webhookUrl : null),
+      empresaId: dbInst ? dbInst.empresa_id : (instance ? instance.empresaId : null),
+      proxy: instance && instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
+      createdAt: dbInst ? dbInst.created_at : (instance ? instance.createdAt : null),
+      lastActivity: instance ? instance.lastActivity : (dbInst ? dbInst.updated_at : null)
+    });
+  } catch (error) {
+    console.error('[API] Erro ao obter status:', error);
+    res.status(500).json({ error: 'Erro ao obter status da instância' });
   }
-
-  res.json({
-    instanceName,
-    isConnected: instance.isConnected,
-    status: instance.status || (instance.isConnected ? 'connected' : 'disconnected'),
-    user: instance.user || null,
-    token: instance.token || null,
-    webhookUrl: instance.webhookUrl || null,
-    empresaId: instance.empresaId || null,
-    proxy: instance.proxy ? `${instance.proxy.host}:${instance.proxy.port}` : null,
-    createdAt: instance.createdAt,
-    lastActivity: instance.lastActivity
-  });
 });
 
 // Informações detalhadas da instância
 router.get('/:instanceName/info', validateInstance, requireConnected, async (req, res) => {
   try {
     const instance = req.instance;
+    const { query } = require('../config/database');
+
+    // Buscar configurações persistentes no banco
+    const dbRes = await query('SELECT webhook_url FROM instances WHERE LOWER(instance_name) = LOWER($1)', [req.instanceName]);
+    const webhookUrl = dbRes.rows[0]?.webhook_url || instance.webhookUrl;
 
     res.json({
       instanceName: req.instanceName,
       isConnected: instance.isConnected,
       user: instance.user,
+      webhookUrl: webhookUrl,
       proxy: instance.proxy,
       createdAt: instance.createdAt,
       lastActivity: instance.lastActivity,

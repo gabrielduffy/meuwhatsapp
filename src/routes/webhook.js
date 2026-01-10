@@ -24,11 +24,25 @@ router.post('/set', (req, res) => {
 });
 
 // Obter webhook configurado
-router.get('/:instanceName', (req, res) => {
+router.get('/:instanceName', async (req, res) => {
   try {
     const { instanceName } = req.params;
-    const webhook = whatsapp.getWebhook(instanceName);
+    const { query } = require('../config/database');
+
+    // Tenta pegar da memória primeiro
+    let webhook = whatsapp.getWebhook(instanceName);
     const advancedConfig = webhookAdvanced.getWebhookConfig(instanceName);
+
+    // Se não estiver na memória, busca no banco de dados
+    if (!webhook || !webhook.url) {
+      const dbRes = await query('SELECT webhook_url, webhook_events FROM instances WHERE LOWER(instance_name) = LOWER($1)', [instanceName]);
+      if (dbRes.rows.length > 0 && dbRes.rows[0].webhook_url) {
+        webhook = {
+          url: dbRes.rows[0].webhook_url,
+          events: dbRes.rows[0].webhook_events || ['all']
+        };
+      }
+    }
 
     // Retornar Strings puras para evitar [object Object] em componentes de Input
     const responseData = {
