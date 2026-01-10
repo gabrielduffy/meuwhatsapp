@@ -110,22 +110,36 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 1. Static Files (Prioridade máxima para evitar interferência de middlewares)
 const frontendDistPath = path.resolve(__dirname, '../frontend/dist');
-const uploadsPath = path.resolve(__dirname, '../uploads');
+const uploadsPath = path.resolve('/app/uploads'); // Caminho absoluto fixo para Docker
 
-// Garantir que a pasta de uploads existe
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
+// Garantir que a pasta de uploads existe e tem permissão
+try {
+  if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+  }
+  // Forçar permissões de leitura/escrita para evitar bloqueios do Docker
+  fs.chmodSync(uploadsPath, '755');
+  logger.info(`Pasta de uploads verificada: ${uploadsPath}`);
+} catch (err) {
+  logger.error(`Erro ao configurar pasta de uploads: ${err.message}`);
 }
 
 logger.info(`Configurando express.static em: ${frontendDistPath}`);
+
 // 2. Middlewares de Segurança e CORS
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors(corsOptions));
 app.use(compression());
 
-// Servir arquivos estáticos com cabeçalhos permissivos para o Lovable
+// Servir arquivos estáticos com cabeçalhos permissivos e Log de Diagnóstico
 app.use(express.static(frontendDistPath));
 app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(uploadsPath, req.path);
+  if (fs.existsSync(filePath)) {
+    logger.debug(`Servindo arquivo: ${req.path}`);
+  } else {
+    logger.warn(`Arquivo não encontrado no disco: ${req.path} em ${filePath}`);
+  }
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
