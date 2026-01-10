@@ -378,15 +378,16 @@ async function createInstance(instanceNameRaw, options = {}) {
           const fileName = `${instanceName}_${message.key.id}_${Date.now()}.${extension}`;
           const fullPath = path.join(UPLOADS_DIR, fileName);
 
+          console.log(`[${instanceName}] Tentando salvar mídia em: ${fullPath}`);
           fs.writeFileSync(fullPath, buffer);
-          // Gerar URL Absoluta para o Lovable/Integrações externas
+
           midiaUrl = `${config.serverUrl}/uploads/${fileName}`;
-          midiaTipo = ptType; // 'imagem', 'video', etc
+          midiaTipo = ptType;
           midiaNomeArquivo = realMessage[msgType]?.fileName || fileName;
 
-          console.log(`[${instanceName}] ✓ Mídia salva em: ${midiaUrl} Tipo: ${midiaTipo}`);
+          console.log(`[${instanceName}] ✓ Mídia salva em: ${midiaUrl}`);
         } catch (err) {
-          console.error(`[${instanceName}] ❌ Erro ao baixar mídia ou msg aninhada:`, err.message);
+          console.error(`[${instanceName}] ❌ ERRO AO SALVAR MIDIA:`, err.message);
         }
       }
 
@@ -411,7 +412,7 @@ async function createInstance(instanceNameRaw, options = {}) {
         contatoNome,
         whatsappMensagemId: message.key.id,
         tipoMensagem: midiaTipo || 'texto',
-        conteudo: msgText || (midiaTipo ? `[Mídia: ${midiaTipo}]` : ''),
+        conteudo: msgText || (midiaUrl ? midiaUrl : (midiaTipo ? `[Mídia: ${midiaTipo}]` : '')),
         midiaUrl,
         midiaTipo,
         midiaNomeArquivo,
