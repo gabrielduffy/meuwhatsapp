@@ -456,7 +456,14 @@ async function createInstance(instanceNameRaw, options = {}) {
           source: 'ios',
           status: isFromMe ? 2 : 1,
           mediaUrl: midiaUrl,
-          mediaType: midiaTipo,
+          // Mapear para inglês apenas no webhook para compatibilidade externa
+          mediaType: {
+            imagem: 'image',
+            audio: 'audio',
+            video: 'video',
+            sticker: 'sticker',
+            documento: 'document'
+          }[midiaTipo] || midiaTipo,
           mimetype: realMessage[msgType]?.mimetype,
           caption: msgText
         },
