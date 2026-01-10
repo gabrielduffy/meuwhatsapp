@@ -447,12 +447,16 @@ async function createInstance(instanceNameRaw, options = {}) {
             id: message.key.id,
             participant: isGroup ? message.key.participant : undefined
           },
-          message: realMessage, // Mensagem já desembrulhada (ephemeral, viewOnce, etc)
+          message: realMessage,
           pushName: message.pushName || contatoNome,
           messageTimestamp: message.messageTimestamp,
           owner: instanceName,
           source: 'ios',
-          status: isFromMe ? 2 : 1
+          status: isFromMe ? 2 : 1,
+          mediaUrl: midiaUrl,
+          mediaType: midiaTipo,
+          mimetype: realMessage[msgType]?.mimetype,
+          caption: msgText
         },
         // Campos na raiz para retrocompatibilidade
         key: {
@@ -465,12 +469,14 @@ async function createInstance(instanceNameRaw, options = {}) {
         remoteJid: remoteJid,
         sender: remoteJid.split('@')[0],
         fromMe: isFromMe,
-        ...dadosChat // Inclui conteudo, midiaUrl, etc
+        midiaUrl: midiaUrl,
+        midiaTipo: midiaTipo,
+        ...dadosChat
       };
 
       // Disparar Webhook
       if (!isFromMe) {
-        console.log(`[${instanceName}] 📥 Mensagem RECEBIDA de ${remoteJid}. Enviando webhook...`);
+        console.log(`[${instanceName}] 📥 Mensagem RECEBIDA de ${remoteJid}. Midia: ${midiaUrl || 'N/A'}`);
       }
       sendWebhook(instanceName, messageData);
 
