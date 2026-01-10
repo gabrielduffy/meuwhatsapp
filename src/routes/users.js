@@ -61,7 +61,7 @@ router.post('/',
 
       // Criar usuário
       const usuario = await usuarioRepo.criar({
-        empresaId: req.empresaId,
+        empresa_id: req.empresaId, // FIX: Nomenclatura correta para o repositório/banco
         email,
         senhaHash,
         nome,
@@ -79,7 +79,7 @@ router.post('/',
       });
     } catch (erro) {
       console.error('[Usuários] Erro ao criar:', erro);
-      res.status(400).json({ erro: erro.message });
+      res.status(400).json({ erro: erro.message, message: erro.message });
     }
   }
 );
@@ -128,7 +128,7 @@ router.get('/', async (req, res) => {
     });
   } catch (erro) {
     console.error('[Usuários] Erro ao listar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -206,7 +206,7 @@ router.get('/:id', async (req, res) => {
     res.json({ usuario: usuarioLimpo });
   } catch (erro) {
     console.error('[Usuários] Erro ao buscar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -242,7 +242,7 @@ router.put('/:id', verificarPermissao(['empresa', 'administrador']), async (req,
     });
   } catch (erro) {
     console.error('[Usuários] Erro ao atualizar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -268,7 +268,7 @@ router.delete('/:id', verificarPermissao(['empresa', 'administrador']), async (r
     res.json({ mensagem: 'Usuário deletado com sucesso' });
   } catch (erro) {
     console.error('[Usuários] Erro ao deletar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -294,7 +294,7 @@ router.post('/:id/ativar', verificarPermissao(['empresa', 'administrador']), asy
     });
   } catch (erro) {
     console.error('[Usuários] Erro ao ativar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -325,7 +325,7 @@ router.post('/:id/desativar', verificarPermissao(['empresa', 'administrador']), 
     });
   } catch (erro) {
     console.error('[Usuários] Erro ao desativar:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 
@@ -354,7 +354,7 @@ router.post('/:id/redefinir-senha', verificarPermissao(['empresa', 'administrado
     res.json({ mensagem: 'Senha redefinida com sucesso' });
   } catch (erro) {
     console.error('[Usuários] Erro ao redefinir senha:', erro);
-    res.status(400).json({ erro: erro.message });
+    res.status(400).json({ erro: erro.message, message: erro.message });
   }
 });
 

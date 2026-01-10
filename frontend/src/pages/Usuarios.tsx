@@ -6,12 +6,12 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface Usuario {
-  id: number;
+  id: string; // UUID
   nome: string;
   email: string;
   funcao: 'administrador' | 'empresa' | 'usuario' | 'afiliado';
   ativo: boolean;
-  empresa_id?: number;
+  empresa_id?: string; // UUID
   empresa_nome?: string;
   criado_em: string;
 }
@@ -140,7 +140,8 @@ export default function Usuarios() {
       resetForm();
       loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao criar usuário');
+      const errorMessage = error.response?.data?.message || error.response?.data?.erro || 'Erro ao criar usuário';
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

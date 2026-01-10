@@ -28,11 +28,11 @@ import Tabs from '../components/ui/Tabs';
 // ========================================
 
 interface Instance {
-  id?: number;
+  id?: string; // UUID
   instanceName: string;
   isConnected: boolean;
   user?: {
-    id: string;
+    id: string; // UUID
     name: string;
   };
   status?: string;

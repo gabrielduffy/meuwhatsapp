@@ -89,18 +89,18 @@ export interface RegisterData {
 }
 
 export interface Usuario {
-  id: number;
+  id: string; // UUID
   nome: string;
   email: string;
   email_verificado: boolean;
   papel: 'admin' | 'usuario';
-  empresa_id: number;
+  empresa_id: string; // UUID
   avatar_url?: string;
   criado_em: string;
 }
 
 export interface Empresa {
-  id: number;
+  id: string; // UUID
   nome: string;
   slug: string;
   saldo_creditos: number;
