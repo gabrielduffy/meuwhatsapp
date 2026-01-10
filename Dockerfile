@@ -12,7 +12,14 @@ RUN npm run build
 
 # Estágio 2: Setup do Backend e Imagem Final
 FROM node:20-alpine
-RUN apk add --no-cache git
+# Instalar FFmpeg e dependências de imagem (CRÍTICO para áudio e stickers)
+RUN apk add --no-cache \
+    git \
+    ffmpeg \
+    imagemagick \
+    graphicsmagick \
+    vips-dev \
+    build-base
 
 WORKDIR /app
 

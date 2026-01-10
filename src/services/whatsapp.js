@@ -916,7 +916,7 @@ async function sendAudio(instanceName, to, audioUrl, ptt = true, options = {}) {
 
   const result = await instance.socket.sendMessage(jid, {
     audio: { url: audioUrl },
-    mimetype: ptt ? 'audio/mp4' : 'audio/mpeg', // Correção crítica para áudio carregar som
+    mimetype: ptt ? 'audio/ogg; codecs=opus' : 'audio/mp4',
     ptt
   });
 
