@@ -127,21 +127,22 @@ try {
 logger.info(`Configurando express.static em: ${frontendDistPath}`);
 
 // 2. Middlewares de Segurança e CORS
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permite carregar mídias em outros sites (Lovable)
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors(corsOptions));
 app.use(compression());
 
-// Servir arquivos estáticos com cabeçalhos permissivos e Log de Diagnóstico
+// Servir arquivos estáticos com cabeçalhos TOTALMENTE permissivos para o Lovable
 app.use(express.static(frontendDistPath));
 app.use('/uploads', (req, res, next) => {
-  const filePath = path.join(uploadsPath, req.path);
-  if (fs.existsSync(filePath)) {
-    logger.debug(`Servindo arquivo: ${req.path}`);
-  } else {
-    logger.warn(`Arquivo não encontrado no disco: ${req.path} em ${filePath}`);
-  }
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache para carregar mais rápido
   next();
 }, express.static(uploadsPath));
 
