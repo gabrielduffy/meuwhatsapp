@@ -430,52 +430,46 @@ async function createInstance(instanceNameRaw, options = {}) {
         }
       }
 
-      // Preparar Webhook Payload (Formato ACHATADO: Requisito do Lovable/Supabase)
-      // SYNC FIX: Mesmo enviadas pelo celular (fromMe), enviamos como 'upsert' para o Lovable gravar o histórico
-      const webhookEvent = (type === 'append') ? 'messages.upsert' : 'messages.upsert';
+      // Preparar Webhook Payload (Fomato Evolution API v2 - Extremamente compatível)
+      const webhookEvent = 'messages.upsert';
 
       const messageData = {
-        event: webhookEvent, // Sempre upsert para sincronização de histórico (celular -> sistema)
-        instanceName: instanceName, // OBRIGATÓRIO para a Edge Function do Lovable
+        event: webhookEvent,
         instance: instanceName,
-        owner: instanceName,
-        // Campos na RAIZ conforme requisitado pela análise do Lovable
+        instanceName: instanceName,
+        // Estrutura padrão data (Requisito de muitos sistemas de CRM/Lovable)
+        data: {
+          key: {
+            remoteJid,
+            fromMe: isFromMe,
+            id: message.key.id,
+            participant: isGroup ? message.key.participant : undefined
+          },
+          message: realMessage, // Mensagem já desembrulhada (ephemeral, viewOnce, etc)
+          pushName: message.pushName || contatoNome,
+          messageTimestamp: message.messageTimestamp,
+          owner: instanceName,
+          source: 'ios',
+          status: isFromMe ? 2 : 1
+        },
+        // Campos na raiz para retrocompatibilidade
         key: {
           remoteJid,
           fromMe: isFromMe,
-          id: message.key.id,
-          participant: isGroup ? message.key.participant : undefined
+          id: message.key.id
         },
-        message: message.message,
-        pushName: message.pushName,
-        messageTimestamp: message.messageTimestamp,
+        message: realMessage,
+        pushName: message.pushName || contatoNome,
+        remoteJid: remoteJid,
         sender: remoteJid.split('@')[0],
         fromMe: isFromMe,
-        remoteJid: remoteJid,
-        source: 'ios',
-        type: 'notify',
-        status: isFromMe ? 2 : 1,
-        // Manter o array de mensagens como redundância (Evolution v2)
-        messages: [
-          {
-            key: {
-              remoteJid,
-              fromMe: isFromMe,
-              id: message.key.id,
-              participant: isGroup ? message.key.participant : undefined
-            },
-            message: message.message,
-            pushName: message.pushName,
-            messageTimestamp: message.messageTimestamp,
-            fromMe: isFromMe,
-            status: isFromMe ? 2 : 1
-          }
-        ],
-        // Campos de compatibilidade adicionais
-        ...dadosChat
+        ...dadosChat // Inclui conteudo, midiaUrl, etc
       };
 
-      // Disparar Webhook (Padrão Único: Lovable já é compatível agora)
+      // Disparar Webhook
+      if (!isFromMe) {
+        console.log(`[${instanceName}] 📥 Mensagem RECEBIDA de ${remoteJid}. Enviando webhook...`);
+      }
       sendWebhook(instanceName, messageData);
 
       addRecentEvent(instanceName, isFromMe ? 'message_sent' : 'message_received', {
