@@ -61,8 +61,8 @@ async function getEmpresaPadraoId() {
 // Diretório para sessões
 const SESSIONS_DIR = path.resolve(config.whatsappSessionDir || './sessions');
 const DATA_DIR = path.resolve('./data');
-// Garantir caminho absoluto compatível com o mapeamento do Easypanel
-const UPLOADS_DIR = path.resolve('/app/uploads');
+// Garantir caminho absoluto IDÊNTICO ao do index.js e do Easypanel
+const UPLOADS_DIR = '/app/uploads';
 
 // Garantir que os diretórios existem
 [SESSIONS_DIR, DATA_DIR, UPLOADS_DIR].forEach(dir => {
