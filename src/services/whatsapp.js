@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const { incrementMetric, updateConnectionStatus, createInstanceMetrics, removeInstanceMetrics } = require('./metrics');
 const { handleIncomingMessage } = require('./autoresponder');
 const { sendWebhookWithRetry, isEventTypeEnabled } = require('./webhook-advanced');
+const config = require('../config/env');
 
 // Armazenamento das instâncias
 const instances = {};
@@ -58,9 +59,9 @@ async function getEmpresaPadraoId() {
 }
 
 // Diretório para sessões
-const SESSIONS_DIR = process.env.SESSIONS_DIR || './sessions';
-const DATA_DIR = process.env.DATA_DIR || './data';
-const UPLOADS_DIR = process.env.UPLOAD_DIR || './uploads';
+const SESSIONS_DIR = path.resolve(config.whatsappSessionDir || './sessions');
+const DATA_DIR = path.resolve('./data');
+const UPLOADS_DIR = path.resolve(config.uploadDir || './uploads');
 
 // Garantir que os diretórios existem
 [SESSIONS_DIR, DATA_DIR, UPLOADS_DIR].forEach(dir => {
@@ -377,7 +378,8 @@ async function createInstance(instanceNameRaw, options = {}) {
           const fullPath = path.join(UPLOADS_DIR, fileName);
 
           fs.writeFileSync(fullPath, buffer);
-          midiaUrl = `/uploads/${fileName}`;
+          // Gerar URL Absoluta para o Lovable/Integrações externas
+          midiaUrl = `${config.serverUrl}/uploads/${fileName}`;
           midiaTipo = ptType; // 'imagem', 'video', etc
           midiaNomeArquivo = realMessage[msgType]?.fileName || fileName;
 
@@ -914,6 +916,7 @@ async function sendAudio(instanceName, to, audioUrl, ptt = true, options = {}) {
 
   const result = await instance.socket.sendMessage(jid, {
     audio: { url: audioUrl },
+    mimetype: ptt ? 'audio/mp4' : 'audio/mpeg', // Correção crítica para áudio carregar som
     ptt
   });
 

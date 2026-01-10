@@ -29,6 +29,7 @@ const config = {
   // Server
   port: parseInt(process.env.PORT, 10) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
+  serverUrl: process.env.SERVER_URL || process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`,
 
   // Database
   databaseUrl: process.env.DATABASE_URL,
