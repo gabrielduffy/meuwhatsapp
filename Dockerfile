@@ -12,16 +12,11 @@ RUN npm run build
 
 # Estágio 2: Setup do Backend e Imagem Final
 FROM node:20-alpine
-# Instalar FFmpeg e dependências de imagem (CRÍTICO para áudio e stickers)
-RUN apk add --no-cache \
-    git \
-    ffmpeg \
-    imagemagick \
-    graphicsmagick \
-    vips-dev \
-    build-base \
-    python3 \
-    libc6-compat
+# Instalar ferramentas de mídia (FFmpeg e Magick são essenciais para áudio e stickers)
+RUN apk add --no-cache git ffmpeg imagemagick
+
+# Pular compilação do sharp (usar binários pré-compilados para evitar erros de build)
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=1
 
 WORKDIR /app
 
