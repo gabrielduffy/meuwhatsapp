@@ -463,18 +463,8 @@ async function createInstance(instanceNameRaw, options = {}) {
         ...dadosChat
       };
 
-      // Disparar Webhook (Padrão Lowercase)
+      // Disparar Webhook (Padrão Único: Lovable já é compatível agora)
       sendWebhook(instanceName, messageData);
-
-      // Fallback para Maiúsculas (Muito comum em Supabase Edge Functions)
-      const upperEvent = (isFromMe ? 'messages.sent' : 'messages.upsert').toUpperCase().replace('.', '_');
-      sendWebhook(instanceName, { ...messageData, event: upperEvent });
-
-      // Se for enviado, forçar um 'upsert' também como redundância
-      if (isFromMe) {
-        sendWebhook(instanceName, { ...messageData, event: 'messages.upsert' });
-        sendWebhook(instanceName, { ...messageData, event: 'MESSAGES_UPSERT' });
-      }
 
       addRecentEvent(instanceName, isFromMe ? 'message_sent' : 'message_received', {
         id: message.key.id,
