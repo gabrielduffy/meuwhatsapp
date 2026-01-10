@@ -78,6 +78,8 @@ interface Mensagem {
   criado_em: string;
   status: string;
   tipo_mensagem: string;
+  midia_url?: string;
+  midia_tipo?: string;
 }
 
 type TabType = 'todos' | 'aguardando' | 'meus' | 'grupos';
@@ -386,6 +388,53 @@ export default function Conversas() {
     );
   }
 
+  const renderMessageContent = (msg: Mensagem) => {
+    const url = msg.midia_url || msg.conteudo;
+
+    if (msg.tipo_mensagem === 'imagem' || msg.tipo_mensagem === 'sticker') {
+      return (
+        <div className="space-y-2">
+          <img
+            src={url}
+            alt="Mídia"
+            className="max-w-full rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+            onClick={() => window.open(url, '_blank')}
+          />
+          {msg.tipo_mensagem !== 'sticker' && msg.conteudo && msg.conteudo !== url && (
+            <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>
+          )}
+        </div>
+      );
+    }
+
+    if (msg.tipo_mensagem === 'audio') {
+      return (
+        <div className="min-w-[200px] py-1">
+          <audio controls className="w-full h-8">
+            <source src={url} type="audio/ogg" />
+            Seu navegador não suporta áudio.
+          </audio>
+        </div>
+      );
+    }
+
+    if (msg.tipo_mensagem === 'video') {
+      return (
+        <div className="space-y-2">
+          <video controls className="max-w-full rounded-lg">
+            <source src={url} type="video/mp4" />
+            Seu navegador não suporta vídeo.
+          </video>
+          {msg.conteudo && msg.conteudo !== url && (
+            <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>
+          )}
+        </div>
+      );
+    }
+
+    return <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>;
+  };
+
   return (
     <div className="flex h-full bg-gray-50 dark:bg-gray-950 overflow-hidden">
       {/* Sidebar: Lista de Conversas */}
@@ -657,7 +706,7 @@ export default function Conversas() {
                       : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700 rounded-tl-none'
                       }`}
                   >
-                    <p className="text-sm md:text-[15px] whitespace-pre-wrap">{msg.conteudo}</p>
+                    {renderMessageContent(msg)}
                     <div className={`flex items-center gap-1 mt-1 ${msg.direcao === 'enviada' ? 'justify-end' : 'justify-start'}`}>
                       <span className={`text-[10px] ${msg.direcao === 'enviada' ? 'text-purple-100' : 'text-gray-400'}`}>
                         {new Date(msg.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

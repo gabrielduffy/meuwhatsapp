@@ -368,12 +368,12 @@ async function createInstance(instanceNameRaw, options = {}) {
           }[msgType] || 'bin';
 
           const ptType = {
-            imageMessage: 'image',
+            imageMessage: 'imagem',
             videoMessage: 'video',
             audioMessage: 'audio',
-            documentMessage: 'document',
+            documentMessage: 'documento',
             stickerMessage: 'sticker'
-          }[msgType] || 'text';
+          }[msgType] || 'texto';
 
           const fileName = `${instanceName}_${message.key.id}_${Date.now()}.${extension}`;
           const fullPath = path.join(UPLOADS_DIR, fileName);
@@ -411,7 +411,7 @@ async function createInstance(instanceNameRaw, options = {}) {
         contatoTelefone: remoteJid.replace('@s.whatsapp.net', ''),
         contatoNome,
         whatsappMensagemId: message.key.id,
-        tipoMensagem: midiaTipo || 'text',
+        tipoMensagem: midiaTipo || 'texto',
         conteudo: msgText || midiaUrl || '',
         midiaUrl,
         midiaTipo,
