@@ -118,13 +118,19 @@ if (!fs.existsSync(uploadsPath)) {
 }
 
 logger.info(`Configurando express.static em: ${frontendDistPath}`);
-app.use(express.static(frontendDistPath));
-app.use('/uploads', express.static(uploadsPath));
-
 // 2. Middlewares de Segurança e CORS
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors(corsOptions));
 app.use(compression());
+
+// Servir arquivos estáticos com cabeçalhos permissivos para o Lovable
+app.use(express.static(frontendDistPath));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(uploadsPath));
+
 
 const publicPaths = [
   '/health', '/status', '/api-docs',
