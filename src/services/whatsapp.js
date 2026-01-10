@@ -727,12 +727,22 @@ async function deleteInstance(instanceName) {
     removeInstanceMetrics(instanceName);
   }
 
+  // Deletar arquivos de sessão
   const sessionPath = path.join(SESSIONS_DIR, instanceName);
   if (fs.existsSync(sessionPath)) {
     fs.rmSync(sessionPath, { recursive: true, force: true });
   }
 
-  return { success: true, message: 'Instância deletada' };
+  // DELETAR DO BANCO DE DADOS (Causa do bug de "não deleta")
+  try {
+    const { query } = require('../config/database');
+    await query('DELETE FROM instances WHERE LOWER(instance_name) = LOWER($1)', [instanceName]);
+    console.log(`[WhatsApp] Instância '${instanceName}' removida do banco de dados.`);
+  } catch (err) {
+    console.error(`[WhatsApp] Erro ao remover '${instanceName}' do banco:`, err.message);
+  }
+
+  return { success: true, message: 'Instância deletada com sucesso' };
 }
 
 async function logoutInstance(instanceName) {
