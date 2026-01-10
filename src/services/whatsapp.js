@@ -1485,7 +1485,7 @@ function setWebhook(instanceNameRaw, webhookUrlRaw, events = []) {
 
   const eventsList = (events && events.length > 0) ? events : ['all'];
 
-  // 1. Salvar no cache global (Chave normalizada para evitar erros de case)
+  // 1. Salvar no cache global (Chave normalizada para sempre ser minúscula)
   webhooks[nameLower] = {
     url: webhookUrl,
     events: eventsList,
@@ -1533,34 +1533,66 @@ function deleteWebhook(instanceNameRaw) {
 async function sendWebhook(instanceName, data) {
   if (!instanceName) return;
   const nameLower = instanceName.trim().toLowerCase();
-  const webhook = webhooks[nameLower];
-  if (!webhook || !webhook.url) return;
 
-  // Verificar se o evento está na lista de eventos permitidos (compatibilidade)
+  // 1. Tentar pegar da memória
+  let webhook = webhooks[nameLower];
+  let token = instanceTokens[instanceName] || instanceTokens[nameLower];
+
+  // 2. BUSCA NO BANCO (Fallback Crítico): Se não estiver em memória, busca no banco
+  if (!webhook || !webhook.url || !token) {
+    try {
+      const res = await query('SELECT token, webhook_url, webhook_events FROM instances WHERE LOWER(instance_name) = $1', [nameLower]);
+      const dbInst = res.rows[0];
+
+      if (dbInst) {
+        if (!webhook || !webhook.url) {
+          webhook = {
+            url: dbInst.webhook_url,
+            events: dbInst.webhook_events || ['all']
+          };
+          webhooks[nameLower] = webhook; // Cache para as próximas
+        }
+        if (!token) {
+          token = dbInst.token;
+          instanceTokens[nameLower] = token; // Cache para as próximas
+        }
+      }
+    } catch (e) {
+      console.error(`[Webhook] Erro ao buscar dados de envio no banco para ${instanceName}:`, e.message);
+    }
+  }
+
+  // 3. Validação final
+  if (!webhook || !webhook.url) {
+    // console.warn(`[Webhook] Ignorado para '${instanceName}': Nenhuma URL configurada.`);
+    return;
+  }
+
+  // Verificar se o evento está na lista de eventos permitidos
   if (webhook.events[0] !== 'all' && !webhook.events.includes(data.event)) {
     return;
   }
 
   // Verificar se o tipo de evento está habilitado no webhook avançado
-  const isAdvancedEnabled = isEventTypeEnabled(instanceName, data.event);
+  const isAdvancedEnabled = isEventTypeEnabled(nameLower, data.event);
 
   const payload = {
     ...data,
     instance: instanceName,
     instanceName,
-    apikey: instanceTokens[instanceName], // Incluir na payload pra garantir
+    apikey: token, // Usar token recuperado
     timestamp: new Date().toISOString()
   };
 
   const headers = {
     'Content-Type': 'application/json',
-    'apikey': instanceTokens[instanceName],
-    'X-API-Key': instanceTokens[instanceName],
-    'Authorization': `Bearer ${instanceTokens[instanceName]}`, // Alguns edge functions usam Bearer
+    'apikey': token,
+    'X-API-Key': token,
+    'Authorization': `Bearer ${token}`,
     'User-Agent': 'WhatsBenemax/2.1'
   };
 
-  console.log(`[Webhook] Enviando evento '${data.event}' para: ${webhook.url}`);
+  console.log(`[Webhook] Enviando evento '${data.event}' da instância '${instanceName}' para: ${webhook.url}`);
 
   // Se webhook avançado está configurado, usar retry automático
   if (isAdvancedEnabled) {
