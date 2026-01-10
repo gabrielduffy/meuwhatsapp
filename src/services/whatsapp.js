@@ -412,7 +412,7 @@ async function createInstance(instanceNameRaw, options = {}) {
         contatoNome,
         whatsappMensagemId: message.key.id,
         tipoMensagem: midiaTipo || 'text',
-        conteudo: msgText || '',
+        conteudo: msgText || midiaUrl || '',
         midiaUrl,
         midiaTipo,
         midiaNomeArquivo,
