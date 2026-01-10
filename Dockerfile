@@ -19,7 +19,9 @@ RUN apk add --no-cache \
     imagemagick \
     graphicsmagick \
     vips-dev \
-    build-base
+    build-base \
+    python3 \
+    libc6-compat
 
 WORKDIR /app
 
