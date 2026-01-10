@@ -1531,7 +1531,9 @@ function deleteWebhook(instanceNameRaw) {
 }
 
 async function sendWebhook(instanceName, data) {
-  const webhook = webhooks[instanceName];
+  if (!instanceName) return;
+  const nameLower = instanceName.trim().toLowerCase();
+  const webhook = webhooks[nameLower];
   if (!webhook || !webhook.url) return;
 
   // Verificar se o evento está na lista de eventos permitidos (compatibilidade)
