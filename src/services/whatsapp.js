@@ -480,6 +480,7 @@ async function createInstance(instanceNameRaw, options = {}) {
         fromMe: isFromMe,
         midiaUrl: midiaUrl,
         midiaTipo: midiaTipo,
+        tipo_mensagem: midiaTipo, // Campo exato que o Lovable está esperando (em português)
         ...dadosChat
       };
 
