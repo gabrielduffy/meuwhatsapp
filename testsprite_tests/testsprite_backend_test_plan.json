@@ -1,0 +1,32 @@
+[
+  {
+    "id": "TC001",
+    "title": "test user authentication endpoints",
+    "description": "Verify the login, registration, password recovery, and JWT token management endpoints function correctly, enforcing secure access control."
+  },
+  {
+    "id": "TC002",
+    "title": "test user management endpoints",
+    "description": "Validate CRUD operations for company users, including permission and profile management, ensuring data integrity and access restrictions."
+  },
+  {
+    "id": "TC003",
+    "title": "test whatsapp instance management endpoints",
+    "description": "Test creation, QR code connection, real-time monitoring, and deletion of WhatsApp instances, ensuring multi-tenant isolation and status accuracy."
+  },
+  {
+    "id": "TC004",
+    "title": "test message sending endpoints",
+    "description": "Verify sending of text, media (image, video, audio), documents, and bot messages with correct content rendering and media processing."
+  },
+  {
+    "id": "TC005",
+    "title": "test ai agent management endpoints",
+    "description": "Validate creation and management of AI agents that respond automatically using Groq AI, including configuration of personality, voice tone, and triggers."
+  },
+  {
+    "id": "TC006",
+    "title": "test advanced webhook configuration endpoints",
+    "description": "Test configuration of external triggers for message and connection events, ensuring reliable event notifications with retry logic."
+  }
+]

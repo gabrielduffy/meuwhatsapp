@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "project": "WhatsBenemax v2.1",
+    "date": "2026-01-15",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "WhatsBenemax is a SaaS multi-instance platform for professional and automated WhatsApp communication management. It integrates the Baileys library with Groq AI to provide a complete solution for customer service, prospecting, and message automation.",
+  "core_goals": [
+    "Enable scalable SaaS architecture supporting multiple isolated tenants (companies) managing their own WhatsApp instances.",
+    "Integrate intelligent AI agents for human-like, contextual automatic responses.",
+    "Ensure technical reliability with robust tech stack including PostgreSQL, Redis, and Bull for message delivery and data persistence.",
+    "Deliver an intuitive and user-friendly experience with QR Code pairing and an evolving React dashboard."
+  ],
+  "key_features": [
+    "Multi-instance management with creation, QR Code and Pairing Code connection, automatic reconnection and status monitoring for WhatsApp instances.",
+    "Comprehensive messaging engine supporting text, images, videos, audio (with conversion), documents, stickers, location, chat features like emoji reactions, replies, polls, and mentions, plus typing and audio recording simulations.",
+    "AI Agents powered by Groq with configurable personality, voice tone, business context, trigger-based responses, and token-usage based credit system per company.",
+    "Automation and CRM capabilities including auto responders, mass message campaigns (broadcast), message scheduling, and follow-up automations.",
+    "Advanced webhook system providing real-time notifications on messages, battery status, connection changes, message status, with robust logging and retry mechanisms.",
+    "Security and authentication features with JWT, multi-tenancy route protection, and rate limiting against attacks.",
+    "Backend built on Node.js, Express, PostgreSQL, Redis, Bull, validated by Zod, with structured logging using Winston.",
+    "Frontend evolving with React, TypeScript, Vite, Tailwind CSS and premium design system elements (Framer Motion, Lucide-React, Radix UI)."
+  ],
+  "user_flow_summary": [
+    "User registers or logs in via secure authentication endpoints with JWT token management.",
+    "User creates and connects multiple WhatsApp instances using QR Code or Pairing Code, with real-time connection monitoring.",
+    "User sends and receives various message formats, utilizing chat features like polls and reactions, with automated typing and audio recording states to enhance UX.",
+    "User configures AI agents with specific voice tones, business contexts and triggers to handle automatic message replies.",
+    "User sets up automation workflows including auto responders, broadcast campaigns, scheduled messages, and follow-ups.",
+    "User configures and manages webhooks to receive event notifications and monitor system status.",
+    "Administrators manage user permissions, profiles, and multi-tenant data securely via the dashboard."
+  ],
+  "validation_criteria": [
+    "All core functional modules (Instance management, Messaging engine, AI agents, Automation, Webhooks) operate correctly with expected inputs and outputs.",
+    "Authentication and authorization mechanisms enforce secure access control with JWT and multi-tenancy protections.",
+    "Message sending and receiving support all specified formats with accurate content rendering and media processing.",
+    "AI agents respond rapidly and contextually based on user configuration and credit consumption.",
+    "Webhook notifications are delivered reliably with retry logic and correct event triggers.",
+    "System remains performant and stable under multi-tenant loads with message queues and caching (Redis, Bull).",
+    "Frontend components adhere to design system standards and provide smooth, responsive UX across supported devices.",
+    "Security measures prevent unauthorized access and mitigate attack vectors like brute force and denial of service."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "Node.js",
+      "Express",
+      "PostgreSQL",
+      "Redis",
+      "Groq AI",
+      "Baileys (WhatsApp SDK)",
+      "Zod",
+      "Winston"
+    ],
+    "features": [
+      {
+        "name": "Autenticaзгo",
+        "description": "Endpoints para login, cadastro, recuperaзгo de senha e gestгo de tokens JWT.",
+        "files": [
+          "src/routes/auth.routes.js",
+          "src/servicos/autenticacao.servico.js"
+        ]
+      },
+      {
+        "name": "Usuбrios",
+        "description": "CRUD de usuбrios da empresa, gestгo de permissхes e perfis.",
+        "files": [
+          "src/routes/users.routes.js",
+          "src/repositorios/usuario.repositorio.js"
+        ]
+      },
+      {
+        "name": "Instвncias (WhatsApp)",
+        "description": "Criaзгo, conexгo via QR Code, monitoramento e exclusгo de instвncias do WhatsApp.",
+        "files": [
+          "src/routes/instance.routes.js",
+          "src/services/whatsapp.js"
+        ]
+      },
+      {
+        "name": "Mensagens",
+        "description": "Envio de mensagens de texto, mнdia (imagem, vнdeo, бudio), documentos e botхes.",
+        "files": [
+          "src/routes/message.routes.js"
+        ]
+      },
+      {
+        "name": "Agentes IA",
+        "description": "Criaзгo e gestгo de agentes inteligentes que respondem automaticamente usando Groq AI.",
+        "files": [
+          "src/routes/ai-agents.routes.js",
+          "src/servicos/agente-ia.servico.js"
+        ]
+      },
+      {
+        "name": "Webhooks Avanзados",
+        "description": "Configuraзгo de gatilhos externos para eventos de mensagem e conexгo.",
+        "files": [
+          "src/routes/webhook.routes.js",
+          "src/services/webhook-advanced.js"
+        ]
+      }
+    ]
+  }
+}

@@ -166,6 +166,13 @@ const notFoundHandler = (req, res, next) => {
     404,
     'ROUTE_NOT_FOUND'
   );
+
+  // Log básico para debug rápido de rotas inexistentes
+  logger.warn(`404 - Rota inexistente: ${req.method} ${req.url}`, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
   next(error);
 };
 

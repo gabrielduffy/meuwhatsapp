@@ -302,7 +302,12 @@ app.use((req, res, next) => {
   }
 
   // 4. Legacy API Routes (X-API-Key or Bearer Token)
-  if (legacyApiPrefixes.some(p => path.startsWith(p))) {
+  // Agora também acessíveis via /api/ para consistência
+  if (legacyApiPrefixes.some(p => path.startsWith(p) || path.startsWith(`/api${p}`))) {
+    // Se for rota de instância mas pública (como qrcode), pular auth
+    if (path.includes('/qrcode') || path.includes('/restore') || path.includes('/debug')) {
+      return next();
+    }
     return instanceAuthMiddleware(req, res, next);
   }
 
@@ -329,23 +334,28 @@ if (config.enableSwagger) {
   logger.info('Swagger documentation disponível em /api-docs');
 }
 
-// Registrar rotas existentes
-app.use('/api/autenticacao', autenticacaoRoutes);
-app.use('/status', statusRoutes);
-app.use('/instance', instanceRoutes);
-app.use('/message', messageRoutes);
-app.use('/group', groupRoutes);
-app.use('/chat', chatRoutes);
-app.use('/misc', miscRoutes);
-app.use('/webhook', webhookRoutes);
-app.use('/warming', warmingRoutes);
-app.use('/metrics', metricsRoutes);
-app.use('/scheduler', schedulerRoutes);
-app.use('/contacts', contactsRoutes);
-app.use('/broadcast', broadcastRoutes);
-app.use('/autoresponder', autoresponderRoutes);
+// Registrar rotas legadas (suporte a ambos os prefixos para evitar quebras)
+const registrarRotasLegadas = (prefix = '') => {
+  app.use(`${prefix}/instance`, instanceRoutes);
+  app.use(`${prefix}/message`, messageRoutes);
+  app.use(`${prefix}/group`, groupRoutes);
+  app.use(`${prefix}/chat`, chatRoutes);
+  app.use(`${prefix}/misc`, miscRoutes);
+  app.use(`${prefix}/webhook`, webhookRoutes);
+  app.use(`${prefix}/warming`, warmingRoutes);
+  app.use(`${prefix}/metrics`, metricsRoutes);
+  app.use(`${prefix}/scheduler`, schedulerRoutes);
+  app.use(`${prefix}/contacts`, contactsRoutes);
+  app.use(`${prefix}/broadcast`, broadcastRoutes);
+  app.use(`${prefix}/autoresponder`, autoresponderRoutes);
+};
 
-// Registrar novas rotas SaaS
+// Registrar com e sem /api para compatibilidade total
+registrarRotasLegadas();
+registrarRotasLegadas('/api');
+
+// Registrar novas rotas SaaS (sempre sob /api)
+app.use('/api/autenticacao', autenticacaoRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/empresa', empresaRoutes);
 app.use('/api/planos', planoRoutes);
@@ -362,7 +372,10 @@ app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-app.use('/api/debug', require('./routes/debug'));
+// Rotas especiais
+app.use('/status', statusRoutes);
+app.use('/api/status', statusRoutes);
+app.use('/api/debug', require('./routes/debug.routes'));
 
 // Fallback para SPA React - DEVE VIR ANTES DO 404 HANDLER
 // Serve o index.html do React para todas as rotas não-API

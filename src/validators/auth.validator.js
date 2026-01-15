@@ -6,10 +6,10 @@ const loginSchema = z.object({
 });
 
 const registroSchema = z.object({
-    nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres').max(100),
+    nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres').max(100).optional().or(z.literal('')),
     email: z.string().email('Email inválido').toLowerCase().trim(),
     senha: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
-    nomeEmpresa: z.string().min(3, 'Nome da empresa deve ter pelo menos 3 caracteres'),
+    nomeEmpresa: z.string().min(3, 'Nome da empresa deve ter pelo menos 3 caracteres').optional().or(z.literal('')),
     codigoAfiliado: z.string().optional()
 });
 
