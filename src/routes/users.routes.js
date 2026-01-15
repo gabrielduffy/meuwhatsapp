@@ -5,6 +5,8 @@ const { gerarHashSenha } = require('../utilitarios/senha');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { garantirMultiTenant, verificarLimite } = require('../middlewares/empresa');
 const { verificarPermissao } = require('../middlewares/permissoes');
+const { validate } = require('../middlewares/validation.middleware');
+const { criarUsuarioSchema, atualizarUsuarioSchema, redefinirSenhaUsuarioSchema } = require('../validators/user.validator');
 
 // Todas as rotas requerem autenticação e multi-tenant
 router.use(autenticarMiddleware);
@@ -41,13 +43,10 @@ router.use(garantirMultiTenant);
 router.post('/',
   verificarPermissao(['empresa', 'administrador']),
   verificarLimite('usuarios'),
+  validate(criarUsuarioSchema),
   async (req, res) => {
     try {
       const { nome, email, senha, funcao = 'usuario', permissoes = [] } = req.body;
-
-      if (!nome || !email || !senha) {
-        return res.status(400).json({ erro: 'Nome, email e senha são obrigatórios' });
-      }
 
       // Verificar se email já existe
       const usuarioExistente = await usuarioRepo.buscarPorEmail(email);
@@ -214,37 +213,31 @@ router.get('/:id', async (req, res) => {
  * PUT /api/usuarios/:id
  * Atualizar usuário
  */
-router.put('/:id', verificarPermissao(['empresa', 'administrador']), async (req, res) => {
-  try {
-    const usuario = await usuarioRepo.buscarPorId(req.params.id);
+router.put('/:id',
+  verificarPermissao(['empresa', 'administrador']),
+  validate(atualizarUsuarioSchema),
+  async (req, res) => {
+    try {
+      const usuario = await usuarioRepo.buscarPorId(req.params.id);
 
-    if (!usuario || usuario.empresa_id !== req.empresaId) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
+      if (!usuario || usuario.empresa_id !== req.empresaId) {
+        return res.status(404).json({ erro: 'Usuário não encontrado' });
+      }
+
+      const usuarioAtualizado = await usuarioRepo.atualizar(req.params.id, req.body);
+
+      // Remover dados sensíveis
+      const { senha_hash, ...usuarioLimpo } = usuarioAtualizado;
+
+      res.json({
+        mensagem: 'Usuário atualizado com sucesso',
+        usuario: usuarioLimpo
+      });
+    } catch (erro) {
+      console.error('[Usuários] Erro ao atualizar:', erro);
+      res.status(400).json({ erro: erro.message, message: erro.message });
     }
-
-    // Campos permitidos para atualização
-    const dadosAtualizacao = {};
-
-    if (req.body.nome) dadosAtualizacao.nome = req.body.nome;
-    if (req.body.email) dadosAtualizacao.email = req.body.email;
-    if (req.body.funcao) dadosAtualizacao.funcao = req.body.funcao;
-    if (req.body.permissoes) dadosAtualizacao.permissoes = req.body.permissoes;
-    if (req.body.ativo !== undefined) dadosAtualizacao.ativo = req.body.ativo;
-
-    const usuarioAtualizado = await usuarioRepo.atualizar(req.params.id, dadosAtualizacao);
-
-    // Remover dados sensíveis
-    const { senha_hash, ...usuarioLimpo } = usuarioAtualizado;
-
-    res.json({
-      mensagem: 'Usuário atualizado com sucesso',
-      usuario: usuarioLimpo
-    });
-  } catch (erro) {
-    console.error('[Usuários] Erro ao atualizar:', erro);
-    res.status(400).json({ erro: erro.message, message: erro.message });
-  }
-});
+  });
 
 /**
  * DELETE /api/usuarios/:id
@@ -333,29 +326,28 @@ router.post('/:id/desativar', verificarPermissao(['empresa', 'administrador']), 
  * POST /api/usuarios/:id/redefinir-senha
  * Redefinir senha de usuário (apenas admin)
  */
-router.post('/:id/redefinir-senha', verificarPermissao(['empresa', 'administrador']), async (req, res) => {
-  try {
-    const { nova_senha } = req.body;
+router.post('/:id/redefinir-senha',
+  verificarPermissao(['empresa', 'administrador']),
+  validate(redefinirSenhaUsuarioSchema),
+  async (req, res) => {
+    try {
+      const { nova_senha } = req.body;
 
-    if (!nova_senha) {
-      return res.status(400).json({ erro: 'Nova senha é obrigatória' });
+      const usuario = await usuarioRepo.buscarPorId(req.params.id);
+
+      if (!usuario || usuario.empresa_id !== req.empresaId) {
+        return res.status(404).json({ erro: 'Usuário não encontrado' });
+      }
+
+      const senhaHash = await gerarHashSenha(nova_senha);
+
+      await usuarioRepo.atualizar(req.params.id, { senhaHash });
+
+      res.json({ mensagem: 'Senha redefinida com sucesso' });
+    } catch (erro) {
+      console.error('[Usuários] Erro ao redefinir senha:', erro);
+      res.status(400).json({ erro: erro.message, message: erro.message });
     }
-
-    const usuario = await usuarioRepo.buscarPorId(req.params.id);
-
-    if (!usuario || usuario.empresa_id !== req.empresaId) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
-
-    const senhaHash = await gerarHashSenha(nova_senha);
-
-    await usuarioRepo.atualizar(req.params.id, { senhaHash });
-
-    res.json({ mensagem: 'Senha redefinida com sucesso' });
-  } catch (erro) {
-    console.error('[Usuários] Erro ao redefinir senha:', erro);
-    res.status(400).json({ erro: erro.message, message: erro.message });
-  }
-});
+  });
 
 module.exports = router;

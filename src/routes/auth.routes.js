@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const autenticacaoServico = require('../servicos/autenticacao.servico');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
+const { validate } = require('../middlewares/validation.middleware');
+const { loginSchema, registroSchema, esqueciSenhaSchema, redefinirSenhaSchema } = require('../validators/auth.validator');
 const { validarSchema } = require('../utilitarios/validadores');
 
 /**
@@ -29,21 +31,9 @@ const { validarSchema } = require('../utilitarios/validadores');
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
-router.post('/cadastrar', async (req, res) => {
+router.post('/cadastrar', validate(registroSchema), async (req, res) => {
   try {
     const { nome, email, senha, nomeEmpresa, codigoAfiliado } = req.body;
-
-    // Validar dados
-    const schema = {
-      nome: { obrigatorio: true, tipo: 'string', min: 3, max: 200 },
-      email: { obrigatorio: true, tipo: 'string' },
-      senha: { obrigatorio: true, tipo: 'string', min: 8 }
-    };
-
-    const validacao = validarSchema({ nome, email, senha }, schema);
-    if (!validacao.valido) {
-      return res.status(400).json({ erro: validacao.erros.join(', ') });
-    }
 
     const resultado = await autenticacaoServico.cadastrar({
       nome,
@@ -82,13 +72,9 @@ router.post('/cadastrar', async (req, res) => {
  *       401:
  *         description: Credenciais inválidas
  */
-router.post('/entrar', async (req, res) => {
+router.post('/entrar', validate(loginSchema), async (req, res) => {
   try {
     const { email, senha } = req.body;
-
-    if (!email || !senha) {
-      return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
-    }
 
     // Informações do dispositivo
     const infoDispositivo = {
@@ -163,13 +149,9 @@ router.post('/sair-todos', autenticarMiddleware, async (req, res) => {
  * POST /api/autenticacao/esqueci-senha
  * Solicitar redefinição de senha
  */
-router.post('/esqueci-senha', async (req, res) => {
+router.post('/esqueci-senha', validate(esqueciSenhaSchema), async (req, res) => {
   try {
     const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ erro: 'Email é obrigatório' });
-    }
 
     const resultado = await autenticacaoServico.esqueciSenha(email);
 
@@ -184,13 +166,9 @@ router.post('/esqueci-senha', async (req, res) => {
  * POST /api/autenticacao/redefinir-senha
  * Redefinir senha com token
  */
-router.post('/redefinir-senha', async (req, res) => {
+router.post('/redefinir-senha', validate(redefinirSenhaSchema), async (req, res) => {
   try {
     const { token, novaSenha } = req.body;
-
-    if (!token || !novaSenha) {
-      return res.status(400).json({ erro: 'Token e nova senha são obrigatórios' });
-    }
 
     const resultado = await autenticacaoServico.redefinirSenha(token, novaSenha);
 

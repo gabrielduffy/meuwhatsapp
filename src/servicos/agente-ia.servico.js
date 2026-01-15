@@ -2,6 +2,7 @@ const Groq = require('groq-sdk');
 const agenteRepositorio = require('../repositorios/agente-ia.repositorio');
 const empresaRepositorio = require('../repositorios/empresa.repositorio');
 const { debitarCreditos } = require('../middlewares/creditos');
+const logger = require('../config/logger');
 
 // Inicializar Groq apenas se API key estiver configurada
 let groq = null;
@@ -9,9 +10,9 @@ if (process.env.GROQ_API_KEY) {
   groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
   });
-  console.log('✅ Groq AI inicializado');
+  logger.info('Groq AI inicializado');
 } else {
-  console.warn('⚠️  GROQ_API_KEY não configurada - funcionalidades de IA estarão desabilitadas');
+  logger.warn('GROQ_API_KEY não configurada - funcionalidades de IA estarão desabilitadas');
 }
 
 /**
@@ -268,7 +269,7 @@ async function testarAgente(empresaId, agenteId, mensagemTeste) {
       aviso: 'Teste realizado. Nenhum crédito foi debitado.'
     };
   } catch (erro) {
-    console.error('[Agente IA] Erro ao testar:', erro);
+    logger.error('Erro ao processar mensagem com Agente IA:', { erro, agenteId, empresaId });
     throw new Error(`Erro ao testar agente: ${erro.message}`);
   }
 }

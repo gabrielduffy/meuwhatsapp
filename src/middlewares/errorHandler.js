@@ -19,34 +19,23 @@ class AppError extends Error {
   }
 }
 
+const logger = require('../config/logger');
+
 /**
  * Middleware de error handling
  * Deve ser o ÚLTIMO middleware registrado
  */
 const errorHandler = (err, req, res, next) => {
-  // Log do erro completo
-  const errorLog = {
-    timestamp: new Date().toISOString(),
-    message: err.message,
-    code: err.code || 'UNKNOWN_ERROR',
-    statusCode: err.statusCode || 500,
-    stack: err.stack,
-    request: {
-      method: req.method,
-      url: req.url,
-      params: req.params,
-      query: req.query,
-      body: req.body,
-      user: req.user?.id,
-      ip: req.ip
-    }
-  };
-
-  // Log apenas erros 5xx em produção (4xx são esperados)
+  // Log do erro usando o logger centralizado
   if (err.statusCode >= 500 || !err.isOperational) {
-    console.error('[ERROR]', JSON.stringify(errorLog, null, 2));
+    logger.logError(err, req);
   } else {
-    console.warn('[WARNING]', errorLog.message, { code: errorLog.code });
+    logger.warn(`[WARNING] ${err.message}`, {
+      code: err.code,
+      url: req.url,
+      method: req.method,
+      user: req.user?.id
+    });
   }
 
   // Erro operacional (esperado) - retornar detalhes
