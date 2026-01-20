@@ -152,10 +152,11 @@ export default function Prospeccao() {
   const carregarLeadsDoJob = async (jobId: string) => {
     try {
       setLoadingLeads(true);
-      const response = await api.get(`/prospeccao/scraper/leads/${jobId}`);
-      setLeadsDoJob(response.data);
+      const response = await api.get(`/api/prospeccao/scraper/leads/${jobId}`);
+      setLeadsDoJob(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Erro ao carregar leads do job:', error);
+      setLeadsDoJob([]);
     } finally {
       setLoadingLeads(false);
     }
@@ -603,8 +604,8 @@ export default function Prospeccao() {
                         <tr key={lead.id} className="text-sm text-white/80 hover:bg-white/5 transition-colors">
                           <td className="py-4 px-4 font-medium text-white">{lead.nome}</td>
                           <td className="py-4 px-4 font-mono text-emerald-400">{lead.telefone}</td>
-                          <td className="py-4 px-4 text-xs font-semibold uppercase">{lead.variaveis?.city}</td>
-                          <td className="py-4 px-4 text-[10px] font-mono opacity-40">{lead.variaveis?.job_id?.slice(0, 8)}...</td>
+                          <td className="py-4 px-4 text-xs font-semibold uppercase">{lead.metadados?.city || lead.variaveis?.city}</td>
+                          <td className="py-4 px-4 text-[10px] font-mono opacity-40">{(lead.metadados?.job_id || lead.variaveis?.job_id || '').slice(0, 8)}...</td>
                           <td className="py-4 px-4 text-[10px] whitespace-nowrap">{new Date(lead.criado_em).toLocaleString('pt-BR')}</td>
                         </tr>
                       ))
