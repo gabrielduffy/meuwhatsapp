@@ -243,19 +243,15 @@ async function criarLead(dados) {
     INSERT INTO leads_prospeccao (
       campanha_id,
       empresa_id,
-      contato_id,
-      nome,
-      telefone,
       variaveis,
       agendar_para
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ) VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *
   `;
 
   const valores = [
     campanhaId,
     empresaId,
-    contatoId,
     nome,
     telefone,
     JSON.stringify(variaveis),
@@ -281,27 +277,25 @@ async function criarLeadsEmLote(leads) {
 
   for (const lead of leads) {
     valoresPlaceholders.push(
-      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}::jsonb, $${paramIndex + 6})`
+      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}::jsonb, $${paramIndex + 5})`
     );
 
     valores.push(
       lead.campanhaId,
       lead.empresaId,
-      lead.contatoId || null,
       lead.nome,
       lead.telefone,
       JSON.stringify(lead.variaveis || {}),
       lead.agendarPara || null
     );
 
-    paramIndex += 7;
+    paramIndex += 6;
   }
 
   const sql = `
     INSERT INTO leads_prospeccao (
       campanha_id,
       empresa_id,
-      contato_id,
       nome,
       telefone,
       variaveis,
