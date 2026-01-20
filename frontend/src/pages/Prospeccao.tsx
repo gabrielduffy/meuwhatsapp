@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  Target,
   Search,
   Clock,
-  History,
+  History as HistoryIcon,
   MoreVertical,
   Plus,
   Play,
@@ -129,15 +130,15 @@ export default function Prospeccao() {
         {[
           { id: 'scraping', label: 'Nova Busca', icon: Search },
           { id: 'campanhas', label: 'Minhas Campanhas', icon: Target },
-          { id: 'historico', label: 'Histórico', icon: History },
+          { id: 'historico', label: 'Histórico', icon: HistoryIcon },
           { id: 'logs', label: 'Logs & Leads', icon: Terminal },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-              : 'text-white/60 hover:text-white hover:bg-white/5'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
           >
             <tab.icon className="w-4 h-4" />
@@ -260,7 +261,7 @@ export default function Prospeccao() {
               <div className="p-6 border-b border-white/10 flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <History className="w-5 h-5 text-purple-400" />
+                    <HistoryIcon className="w-5 h-5 text-purple-400" />
                     Histórico de Prospecções
                   </h2>
                   <p className="text-sm text-white/60">Todas as buscas realizadas pelo sistema.</p>
@@ -324,7 +325,7 @@ export default function Prospeccao() {
                   ))
                 ) : (
                   <div className="py-20 text-center space-y-4">
-                    <History className="w-12 h-12 text-white/10 mx-auto" />
+                    <HistoryIcon className="w-12 h-12 text-white/10 mx-auto" />
                     <p className="text-white/40">Nenhuma busca realizada no histórico.</p>
                     <Button variant="glass" size="sm" onClick={carregarHistorico} className="mx-auto">
                       <RefreshCw className="w-4 h-4" />
@@ -358,7 +359,7 @@ export default function Prospeccao() {
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                   <a
-                    href={`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/prospeccao/scraper/exportar`}
+                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/prospeccao/scraper/exportar`}
                     target="_blank"
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all"
                   >
@@ -407,7 +408,6 @@ export default function Prospeccao() {
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-6"
           >
-            {/* O conteúdo original de campanhas de Prospeccao.tsx vai aqui */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">Gestão de Campanhas</h2>
               <Button variant="primary" size="sm">
