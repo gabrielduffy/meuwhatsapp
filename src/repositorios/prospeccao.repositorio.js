@@ -246,9 +246,8 @@ async function criarLead(dados) {
       nome,
       telefone,
       origem,
-      metadados,
-      agendar_para
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      metadados
+    ) VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *
   `;
 
@@ -258,8 +257,7 @@ async function criarLead(dados) {
     nome,
     telefone,
     origem,
-    JSON.stringify(metadados),
-    agendarPara
+    JSON.stringify(metadados)
   ];
 
   const resultado = await query(sql, valores);
@@ -281,7 +279,7 @@ async function criarLeadsEmLote(leads) {
 
   for (const lead of leads) {
     valoresPlaceholders.push(
-      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}::jsonb, $${paramIndex + 6})`
+      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}::jsonb)`
     );
 
     valores.push(
@@ -290,11 +288,10 @@ async function criarLeadsEmLote(leads) {
       lead.nome,
       lead.telefone,
       lead.origem || 'gmaps_scraper',
-      JSON.stringify(lead.metadados || {}),
-      lead.agendarPara || null
+      JSON.stringify(lead.metadados || {})
     );
 
-    paramIndex += 7;
+    paramIndex += 6;
   }
 
   const sql = `
@@ -304,8 +301,7 @@ async function criarLeadsEmLote(leads) {
       nome,
       telefone,
       origem,
-      metadados,
-      agendar_para
+      metadados
     ) VALUES ${valoresPlaceholders.join(', ')}
     RETURNING *
   `;
