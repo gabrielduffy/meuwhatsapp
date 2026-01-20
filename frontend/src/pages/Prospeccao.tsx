@@ -16,6 +16,8 @@ import {
   Terminal,
   FileDown,
   RefreshCw,
+  ExternalLink,
+  UserX
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -54,6 +56,8 @@ export default function Prospeccao() {
   const [leadsMinerados, setLeadsMinerados] = useState<any[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [leadsDoJob, setLeadsDoJob] = useState<any[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(false);
 
   useEffect(() => {
     let interval: any;
@@ -131,6 +135,29 @@ export default function Prospeccao() {
       toast.error(error.response?.data?.erro || 'Erro ao iniciar busca');
     } finally {
       setLoading(false);
+    }
+  };
+  // Carregar leads quando expandir um item do histórico
+  useEffect(() => {
+    if (expandedId) {
+      const item = historico.find(h => h.id === expandedId);
+      if (item && item.job_id) {
+        carregarLeadsDoJob(item.job_id);
+      }
+    } else {
+      setLeadsDoJob([]);
+    }
+  }, [expandedId, historico]);
+
+  const carregarLeadsDoJob = async (jobId: string) => {
+    try {
+      setLoadingLeads(true);
+      const response = await api.get(`/prospeccao/scraper/leads/${jobId}`);
+      setLeadsDoJob(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar leads do job:', error);
+    } finally {
+      setLoadingLeads(false);
     }
   };
 
@@ -417,6 +444,70 @@ export default function Prospeccao() {
                                   <p className="text-sm text-white/60">Aguardando novos contatos serem minerados...</p>
                                 </div>
                               )}
+
+                              {/* Tabela de Leads Extraídos */}
+                              <div className="mt-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Contatos Extraídos</h4>
+                                  <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                                    {leadsDoJob.length} encontrados
+                                  </span>
+                                </div>
+
+                                {loadingLeads ? (
+                                  <div className="py-10 flex flex-col items-center justify-center gap-3 bg-white/[0.01] rounded-xl border border-white/5">
+                                    <RefreshCw className="w-6 h-6 text-purple-400 animate-spin" />
+                                    <p className="text-xs text-white/40 italic">Buscando contatos no servidor...</p>
+                                  </div>
+                                ) : leadsDoJob.length > 0 ? (
+                                  <div className="overflow-hidden rounded-xl border border-white/5 bg-black/20">
+                                    <table className="w-full text-left border-collapse">
+                                      <thead>
+                                        <tr className="bg-white/5 border-b border-white/5 text-[10px] text-white/40 uppercase font-bold">
+                                          <th className="px-4 py-3">Nome / Local</th>
+                                          <th className="px-4 py-3">Telefone</th>
+                                          <th className="px-4 py-3 text-right whitespace-nowrap">Ações</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-white/5">
+                                        {leadsDoJob.map((lead) => (
+                                          <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group/row">
+                                            <td className="px-4 py-3">
+                                              <div className="flex flex-col">
+                                                <span className="text-xs text-white font-medium truncate max-w-[200px]">{lead.nome || 'N/A'}</span>
+                                                {lead.metadados?.city && (
+                                                  <span className="text-[10px] text-white/30 truncate">{lead.metadados.city}</span>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td className="px-4 py-3 font-mono text-[10px] text-purple-400">
+                                              {lead.telefone}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                              <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                  variant="glass"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0 opacity-0 group-hover/row:opacity-100 transition-opacity"
+                                                  onClick={() => window.open(`https://wa.me/${lead.telefone.replace(/\D/g, '')}`, '_blank')}
+                                                  title="Abrir no WhatsApp"
+                                                >
+                                                  <ExternalLink className="w-3.5 h-3.5" />
+                                                </Button>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <div className="py-10 text-center bg-white/[0.01] rounded-xl border border-dashed border-white/10">
+                                    <UserX className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                                    <p className="text-[10px] text-white/30 uppercase font-bold tracking-widest">Nenhum contato salvo ainda</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </motion.div>
                         )}

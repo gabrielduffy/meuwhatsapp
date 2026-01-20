@@ -493,11 +493,9 @@ router.get('/scraper/leads/all', async (req, res) => {
 router.get('/scraper/leads/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
-    // Buscar no banco leads que tenham o jobId ou metadados da busca
-    // Como simplificação, buscamos os leads da empresa filtrados por origem
     const { query } = require('../config/database');
     const result = await query(
-      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND (variaveis->>'job_id' = $2 OR variaveis->>'origem' = 'gmaps_scraper') ORDER BY criado_em DESC",
+      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND (metadados->>'job_id' = $2 OR origem = 'gmaps_scraper') ORDER BY criado_em DESC",
       [req.empresaId, jobId]
     );
     res.json(result.rows);
@@ -520,11 +518,11 @@ router.get('/scraper/exportar', async (req, res) => {
     const { jobId } = req.query;
     const { query } = require('../config/database');
 
-    let sql = "SELECT nome, telefone, (variaveis->>'niche') as niche, (variaveis->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper'";
+    let sql = "SELECT nome, telefone, (metadados->>'niche') as niche, (metadados->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND origem = 'gmaps_scraper'";
     const params = [req.empresaId];
 
     if (jobId) {
-      sql += " AND variaveis->>'job_id' = $2";
+      sql += " AND metadados->>'job_id' = $2";
       params.push(jobId);
     }
 
@@ -532,7 +530,11 @@ router.get('/scraper/exportar', async (req, res) => {
 
     let csv = 'Nome,Telefone,Nicho,Cidade\n';
     result.rows.forEach(row => {
-      csv += `${row.nome},${row.telefone},${row.niche},${row.cidade}\n`;
+      // Limpar vírgulas para não quebrar o CSV
+      const nome = (row.nome || '').replace(/,/g, '');
+      const niche = (row.niche || '').replace(/,/g, '');
+      const cidade = (row.cidade || '').replace(/,/g, '');
+      csv += `${nome},${row.telefone},${niche},${cidade}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');

@@ -683,5 +683,22 @@ module.exports = {
   criarHistoricoScraping,
   listarHistoricoScraping,
   atualizarHistoricoScraping,
-  inicializarTabelaHistorico
+  inicializarTabelaHistorico,
+  listarLeadsPorJob
 };
+
+/**
+ * Listar leads de um job específico
+ */
+async function listarLeadsPorJob(jobId, empresaId) {
+  const { query } = require('../config/database');
+  const sql = `
+    SELECT * FROM leads_prospeccao 
+    WHERE empresa_id = $1 
+    AND (metadados->>'job_id' = $2 OR metadados->>'job_id' = $3)
+    ORDER BY criado_em DESC
+  `;
+  // Tratamos o jobId como string e como número (caso venha diferente do Redis)
+  const resultado = await query(sql, [empresaId, jobId.toString(), jobId]);
+  return resultado.rows;
+}
