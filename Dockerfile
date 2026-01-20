@@ -13,10 +13,23 @@ RUN npm run build
 # Estágio 2: Setup do Backend e Imagem Final
 FROM node:20-alpine
 # Instalar ferramentas de mídia (FFmpeg e Magick são essenciais para áudio e stickers)
-RUN apk add --no-cache git ffmpeg imagemagick
+# Instalar ferramentas de mídia e dependências para o Puppeteer (Chromium)
+RUN apk add --no-cache \
+    git \
+    ffmpeg \
+    imagemagick \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    udev
 
-# Pular compilação do sharp (usar binários pré-compilados para evitar erros de build)
+# Pular compilação do sharp e configurar path do Chromium para o Puppeteer
 ENV SHARP_IGNORE_GLOBAL_LIBVIPS=1
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
