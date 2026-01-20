@@ -5,12 +5,8 @@ const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
 const axios = require('axios');
 
 // Criar fila de scraping
-const mapScraperQueue = new Queue('map-scraper', {
-    redis: {
-        host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'redis',
-        port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-        password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : '@412Trocar'
-    },
+const redisConfig = process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379';
+const mapScraperQueue = new Queue('map-scraper', redisConfig, {
     defaultJobOptions: {
         attempts: 2,
         backoff: {

@@ -4,12 +4,9 @@ const schedulerRepository = require('../repositories/schedulerRepository');
 const whatsapp = require('../services/whatsapp');
 
 // Criar fila de agendamento
-const schedulerQueue = new Queue('scheduler', {
-  redis: {
-    host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'redis',
-    port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-    password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : '@412Trocar'
-  },
+// Criar fila de agendamento
+const redisConfig = process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379';
+const schedulerQueue = new Queue('scheduler', redisConfig, {
   defaultJobOptions: {
     attempts: 3,
     backoff: {

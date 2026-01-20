@@ -3,12 +3,9 @@ const { redis } = require('../config/redis');
 const webhookRepository = require('../repositories/webhookRepository');
 
 // Criar fila de webhooks
-const webhookQueue = new Queue('webhook', {
-  redis: {
-    host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'redis',
-    port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-    password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : '@412Trocar'
-  },
+// Criar fila de webhooks
+const redisConfig = process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379';
+const webhookQueue = new Queue('webhook', redisConfig, {
   defaultJobOptions: {
     attempts: 3,
     backoff: {

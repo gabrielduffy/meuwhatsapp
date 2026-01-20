@@ -4,12 +4,8 @@ const broadcastRepository = require('../repositories/broadcastRepository');
 const whatsapp = require('../services/whatsapp');
 
 // Criar fila de broadcast
-const broadcastQueue = new Queue('broadcast', {
-  redis: {
-    host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'redis',
-    port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-    password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : '@412Trocar'
-  },
+const redisConfig = process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379';
+const broadcastQueue = new Queue('broadcast', redisConfig, {
   defaultJobOptions: {
     attempts: 3,
     backoff: {
