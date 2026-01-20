@@ -33,8 +33,18 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
 
     const browser = await puppeteer.launch({
         headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process'
+        ]
     });
+    console.log(`[GMaps Scraper] Navegador iniciado (Docker path: ${process.env.PUPPETEER_EXECUTABLE_PATH || 'default'}).`);
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });

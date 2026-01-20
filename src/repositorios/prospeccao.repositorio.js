@@ -647,7 +647,12 @@ async function inicializarTabelaHistorico() {
   `;
   try {
     await query(sql);
-    console.log('✅ Tabela historico_prospeccao verificada/criada');
+
+    // Garantir que as colunas novas existam se a tabela já existia
+    await query(`ALTER TABLE historico_prospeccao ADD COLUMN IF NOT EXISTS mensagem_erro TEXT`);
+    await query(`ALTER TABLE historico_prospeccao ADD COLUMN IF NOT EXISTS progresso INTEGER DEFAULT 0`);
+
+    console.log('✅ Tabela historico_prospeccao verificada/atualizada');
   } catch (e) {
     console.error('❌ Erro ao criar tabela historico_prospeccao:', e.message);
   }

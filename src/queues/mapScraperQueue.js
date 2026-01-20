@@ -21,18 +21,22 @@ const mapScraperQueue = new Queue('map-scraper', redisConfig, {
 // Processar jobs de scraping
 mapScraperQueue.process(async (job) => {
     const { niche, city, limit, campanhaId, empresaId, webhookUrl } = job.data;
+    const jobIdStr = String(job.id);
 
-    console.log(`[MapScraperQueue] Iniciando job para: ${niche} em ${city}`);
+    console.log(`[MapScraperQueue] Iniciando job #${jobIdStr} para: ${niche} em ${city}`);
 
     try {
         // 0. Atualizar progresso inicial
-        await prospeccaoRepo.atualizarHistoricoScraping(job.id, { progresso: 10 }).catch(() => { });
+        const atualizado = await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: 10 });
+        if (!atualizado) {
+            console.warn(`[MapScraperQueue] Não foi possível encontrar registro no histórico para o job ${jobIdStr}`);
+        }
 
         // 1. Executar Scraping
         const rawLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limit || 150, (p) => {
             // Callback de progresso se o serviço suportar (vamos assumir que sim ou simular)
             job.progress(p);
-            prospeccaoRepo.atualizarHistoricoScraping(job.id, { progresso: p }).catch(() => { });
+            prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: p }).catch(() => { });
         });
 
         // 2. Inserir no Banco de Dados
@@ -52,14 +56,14 @@ mapScraperQueue.process(async (job) => {
             }
 
             // Atualizar Histórico de Scraping como concluído
-            await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+            await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, {
                 status: 'concluido',
                 leadsColetados: leadsParaInserir.length,
                 progresso: 100
             }).catch(e => console.error('Erro ao atualizar histórico:', e.message));
         } else {
             // Mesmo se zero leads, marca como concluído
-            await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+            await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, {
                 status: 'concluido',
                 leadsColetados: 0,
                 progresso: 100
@@ -102,7 +106,7 @@ mapScraperQueue.process(async (job) => {
         }
 
         // Atualizar Histórico em caso de erro com o log completo
-        await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+        await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, {
             status: 'falhado',
             leadsColetados: 0,
             mensagem_erro: error.stack || error.message,

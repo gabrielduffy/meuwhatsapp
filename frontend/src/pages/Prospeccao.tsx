@@ -56,10 +56,29 @@ export default function Prospeccao() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeTab === 'historico') carregarHistorico();
+    let interval: any;
+
+    if (activeTab === 'historico') {
+      carregarHistorico();
+      // Polling se houver itens processando
+      interval = setInterval(() => {
+        const temGenteProcessando = historico.some(h => h.status === 'processando');
+        if (temGenteProcessando) {
+          carregarHistorico();
+        }
+      }, 5000);
+    }
+
     if (activeTab === 'campanhas') carregarCampanhas();
-    if (activeTab === 'logs') carregarLeadsMinerados();
-  }, [activeTab]);
+    if (activeTab === 'logs') {
+      carregarLeadsMinerados();
+      interval = setInterval(carregarLeadsMinerados, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab, historico.some(h => h.status === 'processando')]);
 
   const carregarLeadsMinerados = async () => {
     try {
@@ -285,10 +304,10 @@ export default function Prospeccao() {
                       >
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.status === 'concluido' ? 'bg-green-500/10' :
-                              item.status === 'falhado' ? 'bg-red-500/10' : 'bg-purple-500/10'
+                            item.status === 'falhado' ? 'bg-red-500/10' : 'bg-purple-500/10'
                             }`}>
                             <Database className={`w-5 h-5 ${item.status === 'concluido' ? 'text-green-400' :
-                                item.status === 'falhado' ? 'text-red-400' : 'text-purple-400'
+                              item.status === 'falhado' ? 'text-red-400' : 'text-purple-400'
                               }`} />
                           </div>
                           <div>
@@ -315,9 +334,9 @@ export default function Prospeccao() {
                           <div className="text-right hidden md:block">
                             {item.status === 'processando' && (
                               <div className="flex flex-col items-end gap-1">
-                                <span className="text-[10px] text-yellow-400 font-bold uppercase">Em Progresso ({item.progresso}%)</span>
+                                <span className="text-[10px] text-yellow-400 font-bold uppercase">Em Progresso ({(item.progresso || 0)}%)</span>
                                 <div className="w-24 bg-white/5 h-1 rounded-full overflow-hidden">
-                                  <div className="bg-yellow-400 h-full transition-all duration-500" style={{ width: `${item.progresso}%` }} />
+                                  <div className="bg-yellow-400 h-full transition-all duration-500" style={{ width: `${(item.progresso || 0)}%` }} />
                                 </div>
                               </div>
                             )}
@@ -362,7 +381,7 @@ export default function Prospeccao() {
                                 </div>
                                 <div className="space-y-1">
                                   <span className="text-[10px] text-white/40 uppercase font-bold">Progresso Total</span>
-                                  <p className="text-sm text-white font-bold">{item.progresso}%</p>
+                                  <p className="text-sm text-white font-bold">{(item.progresso || 0)}%</p>
                                 </div>
                                 <div className="flex justify-end items-center">
                                   <Button
