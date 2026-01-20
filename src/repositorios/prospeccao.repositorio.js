@@ -232,10 +232,10 @@ async function criarLead(dados) {
   const {
     campanhaId,
     empresaId,
-    contatoId = null,
     nome,
     telefone,
-    variaveis = {},
+    origem = 'gmaps_scraper',
+    metadados = {},
     agendarPara = null
   } = dados;
 
@@ -243,9 +243,12 @@ async function criarLead(dados) {
     INSERT INTO leads_prospeccao (
       campanha_id,
       empresa_id,
-      variaveis,
+      nome,
+      telefone,
+      origem,
+      metadados,
       agendar_para
-    ) VALUES ($1, $2, $3, $4, $5, $6)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *
   `;
 
@@ -254,7 +257,8 @@ async function criarLead(dados) {
     empresaId,
     nome,
     telefone,
-    JSON.stringify(variaveis),
+    origem,
+    JSON.stringify(metadados),
     agendarPara
   ];
 
@@ -277,19 +281,20 @@ async function criarLeadsEmLote(leads) {
 
   for (const lead of leads) {
     valoresPlaceholders.push(
-      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}::jsonb, $${paramIndex + 5})`
+      `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}::jsonb, $${paramIndex + 6})`
     );
 
     valores.push(
-      lead.campanhaId,
+      lead.campanhaId || null,
       lead.empresaId,
       lead.nome,
       lead.telefone,
-      JSON.stringify(lead.variaveis || {}),
+      lead.origem || 'gmaps_scraper',
+      JSON.stringify(lead.metadados || {}),
       lead.agendarPara || null
     );
 
-    paramIndex += 6;
+    paramIndex += 7;
   }
 
   const sql = `
@@ -298,7 +303,8 @@ async function criarLeadsEmLote(leads) {
       empresa_id,
       nome,
       telefone,
-      variaveis,
+      origem,
+      metadados,
       agendar_para
     ) VALUES ${valoresPlaceholders.join(', ')}
     RETURNING *

@@ -7,8 +7,8 @@ async function limparTudo() {
         const resHist = await query('DELETE FROM historico_prospeccao');
         console.log(`✅ Histórico removido: ${resHist.rowCount} registros.`);
 
-        // 2. Limpar leads minerados pelo scraper
-        const resLeads = await query("DELETE FROM leads_prospeccao WHERE variaveis->>'origem' = 'gmaps_scraper'");
+        // 2. Limpar leads minerados pelo scraper (usando a coluna origem que existe no schema)
+        const resLeads = await query("DELETE FROM leads_prospeccao WHERE origem = 'gmaps_scraper'");
         console.log(`✅ Leads minerados removidos: ${resLeads.rowCount} registros.`);
 
         console.log('\n--- LIMPEZA CONCLUÍDA ---');

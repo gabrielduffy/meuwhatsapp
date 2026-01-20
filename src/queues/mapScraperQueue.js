@@ -45,7 +45,8 @@ mapScraperQueue.process(async (job) => {
             empresaId: empresaId,
             nome: lead.nome,
             telefone: lead.whatsapp,
-            variaveis: { origem: 'gmaps_scraper', niche, city, job_id: job.id }
+            origem: 'gmaps_scraper',
+            metadados: { niche, city, job_id: jobIdStr }
         }));
 
         if (leadsParaInserir.length > 0) {
