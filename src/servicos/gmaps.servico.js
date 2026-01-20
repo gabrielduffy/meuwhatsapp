@@ -28,7 +28,7 @@ function formatarWhatsApp(telefone) {
     return null;
 }
 
-async function buscarLeadsNoMaps(niche, city, limit = 150) {
+async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
     console.log(`[GMaps Scraper] Iniciando busca (Puppeteer): ${niche} em ${city} (limite: ${limit})`);
 
     const browser = await puppeteer.launch({
@@ -89,6 +89,11 @@ async function buscarLeadsNoMaps(niche, city, limit = 150) {
                 return document.body.innerText.includes('Você chegou ao fim da lista') ||
                     document.body.innerText.includes('Não encontramos resultados');
             });
+
+            if (onProgress) {
+                const progresso = Math.min(Math.round((leads.length / limit) * 100), 95);
+                onProgress(progresso);
+            }
 
             if (isEnd) break;
             totalScrolled++;

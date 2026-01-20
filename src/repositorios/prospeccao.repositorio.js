@@ -604,14 +604,26 @@ async function listarHistoricoScraping(empresaId) {
  * Atualizar status e contagem do histórico
  */
 async function atualizarHistoricoScraping(job_id, dados) {
-  const { status, leadsColetados } = dados;
+  const { status, leadsColetados, mensagem_erro, progresso } = dados;
+  const campos = [];
+  const valores = [];
+  let idx = 1;
+
+  if (status) { campos.push(`status = $${idx++}`); valores.push(status); }
+  if (leadsColetados !== undefined) { campos.push(`leads_coletados = $${idx++}`); valores.push(leadsColetados); }
+  if (mensagem_erro !== undefined) { campos.push(`mensagem_erro = $${idx++}`); valores.push(mensagem_erro); }
+  if (progresso !== undefined) { campos.push(`progresso = $${idx++}`); valores.push(progresso); }
+
+  if (campos.length === 0) return null;
+
+  valores.push(job_id);
   const sql = `
     UPDATE historico_prospeccao
-    SET status = $1, leads_coletados = $2
-    WHERE job_id = $3
+    SET ${campos.join(', ')}
+    WHERE job_id = $${idx}
     RETURNING *
   `;
-  const resultado = await query(sql, [status, leadsColetados, job_id]);
+  const resultado = await query(sql, valores);
   return resultado.rows[0];
 }
 
@@ -628,6 +640,8 @@ async function inicializarTabelaHistorico() {
       leads_coletados INTEGER DEFAULT 0,
       status VARCHAR(20) DEFAULT 'processando',
       job_id VARCHAR(100),
+      mensagem_erro TEXT,
+      progresso INTEGER DEFAULT 0,
       criado_em TIMESTAMP DEFAULT NOW()
     )
   `;

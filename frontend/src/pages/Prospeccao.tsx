@@ -25,10 +25,13 @@ import toast from 'react-hot-toast';
 
 interface HistoricoScraping {
   id: string;
+  job_id: string;
   niche: string;
   city: string;
   leads_coletados: number;
   status: 'processando' | 'concluido' | 'falhado';
+  mensagem_erro?: string;
+  progresso: number;
   criado_em: string;
 }
 
@@ -50,6 +53,7 @@ export default function Prospeccao() {
   const [historico, setHistorico] = useState<HistoricoScraping[]>([]);
   const [leadsMinerados, setLeadsMinerados] = useState<any[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === 'historico') carregarHistorico();
@@ -137,8 +141,8 @@ export default function Prospeccao() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+              : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
           >
             <tab.icon className="w-4 h-4" />
@@ -274,11 +278,18 @@ export default function Prospeccao() {
               <div className="divide-y divide-white/5">
                 {historico.length > 0 ? (
                   historico.map((item) => (
-                    <div key={item.id} className="p-4 hover:bg-white/5 transition-colors group">
-                      <div className="flex items-center justify-between">
+                    <div key={item.id} className="transition-colors group">
+                      <div
+                        className="p-4 hover:bg-white/5 cursor-pointer flex items-center justify-between"
+                        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                      >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                            <Database className="w-5 h-5 text-purple-400" />
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.status === 'concluido' ? 'bg-green-500/10' :
+                              item.status === 'falhado' ? 'bg-red-500/10' : 'bg-purple-500/10'
+                            }`}>
+                            <Database className={`w-5 h-5 ${item.status === 'concluido' ? 'text-green-400' :
+                                item.status === 'falhado' ? 'text-red-400' : 'text-purple-400'
+                              }`} />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -301,9 +312,19 @@ export default function Prospeccao() {
                         </div>
 
                         <div className="flex items-center gap-4">
+                          <div className="text-right hidden md:block">
+                            {item.status === 'processando' && (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-[10px] text-yellow-400 font-bold uppercase">Em Progresso ({item.progresso}%)</span>
+                                <div className="w-24 bg-white/5 h-1 rounded-full overflow-hidden">
+                                  <div className="bg-yellow-400 h-full transition-all duration-500" style={{ width: `${item.progresso}%` }} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           {item.status === 'processando' && (
                             <Badge variant="warning" size="sm" className="animate-pulse">
-                              Processando...
+                              Processando
                             </Badge>
                           )}
                           {item.status === 'concluido' && (
@@ -316,11 +337,71 @@ export default function Prospeccao() {
                               Falhou
                             </Badge>
                           )}
-                          <button className="p-2 text-white/20 hover:text-white transition-colors">
+                          <motion.div
+                            animate={{ rotate: expandedId === item.id ? 180 : 0 }}
+                            className="p-2 text-white/20 hover:text-white"
+                          >
                             <ChevronDown className="w-4 h-4" />
-                          </button>
+                          </motion.div>
                         </div>
                       </div>
+
+                      <AnimatePresence>
+                        {expandedId === item.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden bg-white/[0.02]"
+                          >
+                            <div className="p-6 border-t border-white/5 space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] text-white/40 uppercase font-bold">Status do Job</span>
+                                  <p className="text-xs text-white/80 font-mono">{item.job_id || 'N/A'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-[10px] text-white/40 uppercase font-bold">Progresso Total</span>
+                                  <p className="text-sm text-white font-bold">{item.progresso}%</p>
+                                </div>
+                                <div className="flex justify-end items-center">
+                                  <Button
+                                    variant="glass"
+                                    size="sm"
+                                    className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/prospeccao/scraper/exportar?jobId=${item.job_id}`, '_blank');
+                                    }}
+                                  >
+                                    <FileDown className="w-4 h-4" />
+                                    Exportar CSV da Busca
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {item.mensagem_erro && (
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 space-y-2">
+                                  <div className="flex items-center gap-2 text-red-400">
+                                    <Terminal className="w-4 h-4" />
+                                    <span className="text-xs font-bold uppercase">Log de Erro</span>
+                                  </div>
+                                  <pre className="text-xs text-red-200/80 font-mono whitespace-pre-wrap leading-relaxed">
+                                    {item.mensagem_erro}
+                                  </pre>
+                                </div>
+                              )}
+
+                              {item.status === 'processando' && (
+                                <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                                  <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />
+                                  <p className="text-sm text-white/60">Aguardando novos contatos serem minerados...</p>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ))
                 ) : (
@@ -345,12 +426,38 @@ export default function Prospeccao() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Status das Buscas Recentes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {historico.filter(h => h.status === 'processando' || h.status === 'falhado').slice(0, 4).map(h => (
+                <Card key={h.id} variant="glass" className="p-4 border-l-4 border-yellow-500 bg-white/[0.02]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wider">{h.niche} em {h.city}</span>
+                    <Badge variant={h.status === 'processando' ? 'warning' : 'danger'} size="sm">
+                      {h.status === 'processando' ? `${h.progresso}%` : 'Falhou'}
+                    </Badge>
+                  </div>
+                  {h.status === 'processando' ? (
+                    <div className="space-y-2">
+                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div className="bg-yellow-500 h-full transition-all duration-500" style={{ width: `${h.progresso}%` }} />
+                      </div>
+                      <p className="text-[10px] text-white/40 italic flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" /> Mining leads... {h.leads_coletados} encontrados
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-red-400 font-mono truncate">{h.mensagem_erro || 'Erro desconhecido'}</p>
+                  )}
+                </Card>
+              ))}
+            </div>
+
             <Card variant="glass" className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Terminal className="w-5 h-5 text-cyan-400" />
-                    Logs de Mineração
+                    <Database className="w-5 h-5 text-emerald-400" />
+                    Leads Minerados
                   </h2>
                   <p className="text-sm text-white/60">Contatos recentes encontrados pelo sistema.</p>
                 </div>
@@ -361,10 +468,10 @@ export default function Prospeccao() {
                   <a
                     href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/prospeccao/scraper/exportar`}
                     target="_blank"
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
                   >
                     <FileDown className="w-4 h-4" />
-                    Exportar CSV
+                    Exportar Tudo (CSV)
                   </a>
                 </div>
               </div>
@@ -376,6 +483,7 @@ export default function Prospeccao() {
                       <th className="py-3 px-4">Empresa</th>
                       <th className="py-3 px-4">WhatsApp</th>
                       <th className="py-3 px-4">Local</th>
+                      <th className="py-3 px-4">Job ID</th>
                       <th className="py-3 px-4">Data</th>
                     </tr>
                   </thead>
@@ -386,12 +494,13 @@ export default function Prospeccao() {
                           <td className="py-4 px-4 font-medium text-white">{lead.nome}</td>
                           <td className="py-4 px-4 font-mono text-emerald-400">{lead.telefone}</td>
                           <td className="py-4 px-4 text-xs font-semibold uppercase">{lead.variaveis?.city}</td>
-                          <td className="py-4 px-4 text-[10px]">{new Date(lead.criado_em).toLocaleString()}</td>
+                          <td className="py-4 px-4 text-[10px] font-mono opacity-40">{lead.variaveis?.job_id?.slice(0, 8)}...</td>
+                          <td className="py-4 px-4 text-[10px] whitespace-nowrap">{new Date(lead.criado_em).toLocaleString('pt-BR')}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="py-10 text-center text-white/40 italic">Nenhum log disponível. Inicie uma busca para ver resultados aqui.</td>
+                        <td colSpan={5} className="py-10 text-center text-white/40 italic">Nenhum log disponível. Inicie uma busca para ver resultados aqui.</td>
                       </tr>
                     )}
                   </tbody>

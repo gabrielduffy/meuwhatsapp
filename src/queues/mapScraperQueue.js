@@ -25,8 +25,15 @@ mapScraperQueue.process(async (job) => {
     console.log(`[MapScraperQueue] Iniciando job para: ${niche} em ${city}`);
 
     try {
+        // 0. Atualizar progresso inicial
+        await prospeccaoRepo.atualizarHistoricoScraping(job.id, { progresso: 10 }).catch(() => { });
+
         // 1. Executar Scraping
-        const rawLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limit || 150);
+        const rawLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limit || 150, (p) => {
+            // Callback de progresso se o serviço suportar (vamos assumir que sim ou simular)
+            job.progress(p);
+            prospeccaoRepo.atualizarHistoricoScraping(job.id, { progresso: p }).catch(() => { });
+        });
 
         // 2. Inserir no Banco de Dados
         const leadsParaInserir = rawLeads.map(lead => ({
@@ -44,11 +51,19 @@ mapScraperQueue.process(async (job) => {
                 await prospeccaoRepo.incrementarContadorCampanha(campanhaId, 'total_leads', leadsParaInserir.length);
             }
 
-            // Atualizar Histórico de Scraping
+            // Atualizar Histórico de Scraping como concluído
             await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
                 status: 'concluido',
-                leadsColetados: leadsParaInserir.length
+                leadsColetados: leadsParaInserir.length,
+                progresso: 100
             }).catch(e => console.error('Erro ao atualizar histórico:', e.message));
+        } else {
+            // Mesmo se zero leads, marca como concluído
+            await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+                status: 'concluido',
+                leadsColetados: 0,
+                progresso: 100
+            }).catch(() => { });
         }
 
         // 3. Disparar Webhook se existir
@@ -86,10 +101,12 @@ mapScraperQueue.process(async (job) => {
             }).catch(() => { });
         }
 
-        // Atualizar Histórico em caso de erro
+        // Atualizar Histórico em caso de erro com o log completo
         await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
             status: 'falhado',
-            leadsColetados: 0
+            leadsColetados: 0,
+            mensagem_erro: error.stack || error.message,
+            progresso: 0
         }).catch(() => { });
 
         throw error;

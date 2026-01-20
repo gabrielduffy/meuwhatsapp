@@ -468,6 +468,19 @@ router.get('/scraper/historico', async (req, res) => {
   }
 });
 
+router.get('/scraper/leads/all', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    const result = await query(
+      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper' ORDER BY criado_em DESC LIMIT 100",
+      [req.empresaId]
+    );
+    res.json(result.rows);
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
 /**
  * @openapi
  * /api/prospeccao/scraper/leads/{jobId}:
@@ -504,11 +517,18 @@ router.get('/scraper/leads/:jobId', async (req, res) => {
  */
 router.get('/scraper/exportar', async (req, res) => {
   try {
+    const { jobId } = req.query;
     const { query } = require('../config/database');
-    const result = await query(
-      "SELECT nome, telefone, (variaveis->>'niche') as niche, (variaveis->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper'",
-      [req.empresaId]
-    );
+
+    let sql = "SELECT nome, telefone, (variaveis->>'niche') as niche, (variaveis->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper'";
+    const params = [req.empresaId];
+
+    if (jobId) {
+      sql += " AND variaveis->>'job_id' = $2";
+      params.push(jobId);
+    }
+
+    const result = await query(sql, params);
 
     let csv = 'Nome,Telefone,Nicho,Cidade\n';
     result.rows.forEach(row => {
@@ -516,7 +536,7 @@ router.get('/scraper/exportar', async (req, res) => {
     });
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=leads_prospeccao.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=leads_${jobId || 'prospeccao'}.csv`);
     res.status(200).send(csv);
   } catch (erro) {
     res.status(500).json({ erro: erro.message });
