@@ -415,6 +415,7 @@ router.post('/scraper/mapa', async (req, res) => {
     }
 
     const { mapScraperQueue } = require('../queues/mapScraperQueue');
+    const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
 
     const job = await mapScraperQueue.add({
       niche,
@@ -424,6 +425,15 @@ router.post('/scraper/mapa', async (req, res) => {
       empresaId: req.empresaId,
       webhookUrl: webhook_url
     });
+
+    // Registrar no Histórico
+    await prospeccaoRepo.criarHistoricoScraping({
+      empresaId: req.empresaId,
+      niche,
+      city,
+      job_id: job.id,
+      status: 'processando'
+    }).catch(e => console.error('Erro ao registrar histórico:', e.message));
 
     res.status(202).json({
       mensagem: 'Processo de scraping iniciado',
@@ -436,5 +446,28 @@ router.post('/scraper/mapa', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/prospeccao/scraper/historico:
+ *   get:
+ *     tags: [Prospecção]
+ *     summary: Lista o histórico de buscas (scraping)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de histórico retornada
+ */
+router.get('/scraper/historico', async (req, res) => {
+  try {
+    const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
+    const historico = await prospeccaoRepo.listarHistoricoScraping(req.empresaId);
+    res.json(historico);
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
 module.exports = router;
+
 

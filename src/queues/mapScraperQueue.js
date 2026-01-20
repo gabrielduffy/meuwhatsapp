@@ -43,6 +43,12 @@ mapScraperQueue.process(async (job) => {
             if (campanhaId) {
                 await prospeccaoRepo.incrementarContadorCampanha(campanhaId, 'total_leads', leadsParaInserir.length);
             }
+
+            // Atualizar Histórico de Scraping
+            await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+                status: 'concluido',
+                leadsColetados: leadsParaInserir.length
+            }).catch(e => console.error('Erro ao atualizar histórico:', e.message));
         }
 
         // 3. Disparar Webhook se existir
@@ -79,6 +85,12 @@ mapScraperQueue.process(async (job) => {
                 data: { niche, city, error: error.message, status: 'error' }
             }).catch(() => { });
         }
+
+        // Atualizar Histórico em caso de erro
+        await prospeccaoRepo.atualizarHistoricoScraping(job.id, {
+            status: 'falhado',
+            leadsColetados: 0
+        }).catch(() => { });
 
         throw error;
     }

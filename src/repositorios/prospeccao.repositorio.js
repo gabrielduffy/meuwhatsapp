@@ -564,6 +564,57 @@ async function listarImportacoes(campanhaId, empresaId) {
   return resultado.rows;
 }
 
+// =====================================================
+// HISTÓRICO DE SCRAPING
+// =====================================================
+
+/**
+ * Criar registro de histórico de scraping
+ */
+async function criarHistoricoScraping(dados) {
+  const { empresaId, niche, city, job_id, leadsColetados = 0, status = 'processando' } = dados;
+
+  const sql = `
+    INSERT INTO historico_prospeccao (
+      empresa_id, niche, city, job_id, leads_coletados, status
+    ) VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *
+  `;
+
+  const resultado = await query(sql, [empresaId, niche, city, job_id, leadsColetados, status]);
+  return resultado.rows[0];
+}
+
+/**
+ * Listar histórico de scraping da empresa
+ */
+async function listarHistoricoScraping(empresaId) {
+  const sql = `
+    SELECT * FROM historico_prospeccao
+    WHERE empresa_id = $1
+    ORDER BY criado_em DESC
+    LIMIT 50
+  `;
+
+  const resultado = await query(sql, [empresaId]);
+  return resultado.rows;
+}
+
+/**
+ * Atualizar status e contagem do histórico
+ */
+async function atualizarHistoricoScraping(job_id, dados) {
+  const { status, leadsColetados } = dados;
+  const sql = `
+    UPDATE historico_prospeccao
+    SET status = $1, leads_coletados = $2
+    WHERE job_id = $3
+    RETURNING *
+  `;
+  const resultado = await query(sql, [status, leadsColetados, job_id]);
+  return resultado.rows[0];
+}
+
 module.exports = {
   // Campanhas
   criarCampanha,
@@ -587,5 +638,10 @@ module.exports = {
   criarImportacao,
   atualizarImportacao,
   buscarImportacaoPorId,
-  listarImportacoes
+  listarImportacoes,
+
+  // Histórico Scraping
+  criarHistoricoScraping,
+  listarHistoricoScraping,
+  atualizarHistoricoScraping
 };

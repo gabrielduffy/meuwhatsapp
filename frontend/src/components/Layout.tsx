@@ -18,11 +18,13 @@ import {
   Smartphone,
   Send,
   FileText,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Prospecção', path: '/prospeccao', icon: Target },
   { label: 'Instâncias', path: '/instancias', icon: Smartphone },
   { label: 'Conversas', path: '/conversas', icon: MessageCircle },
   { label: 'Enviar Mensagem', path: '/enviar-mensagem', icon: Send },
