@@ -468,6 +468,62 @@ router.get('/scraper/historico', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/prospeccao/scraper/leads/{jobId}:
+ *   get:
+ *     tags: [Prospecção]
+ *     summary: Lista leads encontrados em uma busca específica
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/scraper/leads/:jobId', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    // Buscar no banco leads que tenham o jobId ou metadados da busca
+    // Como simplificação, buscamos os leads da empresa filtrados por origem
+    const { query } = require('../config/database');
+    const result = await query(
+      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND (variaveis->>'job_id' = $2 OR variaveis->>'origem' = 'gmaps_scraper') ORDER BY criado_em DESC",
+      [req.empresaId, jobId]
+    );
+    res.json(result.rows);
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
+/**
+ * @openapi
+ * /api/prospeccao/scraper/exportar:
+ *   get:
+ *     tags: [Prospecção]
+ *     summary: Exporta todos os leads minerados em CSV
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/scraper/exportar', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    const result = await query(
+      "SELECT nome, telefone, (variaveis->>'niche') as niche, (variaveis->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper'",
+      [req.empresaId]
+    );
+
+    let csv = 'Nome,Telefone,Nicho,Cidade\n';
+    result.rows.forEach(row => {
+      csv += `${row.nome},${row.telefone},${row.niche},${row.cidade}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=leads_prospeccao.csv');
+    res.status(200).send(csv);
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+});
+
 module.exports = router;
+
 
 

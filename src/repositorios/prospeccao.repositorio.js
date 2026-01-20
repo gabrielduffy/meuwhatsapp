@@ -615,6 +615,30 @@ async function atualizarHistoricoScraping(job_id, dados) {
   return resultado.rows[0];
 }
 
+/**
+ * Inicializar tabela de histórico se não existir
+ */
+async function inicializarTabelaHistorico() {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS historico_prospeccao (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+      niche VARCHAR(255) NOT NULL,
+      city VARCHAR(255) NOT NULL,
+      leads_coletados INTEGER DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'processando',
+      job_id VARCHAR(100),
+      criado_em TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  try {
+    await query(sql);
+    console.log('✅ Tabela historico_prospeccao verificada/criada');
+  } catch (e) {
+    console.error('❌ Erro ao criar tabela historico_prospeccao:', e.message);
+  }
+}
+
 module.exports = {
   // Campanhas
   criarCampanha,
@@ -643,5 +667,6 @@ module.exports = {
   // Histórico Scraping
   criarHistoricoScraping,
   listarHistoricoScraping,
-  atualizarHistoricoScraping
+  atualizarHistoricoScraping,
+  inicializarTabelaHistorico
 };

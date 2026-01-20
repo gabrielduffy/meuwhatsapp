@@ -571,6 +571,10 @@ httpServer.listen(config.port, '0.0.0.0', async () => {
   // Carregar sessões existentes
   await loadExistingSessions();
 
+  // Inicializar tabelas de prospecção
+  const prospeccaoRepo = require('./repositorios/prospeccao.repositorio');
+  await prospeccaoRepo.inicializarTabelaHistorico();
+
   // Log de filas Bull
   logger.info('Filas Bull (Redis) inicializadas: map-scraper');
 

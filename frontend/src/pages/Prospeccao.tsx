@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Target,
   Search,
   Clock,
   History,
@@ -13,6 +12,9 @@ import {
   ChevronDown,
   Database,
   ArrowRight,
+  Terminal,
+  FileDown,
+  RefreshCw,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -41,16 +43,30 @@ interface Campanha {
 }
 
 export default function Prospeccao() {
-  const [activeTab, setActiveTab] = useState<'scraping' | 'campanhas' | 'historico'>('scraping');
+  const [activeTab, setActiveTab] = useState<'scraping' | 'campanhas' | 'historico' | 'logs'>('scraping');
   const [loading, setLoading] = useState(false);
   const [searchData, setSearchData] = useState({ niche: '', city: '', limit: 150 });
   const [historico, setHistorico] = useState<HistoricoScraping[]>([]);
+  const [leadsMinerados, setLeadsMinerados] = useState<any[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
 
   useEffect(() => {
     if (activeTab === 'historico') carregarHistorico();
     if (activeTab === 'campanhas') carregarCampanhas();
+    if (activeTab === 'logs') carregarLeadsMinerados();
   }, [activeTab]);
+
+  const carregarLeadsMinerados = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/api/prospeccao/scraper/leads/all');
+      setLeadsMinerados(res.data);
+    } catch (error) {
+      console.error('Erro ao carregar leads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const carregarHistorico = async () => {
     try {
@@ -114,6 +130,7 @@ export default function Prospeccao() {
           { id: 'scraping', label: 'Nova Busca', icon: Search },
           { id: 'campanhas', label: 'Minhas Campanhas', icon: Target },
           { id: 'historico', label: 'Histórico', icon: History },
+          { id: 'logs', label: 'Logs & Leads', icon: Terminal },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -309,8 +326,75 @@ export default function Prospeccao() {
                   <div className="py-20 text-center space-y-4">
                     <History className="w-12 h-12 text-white/10 mx-auto" />
                     <p className="text-white/40">Nenhuma busca realizada no histórico.</p>
+                    <Button variant="glass" size="sm" onClick={carregarHistorico} className="mx-auto">
+                      <RefreshCw className="w-4 h-4" />
+                      Tentar Carregar
+                    </Button>
                   </div>
                 )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {activeTab === 'logs' && (
+          <motion.div
+            key="logs"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card variant="glass" className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Terminal className="w-5 h-5 text-cyan-400" />
+                    Logs de Mineração
+                  </h2>
+                  <p className="text-sm text-white/60">Contatos recentes encontrados pelo sistema.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="glass" size="sm" onClick={carregarLeadsMinerados}>
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                  <a
+                    href={`${process.env.VITE_API_URL || 'http://localhost:3000'}/api/prospeccao/scraper/exportar`}
+                    target="_blank"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Exportar CSV
+                  </a>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-white/40 text-[10px] uppercase tracking-widest border-b border-white/10">
+                      <th className="py-3 px-4">Empresa</th>
+                      <th className="py-3 px-4">WhatsApp</th>
+                      <th className="py-3 px-4">Local</th>
+                      <th className="py-3 px-4">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {leadsMinerados.length > 0 ? (
+                      leadsMinerados.map((lead) => (
+                        <tr key={lead.id} className="text-sm text-white/80 hover:bg-white/5 transition-colors">
+                          <td className="py-4 px-4 font-medium text-white">{lead.nome}</td>
+                          <td className="py-4 px-4 font-mono text-emerald-400">{lead.telefone}</td>
+                          <td className="py-4 px-4 text-xs font-semibold uppercase">{lead.variaveis?.city}</td>
+                          <td className="py-4 px-4 text-[10px]">{new Date(lead.criado_em).toLocaleString()}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-10 text-center text-white/40 italic">Nenhum log disponível. Inicie uma busca para ver resultados aqui.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </Card>
           </motion.div>
