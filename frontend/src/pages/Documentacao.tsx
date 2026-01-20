@@ -20,6 +20,7 @@ const CATEGORIES = [
     { id: 'instances', label: 'Gestão de Instâncias', icon: Smartphone },
     { id: 'messages', label: 'Mensagens Avançadas', icon: MessageSquare },
     { id: 'webhooks', label: 'Webhooks & Eventos', icon: Globe },
+    { id: 'scraping', label: 'Scraping Google Maps', icon: Code },
 ];
 
 // Dados da Documentação
@@ -173,6 +174,41 @@ const ENDPOINTS = {
   }
 }`,
             response: `Status: 200 OK`
+        }
+    ],
+    scraping: [
+        {
+            method: 'POST',
+            path: '/api/prospeccao/scraper/mapa',
+            title: 'Iniciar Busca no Google Maps',
+            description: 'Inicia um robô em cloud para coletar leads de empresas. Extremamente útil para prospecção fria automatizada.',
+            body: `{
+  "niche": "Restaurantes Italianos",
+  "city": "São Paulo - SP",
+  "limit": 150,
+  "campanhaId": "opcional-id-campanha",
+  "webhook_url": "https://seu-web-hook.com/fin"
+}`,
+            response: `{
+  "mensagem": "Processo de scraping iniciado",
+  "jobId": "bull_job_123"
+}`
+        },
+        {
+            method: 'WEBHOOK',
+            path: 'Evento: map_scraper_completed',
+            title: 'Retorno do Scraper',
+            description: 'Payload enviado para seu webhook quando a busca termina.',
+            body: `{
+  "event": "map_scraper_completed",
+  "data": {
+    "niche": "Restaurantes Italianos",
+    "city": "São Paulo - SP",
+    "leads_collected": 142,
+    "status": "success"
+  }
+}`,
+            response: `Status 200 esperado`
         }
     ]
 };

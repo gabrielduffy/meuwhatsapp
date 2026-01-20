@@ -355,4 +355,86 @@ router.get('/importacoes/:id', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/prospeccao/scraper/mapa:
+ *   post:
+ *     tags: [Prospecção]
+ *     summary: Inicia busca de leads no Google Maps (Scraper)
+ *     description: Esse endpoint inicia um robô em background que busca empresas no Google Maps por nicho e cidade. Os leads encontrados são inseridos na campanha especificada e podem ser notificados via webhook ao finalizar.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - niche
+ *               - city
+ *             properties:
+ *               niche:
+ *                 type: string
+ *                 example: "Pizzarias"
+ *                 description: "O que buscar (ex: Dentistas, Petshops)"
+ *               city:
+ *                 type: string
+ *                 example: "Rio de Janeiro"
+ *                 description: "Cidade da busca"
+ *               limit:
+ *                 type: integer
+ *                 example: 100
+ *                 description: "Limite de leads (padrão 150)"
+ *               campanhaId:
+ *                 type: string
+ *                 description: "ID da campanha para associar os leads (opcional)"
+ *               webhook_url:
+ *                 type: string
+ *                 example: "https://meu-sistema.com/webhook"
+ *                 description: "URL para notificação de finalização (opcional)"
+ *     responses:
+ *       202:
+ *         description: Busca iniciada em background
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensagem: { type: string, example: "Processo de scraping iniciado" }
+ *                 jobId: { type: string }
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/scraper/mapa', async (req, res) => {
+  try {
+    const { niche, city, limit, campanhaId, webhook_url } = req.body;
+
+    if (!niche || !city) {
+      return res.status(400).json({ erro: 'Nicho e cidade são obrigatórios' });
+    }
+
+    const { mapScraperQueue } = require('../queues/mapScraperQueue');
+
+    const job = await mapScraperQueue.add({
+      niche,
+      city,
+      limit,
+      campanhaId,
+      empresaId: req.empresaId,
+      webhookUrl: webhook_url
+    });
+
+    res.status(202).json({
+      mensagem: 'Processo de scraping iniciado',
+      jobId: job.id
+    });
+
+  } catch (erro) {
+    console.error('[Prospecção] Erro ao iniciar scraper:', erro);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
 module.exports = router;
+

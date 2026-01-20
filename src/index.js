@@ -66,6 +66,8 @@ const { initBroadcast } = require('./services/broadcast');
 const { initAutoResponder } = require('./services/autoresponder');
 const { initWebhookAdvanced } = require('./services/webhook-advanced');
 const chatServico = require('./servicos/chat.servico');
+const { mapScraperQueue } = require('./queues/mapScraperQueue');
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -568,6 +570,9 @@ httpServer.listen(config.port, '0.0.0.0', async () => {
 
   // Carregar sessões existentes
   await loadExistingSessions();
+
+  // Log de filas Bull
+  logger.info('Filas Bull (Redis) inicializadas: map-scraper');
 
   logger.info('Todos os sistemas inicializados com sucesso!');
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Eye, EyeOff } from 'lucide-react';
+import { MessageCircle, Eye, EyeOff, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -164,6 +164,26 @@ export default function Login() {
                 Criar conta gratuita
               </Link>
             </p>
+          </div>
+
+          {/* Links Externos / Documentação Pública */}
+          <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center gap-6">
+            <a
+              href="/api-docs"
+              target="_blank"
+              className="text-xs font-semibold text-gray-400 hover:text-purple-600 flex items-center gap-1 transition-colors"
+            >
+              <Globe className="w-3 h-3" />
+              API Swagger
+            </a>
+            <a
+              href="https://whatsbenemax.com/documentacao-externa"
+              target="_blank"
+              className="text-xs font-semibold text-gray-400 hover:text-emerald-600 flex items-center gap-1 transition-colors"
+            >
+              <Eye className="w-3 h-3" />
+              Docs Pública
+            </a>
           </div>
         </div>
       </motion.div>
