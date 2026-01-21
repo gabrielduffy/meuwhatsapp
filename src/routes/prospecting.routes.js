@@ -495,7 +495,7 @@ router.get('/scraper/leads/:jobId', async (req, res) => {
     const { jobId } = req.params;
     const { query } = require('../config/database');
     const result = await query(
-      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND (metadados->>'job_id' = $2 OR origem = 'gmaps_scraper') ORDER BY criado_em DESC",
+      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND metadados->>'job_id' = $2 ORDER BY criado_em DESC",
       [req.empresaId, jobId]
     );
     res.json(result.rows);

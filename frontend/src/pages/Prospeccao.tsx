@@ -155,6 +155,7 @@ export default function Prospeccao() {
   const carregarLeadsDoJob = async (jobId: string) => {
     try {
       setLoadingLeads(true);
+      setLeadsDoJob([]); // Limpa para não mostrar dados do job anterior
       const response = await api.get(`/api/prospeccao/scraper/leads/${jobId}`);
       setLeadsDoJob(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -500,6 +501,7 @@ export default function Prospeccao() {
                                       <thead>
                                         <tr className="bg-white/5 border-b border-white/5 text-[10px] text-white/40 uppercase font-bold">
                                           <th className="px-4 py-3">Nome / Local</th>
+                                          <th className="px-4 py-3">Fonte</th>
                                           <th className="px-4 py-3">Telefone</th>
                                           <th className="px-4 py-3 text-right whitespace-nowrap">Ações</th>
                                         </tr>
@@ -514,6 +516,19 @@ export default function Prospeccao() {
                                                   <span className="text-[10px] text-white/30 truncate">{lead.metadados.city}</span>
                                                 )}
                                               </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                              <Badge
+                                                variant={
+                                                  lead.metadados?.source === 'instagram' ? 'purple' :
+                                                    lead.metadados?.source === 'linkedin' ? 'cyan' :
+                                                      lead.metadados?.source === 'olx' ? 'success' : 'info'
+                                                }
+                                                size="sm"
+                                                className="text-[9px] uppercase tracking-tighter"
+                                              >
+                                                {lead.metadados?.source || 'G-Maps'}
+                                              </Badge>
                                             </td>
                                             <td className="px-4 py-3 font-mono text-[10px] text-purple-400">
                                               {lead.telefone}

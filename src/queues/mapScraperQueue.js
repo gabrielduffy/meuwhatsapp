@@ -36,21 +36,29 @@ mapScraperQueue.process(async (job) => {
         // Determinar limite por fonte
         const limitPerSource = Math.ceil((limit || 150) / sources.length);
 
-        for (const source of sources) {
+        const sourceCount = sources.length;
+        const progressPerSource = 100 / sourceCount;
+
+        for (let i = 0; i < sources.length; i++) {
+            const source = sources[i];
+            const baseProgress = i * progressPerSource;
             console.log(`[MapScraperQueue] Processando fonte: ${source}`);
             let sourceLeads = [];
 
             try {
+                const progressCallback = (p) => {
+                    const totalP = Math.min(Math.round(baseProgress + (p * progressPerSource / 100)), 99);
+                    prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: totalP }).catch(() => { });
+                };
+
                 if (source === 'gmaps') {
-                    sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, (p) => {
-                        prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: Math.min(25, p) }).catch(() => { });
-                    });
+                    sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, progressCallback);
                 } else if (source === 'instagram') {
-                    sourceLeads = await instagramServico.buscarLeadsNoInstagram(niche, city, limitPerSource);
+                    sourceLeads = await instagramServico.buscarLeadsNoInstagram(niche, city, limitPerSource, progressCallback);
                 } else if (source === 'olx') {
-                    sourceLeads = await olxServico.buscarLeadsNoOLX(niche, city, limitPerSource);
+                    sourceLeads = await olxServico.buscarLeadsNoOLX(niche, city, limitPerSource, progressCallback);
                 } else if (source === 'linkedin') {
-                    sourceLeads = await linkedinServico.buscarLeadsNoLinkedIn(niche, city, limitPerSource);
+                    sourceLeads = await linkedinServico.buscarLeadsNoLinkedIn(niche, city, limitPerSource, progressCallback);
                 }
             } catch (err) {
                 console.error(`[MapScraperQueue] Erro na fonte ${source}:`, err.message);
