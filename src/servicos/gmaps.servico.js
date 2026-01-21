@@ -29,12 +29,18 @@ function formatarWhatsApp(telefone) {
 }
 
 async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
-    console.log(`[GMaps Scraper] Iniciando busca (Puppeteer): ${niche} em ${city} (limite: ${limit})`);
+    console.log(`[GMaps Scraper] Iniciando busca com PROXY RESIDENCIAL: ${niche} em ${city}`);
+
+    // Configurações do Proxy DataImpulse (Segmentação: Brasil)
+    const PROXY_HOST = 'gw.dataimpulse.com:823';
+    const PROXY_USER = '14e775730d7037f4aad0__cr.br';
+    const PROXY_PASS = '8aebbfaa273d7787';
 
     const browser = await puppeteer.launch({
         headless: true,
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
         args: [
+            `--proxy-server=${PROXY_HOST}`,
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
@@ -47,15 +53,32 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
             '--font-render-hinting=none'
         ]
     });
-    console.log(`[GMaps Scraper] Navegador iniciado (Docker path: ${process.env.PUPPETEER_EXECUTABLE_PATH || 'default'}).`);
+    console.log(`[GMaps Scraper] Navegador iniciado com Proxy em ${PROXY_HOST}`);
 
     const page = await browser.newPage();
+
+    // Autenticação do Proxy
+    await page.authenticate({
+        username: PROXY_USER,
+        password: PROXY_PASS
+    });
+
+    // Otimização: Bloquear imagens e CSS para economizar os GBs do cliente
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+        if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+            req.abort();
+        } else {
+            req.continue();
+        }
+    });
+
     await page.setViewport({ width: 1280, height: 720 });
 
     const searchQuery = encodeURIComponent(`${niche} em ${city}`);
 
     try {
-        await page.goto(`https://www.google.com/maps/search/${searchQuery}`, { waitUntil: 'networkidle2' });
+        await page.goto(`https://www.google.com/maps/search/${searchQuery}`, { waitUntil: 'networkidle2', timeout: 60000 });
 
         const leads = [];
         let totalScrolled = 0;

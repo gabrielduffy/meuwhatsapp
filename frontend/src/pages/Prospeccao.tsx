@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target,
   Search,
-  Clock,
   History as HistoryIcon,
   MoreVertical,
   Plus,
@@ -209,7 +208,7 @@ export default function Prospeccao() {
             className="space-y-6"
           >
             {/* Métricas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card variant="glass" className="p-4 border-l-4 border-purple-500">
                 <div className="flex items-center gap-3 mb-2 text-white/60">
                   <Search className="w-4 h-4" />
@@ -225,14 +224,6 @@ export default function Prospeccao() {
                 </div>
                 <p className="text-2xl font-bold text-white">0 envios</p>
                 <p className="text-[10px] text-cyan-400 mt-1">Total do dia</p>
-              </Card>
-              <Card variant="glass" className="p-4 border-l-4 border-green-500">
-                <div className="flex items-center gap-3 mb-2 text-white/60">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Horário Ativo</span>
-                </div>
-                <p className="text-2xl font-bold text-white">08:00 - 18:00</p>
-                <p className="text-[10px] text-green-400 mt-1">Segunda a Sexta</p>
               </Card>
               <Card variant="glass" className="p-4 border-l-4 border-yellow-500">
                 <div className="flex items-center gap-3 mb-2 text-white/60">
