@@ -16,13 +16,13 @@ async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
 
     const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
-    const PROXY_USER = `14e775730d7037f4aad0__cr.br__sessid.${sessionId}`;
+    const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
 
     const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH ||
         (process.platform === 'win32'
             ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-            : '/usr/bin/google-chrome');
+            : '/usr/bin/chromium-browser');
 
     const browser = await puppeteer.launch({
         headless: true,
