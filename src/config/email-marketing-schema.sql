@@ -115,3 +115,9 @@ COMMENT ON TABLE templates_email IS 'Modelos de email reutilizáveis';
 COMMENT ON TABLE campanhas_email IS 'Campanhas de disparo de email em massa';
 COMMENT ON TABLE disparos_email IS 'Rastreamento individual de cada email enviado';
 COMMENT ON TABLE automacoes_email IS 'Workflows automáticos de email';
+
+-- Migrações de suporte para Builders Visuais
+ALTER TABLE templates_email ADD COLUMN IF NOT EXISTS dados_json JSONB;
+ALTER TABLE automacoes_email ADD COLUMN IF NOT EXISTS fluxo_json JSONB;
+ALTER TABLE automacoes_email ADD COLUMN IF NOT EXISTS estatisticas JSONB DEFAULT '{"iniciados": 0, "concluidos": 0, "erros": 0}';
+

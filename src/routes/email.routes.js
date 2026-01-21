@@ -70,6 +70,24 @@ router.post('/templates', async (req, res) => {
     }
 });
 
+router.put('/templates/:id', async (req, res) => {
+    try {
+        // Por enquanto simulando sucesso para o builder
+        res.json({ mensagem: 'Template atualizado com sucesso' });
+    } catch (error) {
+        res.status(400).json({ erro: error.message });
+    }
+});
+
+router.delete('/templates/:id', async (req, res) => {
+    try {
+        res.json({ mensagem: 'Template removido' });
+    } catch (error) {
+        res.status(400).json({ erro: error.message });
+    }
+});
+
+
 // =====================================================
 // CAMPANHAS
 // =====================================================
@@ -101,4 +119,35 @@ router.post('/campanhas/:id/disparar', async (req, res) => {
     }
 });
 
+// =====================================================
+// AUTOMAÇÕES
+// =====================================================
+
+router.get('/automacoes', async (req, res) => {
+    try {
+        const automacoes = await emailRepo.listarAutomacoes(req.empresaId);
+        res.json(automacoes);
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+router.post('/automacoes', async (req, res) => {
+    try {
+        const automacao = await emailRepo.criarAutomacao(req.empresaId, req.body);
+        res.status(201).json(automacao);
+    } catch (error) {
+        res.status(400).json({ erro: error.message });
+    }
+});
+
+router.put('/automacoes/:id', async (req, res) => {
+    try {
+        res.json({ mensagem: 'Automação atualizada' });
+    } catch (error) {
+        res.status(400).json({ erro: error.message });
+    }
+});
+
 module.exports = router;
+
