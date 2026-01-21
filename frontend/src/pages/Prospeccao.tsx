@@ -601,8 +601,8 @@ export default function Prospeccao() {
                       <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                         <div className="bg-yellow-500 h-full transition-all duration-500" style={{ width: `${h.progresso}%` }} />
                       </div>
-                      <p className="text-[10px] text-white/40 italic flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" /> Mining leads... {h.leads_coletados} encontrados
+                      <p className="text-[10px] text-white/40 italic flex items-center gap-1 truncate" title={h.mensagem_erro}>
+                        <RefreshCw className="w-3 h-3 animate-spin" /> {h.mensagem_erro || 'Iniciando minerador...'} | {h.leads_coletados} encontrados
                       </p>
                     </div>
                   ) : (

@@ -46,10 +46,24 @@ mapScraperQueue.process(async (job) => {
             let sourceLeads = [];
 
             try {
-                const progressCallback = (p) => {
-                    const totalP = Math.min(Math.round(baseProgress + (p * progressPerSource / 100)), 99);
-                    prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: totalP }).catch(() => { });
+                const progressCallback = (data) => {
+                    const updateData = {};
+
+                    if (data.p !== undefined) {
+                        updateData.progresso = Math.min(Math.round(baseProgress + (data.p * progressPerSource / 100)), 99);
+                    }
+
+                    if (data.msg) {
+                        updateData.mensagem_erro = `[${source.toUpperCase()}] ${data.msg}`;
+                    }
+
+                    if (Object.keys(updateData).length > 0) {
+                        prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, updateData).catch(() => { });
+                    }
                 };
+
+                // Reportar início da fonte
+                progressCallback({ msg: 'Iniciando extração...' });
 
                 if (source === 'gmaps') {
                     sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, progressCallback);
@@ -62,6 +76,9 @@ mapScraperQueue.process(async (job) => {
                 }
             } catch (err) {
                 console.error(`[MapScraperQueue] Erro na fonte ${source}:`, err.message);
+                prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, {
+                    mensagem_erro: `Erro em ${source}: ${err.message}`
+                }).catch(() => { });
             }
 
             sourceLeads.forEach(l => {

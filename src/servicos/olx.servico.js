@@ -1,32 +1,49 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
+const { formatarWhatsApp } = require('./gmaps.servico');
 
 puppeteer.use(StealthPlugin());
 
 async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
-    console.log(`[OLX Scraper] Iniciando busca: ${niche} em ${city}`);
+    const log = (msg) => {
+        console.log(`[OLX Scraper] ${msg}`);
+        if (onProgress) onProgress({ msg: msg });
+    };
+
+    log(`Iniciando busca OLX para: ${niche} em ${city}`);
+    const dddsValidos = obterDDDsDaCidade(city);
 
     const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
     const PROXY_USER = `14e775730d7037f4aad0__cr.br__sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
 
+    const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH ||
+        (process.platform === 'win32'
+            ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+            : '/usr/bin/google-chrome');
+
     const browser = await puppeteer.launch({
         headless: true,
+        executablePath: chromePath,
         args: [`--proxy-server=${PROXY_HOST}`, '--no-sandbox']
     });
 
-    const page = await browser.newPage();
-    await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
-
     try {
+        const page = await browser.newPage();
+        await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
+
         const query = encodeURIComponent(`${niche} ${city}`);
+        log(`Buscando no Google: site:olx.com.br+"whatsapp"+${query}`);
         await page.goto(`https://www.google.com/search?q=site:olx.com.br+"whatsapp"+${query}`, { waitUntil: 'networkidle2' });
 
         const leads = [];
         let pages = 0;
 
-        while (leads.length < limit && pages < 5) {
+        while (leads.length < limit && pages < 10) {
+            log(`Analisando página ${pages + 1} do Google...`);
+
             const results = await page.evaluate(() => {
                 const list = [];
                 document.querySelectorAll('.g').forEach(el => {
@@ -41,21 +58,28 @@ async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
                 return list;
             });
 
-            const { formatarWhatsApp } = require('./gmaps.servico');
-            results.forEach(item => {
+            for (const item of results) {
+                if (leads.length >= limit) break;
                 const whatsapp = formatarWhatsApp(item.rawPhone);
-                if (whatsapp && leads.length < limit && !leads.find(l => l.whatsapp === whatsapp)) {
-                    leads.push({ nome: item.nome, whatsapp });
-                }
-            });
 
-            if (onProgress) onProgress(Math.min(Math.round((leads.length / limit) * 100), 99));
+                if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
+                    if (!leads.find(l => l.whatsapp === whatsapp)) {
+                        leads.push({ nome: item.nome, whatsapp });
+                        log(`[✓] Lead: ${item.nome} (${whatsapp})`);
+                    }
+                } else if (whatsapp) {
+                    log(`[-] DDD Ignorado: ${whatsapp}`);
+                }
+            }
+
+            if (onProgress) onProgress({ p: Math.min(Math.round((leads.length / limit) * 100), 99) });
 
             const nextButton = await page.$('#pnnext');
             if (nextButton && leads.length < limit) {
                 await nextButton.click();
                 await page.waitForNavigation({ waitUntil: 'networkidle2' });
                 pages++;
+                await new Promise(r => setTimeout(r, 1000));
             } else {
                 break;
             }
@@ -63,7 +87,7 @@ async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
 
         return leads;
     } catch (error) {
-        console.error('[OLX Scraper] Erro:', error);
+        log(`Erro: ${error.message}`);
         return [];
     } finally {
         await browser.close();
