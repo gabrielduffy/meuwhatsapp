@@ -93,64 +93,82 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
         const maxScrolls = 40;
 
         while (leads.length < limit && totalScrolled < maxScrolls) {
-            log(`Scroll ${totalScrolled + 1}/${maxScrolls} | Coletados: ${leads.length}`);
+            log(`Scroll ${totalScrolled + 1}/${maxScrolls} | Encontrados: ${leads.length}`);
 
             await page.evaluate(() => {
                 const scrollable = document.querySelector('div[role="feed"]');
-                if (scrollable) scrollable.scrollBy(0, 1000);
+                if (scrollable) {
+                    scrollable.scrollBy(0, 1200);
+                }
             });
 
             await new Promise(r => setTimeout(r, 2000));
 
+            // Pega todos os cards de estabelecimentos
             const cards = await page.$$('div[role="article"]');
 
             for (let i = 0; i < cards.length && leads.length < limit; i++) {
                 try {
-                    const name = await page.evaluate((idx) => {
+                    // Extração robusta do nome e telefone (se visível) direto do card
+                    const cardData = await page.evaluate((idx) => {
                         const allCards = document.querySelectorAll('div[role="article"]');
-                        return allCards[idx]?.querySelector('.qBF1Pd')?.innerText || null;
+                        const card = allCards[idx];
+                        if (!card) return null;
+
+                        const name = card.querySelector('.qBF1Pd')?.innerText;
+
+                        // Busca telefone no texto bruto do card (às vezes o Google mostra no snippet)
+                        const text = card.innerText;
+                        const phoneMatch = text.match(/\(?\d{2}\)?\s?\d{4,5}-?\d{4}/);
+                        const phoneSnippet = phoneMatch ? phoneMatch[0] : null;
+
+                        return { name, phoneSnippet };
                     }, i);
 
-                    if (!name || processedNames.has(name)) continue;
-                    processedNames.add(name);
+                    if (!cardData?.name || processedNames.has(cardData.name)) continue;
+                    processedNames.add(cardData.name);
 
-                    // Clicar no estabelecimento
-                    await page.evaluate((idx) => {
-                        const allCards = document.querySelectorAll('div[role="article"]');
-                        allCards[idx]?.click();
-                    }, i);
+                    let phoneFound = cardData.phoneSnippet;
 
-                    await new Promise(r => setTimeout(r, 1200));
+                    // Se não achou o telefone no snippet, vamos clicar para abrir o painel lateral
+                    if (!phoneFound) {
+                        log(`Tentando extrair telefone de ${cardData.name} (clicando no card)...`);
+                        await page.evaluate((idx) => {
+                            const allCards = document.querySelectorAll('div[role="article"]');
+                            allCards[idx]?.click();
+                        }, i);
 
-                    // Extrair telefone
-                    const phoneData = await page.evaluate(() => {
-                        const btn = document.querySelector('button[data-item-id^="phone:tel:"]');
-                        if (btn) return btn.getAttribute('data-item-id').replace('phone:tel:', '');
+                        await new Promise(r => setTimeout(r, 1500));
 
-                        // Fallback Regex no texto do painel
-                        const panel = document.querySelector('[role="main"]');
-                        if (panel) {
-                            const match = panel.innerText.match(/\(?\d{2}\)?\s?\d{4,5}-?\d{4}/);
+                        phoneFound = await page.evaluate(() => {
+                            // Tenta seletores de botão de telefone
+                            const btn = document.querySelector('button[data-item-id^="phone:tel:"]');
+                            if (btn) return btn.getAttribute('data-item-id').replace('phone:tel:', '');
+
+                            // Tenta encontrar qualquer telefone por Regex no painel lateral completo
+                            const mainPanel = document.querySelector('[role="main"]') || document.body;
+                            const match = mainPanel.innerText.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
                             return match ? match[0] : null;
-                        }
-                        return null;
-                    });
+                        });
+                    }
 
-                    if (phoneData) {
-                        const whatsapp = formatarWhatsApp(phoneData);
+                    if (phoneFound) {
+                        const whatsapp = formatarWhatsApp(phoneFound);
                         if (whatsapp && !leads.find(l => l.whatsapp === whatsapp)) {
-
-                            // Aplica Filtro DDD Inteligente
+                            // Validação de DDD
                             if (validarDDD(whatsapp, dddsValidos)) {
-                                leads.push({ nome: name, whatsapp });
-                                log(`[✓] Lead: ${name} (${whatsapp})`);
+                                leads.push({ nome: cardData.name, whatsapp });
+                                log(`[✓] Lead: ${cardData.name} (${whatsapp})`);
                             } else {
-                                log(`[-] DDD Inválido ignorado: ${whatsapp} (${name})`);
+                                log(`[-] Pulei: ${cardData.name} (DDD ${whatsapp.substring(2, 4)} não bate com ${city})`);
                             }
                         }
+                    } else {
+                        // Log opcional para saber que pulei porque não achei o telefone
+                        // log(`[?] Sem telefone: ${cardData.name}`);
                     }
                 } catch (e) {
-                    // Ignora erro individual e segue
+                    continue; // Segue para o próximo estabelecimento se der erro em um
                 }
             }
 
