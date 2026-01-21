@@ -5,25 +5,34 @@ const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
 puppeteer.use(StealthPlugin());
 
 /**
- * Serviço de Scraping do Google Maps - VERSÃO RESTAURADA E ESTABILIZADA
+ * Serviço de Scraping do Google Maps - VERSÃO ROBUSTA (CLIQUE & EXTRAÇÃO)
  */
 
 function formatarWhatsApp(telefone) {
     if (!telefone) return null;
     let limpo = telefone.replace(/\D/g, '');
-    if (limpo.startsWith('0')) limpo = limpo.substring(1);
+    if (limpo.startsWith('0')) {
+        // Se começa com 0, remove o zero (comum em números com operadora 0XX)
+        limpo = limpo.substring(1);
+    }
+
+    // Se tem 10 ou 11 dígitos, adiciona 55 (Brasil)
     if (limpo.length === 10 || limpo.length === 11) {
         limpo = '55' + limpo;
     }
-    if (limpo.length === 13 && limpo.startsWith('55')) {
-        return limpo;
-    }
+
+    // Se for 12 dígitos começando com 55 (sem o 9), tenta padronizar para 13 dígitos
     if (limpo.length === 12 && limpo.startsWith('55')) {
         const ddd = limpo.substring(2, 4);
         const resto = limpo.substring(4);
         return `55${ddd}9${resto}`;
     }
-    return null;
+
+    if (limpo.length === 13 && limpo.startsWith('55')) {
+        return limpo;
+    }
+
+    return limpo.length >= 10 ? limpo : null;
 }
 
 async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
@@ -32,12 +41,12 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
         if (onProgress) onProgress({ msg: msg });
     };
 
-    log(`Iniciando busca otimizada: ${niche} em ${city}`);
+    log(`Iniciando busca robusta: ${niche} em ${city}`);
 
     const dddsValidos = obterDDDsDaCidade(city);
     const sessionId = Math.random().toString(36).substring(7);
 
-    // CORREÇÃO CRÍTICA DO PROXY: Separador ';' é obrigatório
+    // Proxy com separador ';' (Crítico para DataImpulse)
     const PROXY_HOST = 'gw.dataimpulse.com:823';
     const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
@@ -62,51 +71,76 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
     try {
         const page = await browser.newPage();
         await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
-        await page.setViewport({ width: 1280, height: 800 });
+        await page.setViewport({ width: 1280, height: 900 });
 
         const searchQuery = encodeURIComponent(`${niche} em ${city}`);
+        log('Acessando Google Maps...');
         await page.goto(`https://www.google.com/maps/search/${searchQuery}`, { waitUntil: 'networkidle2', timeout: 60000 });
 
         const leads = [];
         const processedNames = new Set();
         let totalScrolled = 0;
-        const maxScrolls = 60;
+        const maxScrolls = 50;
 
         while (leads.length < limit && totalScrolled < maxScrolls) {
-            log(`Minerando página... (${leads.length} encontrados)`);
+            log(`Processando página (${leads.length}/${limit})...`);
 
+            // Scroll para carregar mais
             await page.evaluate(() => {
                 const scrollable = document.querySelector('div[role="feed"]');
                 if (scrollable) scrollable.scrollBy(0, 1000);
             });
-
             await new Promise(r => setTimeout(r, 2000));
 
-            // EXTRAÇÃO DIRETA (A que funcionava antes)
-            const results = await page.evaluate(() => {
-                const list = [];
-                const cards = document.querySelectorAll('div[role="article"]');
-                cards.forEach(card => {
-                    const name = card.querySelector('.qBF1Pd')?.innerText;
-                    const text = card.innerText;
-                    const phoneMatch = text.match(/\(?\d{2}\)?\s?\d{4,5}-?\d{4}/);
-                    if (name && phoneMatch) {
-                        list.push({ name, rawPhone: phoneMatch[0] });
-                    }
-                });
-                return list;
-            });
+            const cards = await page.$$('div[role="article"]');
 
-            for (const item of results) {
-                if (leads.length >= limit) break;
-                if (processedNames.has(item.name)) continue;
-                processedNames.add(item.name);
+            for (let i = 0; i < cards.length && leads.length < limit; i++) {
+                try {
+                    const card = cards[i];
+                    const name = await card.$eval('.qBF1Pd', el => el.innerText).catch(() => null);
 
-                const whatsapp = formatarWhatsApp(item.rawPhone);
-                if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
-                    if (!leads.find(l => l.whatsapp === whatsapp)) {
-                        leads.push({ nome: item.name, whatsapp });
+                    if (!name || processedNames.has(name)) continue;
+                    processedNames.add(name);
+
+                    log(`Analisando: ${name}...`);
+
+                    // Clicar no card para abrir o painel lateral
+                    await card.click();
+
+                    // Aguardar o botão de telefone aparecer no painel lateral
+                    // Usamos um timeout menor para não travar se não tiver telefone
+                    let phoneFound = null;
+                    try {
+                        const btnSelector = 'button[data-item-id^="phone:tel:"]';
+                        await page.waitForSelector(btnSelector, { timeout: 3000 });
+                        phoneFound = await page.$eval(btnSelector, el => el.getAttribute('data-item-id').replace('phone:tel:', ''));
+                    } catch (e) {
+                        // Se não achou o botão, tenta Regex no texto do painel
+                        phoneFound = await page.evaluate(() => {
+                            const panel = document.querySelector('[role="main"]');
+                            if (!panel) return null;
+                            const match = panel.innerText.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                            return match ? match[0] : null;
+                        });
                     }
+
+                    if (phoneFound) {
+                        const whatsapp = formatarWhatsApp(phoneFound);
+                        if (whatsapp && !leads.find(l => l.whatsapp === whatsapp)) {
+                            if (validarDDD(whatsapp, dddsValidos)) {
+                                leads.push({ nome: name, whatsapp });
+                                log(`[✓] Sucesso: ${name} (${whatsapp})`);
+                            } else {
+                                // log(`[-] DDD Inválido: ${whatsapp}`);
+                            }
+                        }
+                    }
+
+                    // Intervalo pequeno entre cliques para evitar bloqueio
+                    await new Promise(r => setTimeout(r, 500));
+
+                } catch (err) {
+                    // Silently ignore individual card errors
                 }
             }
 
@@ -120,12 +154,12 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
             if (isEnd && leads.length > 0) break;
         }
 
-        log(`Busca finalizada com ${leads.length} contatos.`);
+        log(`Busca concluída. Leads: ${leads.length}`);
         return leads;
 
     } catch (error) {
-        log(`Erro: ${error.message}`);
-        return leads; // Retorna o que conseguiu
+        log(`Erro fatal: ${error.message}`);
+        return leads;
     } finally {
         await browser.close();
     }
