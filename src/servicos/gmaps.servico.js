@@ -35,7 +35,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
     // Geramos um ID de sessão aleatório para forçar uma troca de IP real a cada nova busca
     const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
-    const PROXY_USER = `14e775730d7037f4aad0__cr.br__sessid.${sessionId}`;
+    const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
 
     const browser = await puppeteer.launch({
@@ -123,18 +123,17 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
             for (const item of items) {
                 if (leads.length >= limit) break;
 
-                // Filtro de segurança: Se o nome da empresa contém outra cidade grande, ignoramos
-                // Isso evita que buscas no Rio tragam empresas chamadas "Contabilidade Curitiba"
+                // Filtro de segurança inteligente: 
+                // Só descartamos se o nome da empresa menciona EXPLICITAMENTE outra cidade grande
                 const nomeLower = item.name.toLowerCase();
                 const cidadeBuscaLower = city.toLowerCase();
-
-                // Se o nome contém uma cidade que não é a da busca (ex: nome tem "Curitiba" e busca é "Rio")
-                // mas permitimos se o nome contiver a própria cidade da busca
                 const outrasCidades = ['curitiba', 'são paulo', 'rio de janeiro', 'belo horizonte', 'brasília', 'porto alegre', 'fortaleza', 'salvador', 'manaus', 'recife'];
-                const encontrouOutraCidade = outrasCidades.find(c => c !== cidadeBuscaLower && nomeLower.includes(c));
 
-                if (encontrouOutraCidade && !nomeLower.includes(cidadeBuscaLower)) {
-                    console.log(`[GMaps Scraper] Ignorando lead de outra cidade: ${item.name}`);
+                const mencaoOutraCidade = outrasCidades.find(c => c !== cidadeBuscaLower && nomeLower.includes(c));
+
+                // Se menciona outra cidade (ex: Curitiba) e NÃO menciona a cidade certa (ex: Rio), descartamos
+                if (mencaoOutraCidade && !nomeLower.includes(cidadeBuscaLower)) {
+                    console.log(`[GMaps Scraper] Lead descartado (Provável anúncio de outra região): ${item.name}`);
                     continue;
                 }
 
