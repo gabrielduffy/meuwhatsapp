@@ -63,6 +63,12 @@ router.get('/templates', async (req, res) => {
 
 router.post('/templates', async (req, res) => {
     try {
+        const { dadosJson, corpoHtml } = req.body;
+        // Se tiver dados do builder mas não tiver HTML pronto, gera no backend
+        if (dadosJson && (!corpoHtml || corpoHtml === '<!-- Gerado pelo Builder -->')) {
+            const { exportHtml } = require('../utilitarios/emailExport');
+            req.body.corpoHtml = exportHtml(dadosJson);
+        }
         const template = await emailRepo.criarTemplate(req.empresaId, req.body);
         res.status(201).json(template);
     } catch (error) {
@@ -72,8 +78,13 @@ router.post('/templates', async (req, res) => {
 
 router.put('/templates/:id', async (req, res) => {
     try {
-        // Por enquanto simulando sucesso para o builder
-        res.json({ mensagem: 'Template atualizado com sucesso' });
+        const { dadosJson, corpoHtml } = req.body;
+        if (dadosJson && (!corpoHtml || corpoHtml === '<!-- Gerado pelo Builder -->')) {
+            const { exportHtml } = require('../utilitarios/emailExport');
+            req.body.corpoHtml = exportHtml(dadosJson);
+        }
+        const template = await emailRepo.atualizarTemplate(req.params.id, req.empresaId, req.body);
+        res.json(template);
     } catch (error) {
         res.status(400).json({ erro: error.message });
     }
@@ -81,6 +92,7 @@ router.put('/templates/:id', async (req, res) => {
 
 router.delete('/templates/:id', async (req, res) => {
     try {
+        await emailRepo.deletarTemplate(req.params.id, req.empresaId);
         res.json({ mensagem: 'Template removido' });
     } catch (error) {
         res.status(400).json({ erro: error.message });
@@ -143,7 +155,17 @@ router.post('/automacoes', async (req, res) => {
 
 router.put('/automacoes/:id', async (req, res) => {
     try {
-        res.json({ mensagem: 'Automação atualizada' });
+        const automacao = await emailRepo.atualizarAutomacao(req.params.id, req.empresaId, req.body);
+        res.json(automacao);
+    } catch (error) {
+        res.status(400).json({ erro: error.message });
+    }
+});
+
+router.delete('/automacoes/:id', async (req, res) => {
+    try {
+        await emailRepo.deletarAutomacao(req.params.id, req.empresaId);
+        res.json({ mensagem: 'Automação removida' });
     } catch (error) {
         res.status(400).json({ erro: error.message });
     }

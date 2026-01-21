@@ -3,7 +3,7 @@ const config = require('../config/env');
 
 // Chave para criptografia (deve ser fixa para conseguir descriptografar depois)
 // Se não houver uma chave no ENV, usamos uma derivação do JWT_SECRET
-const ENCRYPTION_KEY = crypto.scryptSync(config.jwtSecret || 'fallback-secret', 'salt', 32);
+const ENCRYPTION_KEY = crypto.scryptSync(config.jwtSecret || 'meu-whatsapp-ultra-secret-2026', config.encryptionSalt || '3f8e9c2a1b0d4e5f', 32);
 const IV_LENGTH = 16;
 
 /**

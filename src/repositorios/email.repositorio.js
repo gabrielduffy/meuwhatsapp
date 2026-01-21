@@ -119,6 +119,15 @@ async function listarCampanhas(empresaId) {
   return resultado.rows;
 }
 
+async function atualizarStatusCampanha(id, empresaId, status, estatisticas = {}) {
+  const sql = `
+        UPDATE campanhas_email 
+        SET status = $1, estatisticas = $2, atualizado_em = NOW()
+        WHERE id = $3 AND empresa_id = $4
+    `;
+  await query(sql, [status, JSON.stringify(estatisticas), id, empresaId]);
+}
+
 // =====================================================
 // AUTOMAÇÕES
 // =====================================================
@@ -171,5 +180,6 @@ module.exports = {
   criarAutomacao,
   listarAutomacoes,
   atualizarAutomacao,
-  deletarAutomacao
+  deletarAutomacao,
+  atualizarStatusCampanha
 };

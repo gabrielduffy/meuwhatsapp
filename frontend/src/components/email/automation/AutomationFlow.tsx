@@ -29,11 +29,16 @@ import {
     Mail
 } from 'lucide-react';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- CUSTOM NODES ---
 
 const NodeWrapper = ({ children, selected, label, icon: Icon, colorClass, typeLabel }: any) => (
-    <div className={`px-4 py-3 rounded-2xl bg-gray-900 border-2 transition-all min-w-[220px] shadow-2xl ${selected ? 'border-purple-500 ring-4 ring-purple-500/20 scale-105' : 'border-white/10 hover:border-white/20'}`}>
+    <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className={`px-4 py-3 rounded-2xl bg-gray-900 border-2 transition-all min-w-[220px] shadow-2xl ${selected ? 'border-purple-500 ring-4 ring-purple-500/20 scale-105' : 'border-white/10 hover:border-white/20'}`}
+    >
         <div className="flex items-center justify-between mb-2">
             <div className={`flex items-center gap-2 ${colorClass}`}>
                 <Icon className="w-4 h-4" />
@@ -43,7 +48,7 @@ const NodeWrapper = ({ children, selected, label, icon: Icon, colorClass, typeLa
         </div>
         <div className="text-sm font-bold text-white mb-1">{label}</div>
         {children}
-    </div>
+    </motion.div>
 );
 
 const TriggerNode = ({ data, selected }: any) => (
@@ -155,7 +160,7 @@ const initialNodes: Node[] = [
 
 export default function AutomationFlow({ onSave, initialData }: { onSave: (data: any) => void, initialData?: any }) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
     useEffect(() => {
         if (initialData?.nodes) {
@@ -173,7 +178,7 @@ export default function AutomationFlow({ onSave, initialData }: { onSave: (data:
                 ...initialNodes[0],
                 data: { ...initialNodes[0].data, onChange: (updates: any) => handleNodeUpdate(initialNodes[0].id, updates) }
             };
-            setNodes([starter]);
+            setNodes([starter as Node]);
         }
     }, [initialData, setNodes, setEdges]);
 
@@ -193,10 +198,11 @@ export default function AutomationFlow({ onSave, initialData }: { onSave: (data:
 
     const addNode = (type: string) => {
         const id = `node-${Date.now()}`;
+        const lastNode = nodes[nodes.length - 1];
         const newNode: Node = {
             id,
             type,
-            position: { x: 400, y: nodes[nodes.length - 1]?.position?.y + 250 || 350 },
+            position: { x: 400, y: (lastNode?.position?.y || 0) + 250 },
             data: {
                 label: type === 'action' ? 'Enviar E-mail' : type === 'delay' ? 'Aguardar' : 'Ramificar',
                 onChange: (updates: any) => handleNodeUpdate(id, updates)
@@ -212,7 +218,7 @@ export default function AutomationFlow({ onSave, initialData }: { onSave: (data:
 
     return (
         <div className="fixed inset-0 z-[100] bg-gray-950 flex flex-col text-white font-sans overflow-hidden">
-            <header className="h-20 px-8 border-b border-white/10 flex items-center justify-between bg-gray-901 backdrop-blur-2xl shrink-0">
+            <header className="h-20 px-8 border-b border-white/10 flex items-center justify-between bg-gray-900/80 backdrop-blur-2xl shrink-0">
                 <div className="flex items-center gap-6">
                     <button onClick={() => window.history.back()} className="p-3 hover:bg-white/5 rounded-2xl transition-all border border-white/5 group">
                         <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -238,36 +244,35 @@ export default function AutomationFlow({ onSave, initialData }: { onSave: (data:
 
             <div className="flex-1 overflow-hidden flex">
                 <aside className="w-80 border-r border-white/10 bg-gray-900/50 p-6 flex flex-col gap-6 shrink-0 shadow-2xl z-10">
-                    <div>
-                        <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Ações</h3>
-                        <div className="space-y-3">
-                            <button onClick={() => addNode('action')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
-                                <div className="flex items-center gap-3">
-                                    <Send className="w-4 h-4 text-cyan-400" />
-                                    <span className="font-bold text-sm text-white">Enviar Email</span>
-                                </div>
-                            </button>
-                            <button onClick={() => addNode('delay')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
-                                <div className="flex items-center gap-3">
-                                    <Clock className="w-4 h-4 text-orange-400" />
-                                    <span className="font-bold text-sm text-white">Atraso</span>
-                                </div>
-                            </button>
-                            <button onClick={() => addNode('condition')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
-                                <div className="flex items-center gap-3">
-                                    <GitBranch className="w-4 h-4 text-blue-400" />
-                                    <span className="font-bold text-sm text-white">Condição</span>
-                                </div>
-                            </button>
-                        </div>
+                    <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Fluxo de Jornada</h3>
+                    <div className="space-y-3">
+                        <button onClick={() => addNode('action')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <Send className="w-4 h-4 text-cyan-400" />
+                                <span className="font-bold text-sm text-white">Enviar Email</span>
+                            </div>
+                        </button>
+                        <button onClick={() => addNode('delay')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <Clock className="w-4 h-4 text-orange-400" />
+                                <span className="font-bold text-sm text-white">Delay Estratégico</span>
+                            </div>
+                        </button>
+                        <button onClick={() => addNode('condition')} className="w-full text-left p-4 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <GitBranch className="w-4 h-4 text-blue-400" />
+                                <span className="font-bold text-sm text-white">Ramificação</span>
+                            </div>
+                        </button>
                     </div>
 
-                    <div className="mt-auto p-5 rounded-3xl bg-gray-800 border border-white/5 space-y-4">
-                        <button
-                            onClick={deleteSelected}
-                            className="w-full py-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all border border-red-500/10 flex items-center justify-center gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" /> Deletar
+                    <div className="mt-auto p-5 rounded-3xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/5 space-y-4 shadow-inner">
+                        <div className="flex items-center gap-2 text-purple-400">
+                            <Settings2 className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Ferramentas</span>
+                        </div>
+                        <button onClick={deleteSelected} className="w-full py-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all border border-red-500/10 flex items-center justify-center gap-2">
+                            <Trash2 className="w-4 h-4" /> Remover Selecionado
                         </button>
                     </div>
                 </aside>
@@ -285,6 +290,17 @@ export default function AutomationFlow({ onSave, initialData }: { onSave: (data:
                         <Background color="#1e293b" variant={BackgroundVariant.Dots} gap={30} size={1} />
                         <Controls />
                         <MiniMap />
+                        <Panel position="top-right">
+                            <div className="bg-white/5 backdrop-blur-md p-4 rounded-3xl border border-white/10 m-4 flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                    <Zap className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Smart Core</p>
+                                    <p className="text-sm font-bold text-white">Ativo & Otimizado</p>
+                                </div>
+                            </div>
+                        </Panel>
                     </ReactFlow>
                 </div>
             </div>
