@@ -13,7 +13,6 @@ async function buscarLeadsNoLinkedIn(niche, city, limit = 150, onProgress = null
 
     log(`Iniciando busca LinkedIn para: ${niche} em ${city}`);
     const dddsValidos = obterDDDsDaCidade(city);
-
     const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
     const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
@@ -34,60 +33,33 @@ async function buscarLeadsNoLinkedIn(niche, city, limit = 150, onProgress = null
         const page = await browser.newPage();
         await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
 
-        const query = encodeURIComponent(`site:linkedin.com/in/ ("CEO" OR "Sócio" OR "Proprietário") "${niche}" "${city}" "9"`);
-        log(`Buscando no Google: ${query}`);
-        await page.goto(`https://www.google.com/search?q=${query}`, { waitUntil: 'networkidle2' });
+        const query = encodeURIComponent(`site:linkedin.com/in/ ${niche} ${city} whatsapp`);
+        log(`Buscando no Bing: ${query}`);
+        await page.goto(`https://www.bing.com/search?q=${query}`, { waitUntil: 'networkidle2' });
+
+        const results = await page.evaluate(() => {
+            const list = [];
+            document.querySelectorAll('.b_algo').forEach(el => {
+                const title = el.querySelector('h2')?.innerText;
+                const snippet = el.innerText;
+                const phoneMatch = snippet.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                if (phoneMatch && title) {
+                    list.push({ nome: title.split('-')[0].trim(), rawPhone: phoneMatch[0] });
+                }
+            });
+            return list;
+        });
 
         const leads = [];
-        let pages = 0;
-
-        while (leads.length < limit && pages < 10) {
-            log(`Analisando página ${pages + 1} do Google...`);
-
-            const results = await page.evaluate(() => {
-                const list = [];
-                document.querySelectorAll('.g').forEach(el => {
-                    const title = el.querySelector('h3')?.innerText;
-                    const snippet = el.innerText;
-                    const phoneMatch = snippet.match(/\(?\d{2}\)?\s?\d{4,5}-?\d{4}/);
-
-                    if (phoneMatch && title) {
-                        list.push({ nome: title.split('-')[0].split('|')[0].trim(), rawPhone: phoneMatch[0] });
-                    }
-                });
-                return list;
-            });
-
-            for (const item of results) {
-                if (leads.length >= limit) break;
-                const whatsapp = formatarWhatsApp(item.rawPhone);
-
-                if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
-                    if (!leads.find(l => l.whatsapp === whatsapp)) {
-                        leads.push({ nome: item.nome, whatsapp });
-                        log(`[✓] Lead: ${item.nome} (${whatsapp})`);
-                    }
-                } else if (whatsapp) {
-                    log(`[-] DDD Ignorado: ${whatsapp}`);
-                }
-            }
-
-            if (onProgress) onProgress({ p: Math.min(Math.round((leads.length / limit) * 100), 99) });
-
-            const nextButton = await page.$('#pnnext');
-            if (nextButton && leads.length < limit) {
-                await nextButton.click();
-                await page.waitForNavigation({ waitUntil: 'networkidle2' });
-                pages++;
-                await new Promise(r => setTimeout(r, 1000));
-            } else {
-                break;
+        for (const item of results) {
+            const whatsapp = formatarWhatsApp(item.rawPhone);
+            if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
+                leads.push({ nome: item.nome, whatsapp });
             }
         }
-
         return leads;
-    } catch (error) {
-        log(`Erro: ${error.message}`);
+    } catch (e) {
+        log(`Erro: ${e.message}`);
         return [];
     } finally {
         await browser.close();
