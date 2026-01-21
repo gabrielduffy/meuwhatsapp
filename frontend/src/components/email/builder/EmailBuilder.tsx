@@ -104,9 +104,12 @@ export default function EmailBuilder({ onSave, initialData }: { onSave: (data: a
                 {/* Main Canvas */}
                 <main className="flex-1 overflow-auto bg-gray-950 p-12 flex justify-center">
                     <div
-                        className="w-full max-w-[600px] min-h-[800px] bg-white rounded-xl shadow-2xl relative overflow-hidden"
+                        className="w-full max-w-[650px] min-h-[850px] bg-white rounded-2xl shadow-[0_30px_100px_rgba(0,0,0,0.4)] relative overflow-hidden ring-1 ring-white/10"
                         style={{ backgroundColor: '#ffffff' }}
                     >
+                        {/* Régua/Guia Visual (Visual Guide) */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-blue-500 opacity-50" />
+
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
@@ -116,15 +119,22 @@ export default function EmailBuilder({ onSave, initialData }: { onSave: (data: a
                                 items={blocks.map(b => b.id)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="p-0">
-                                    <AnimatePresence>
+                                <div className="p-0 transition-all duration-500">
+                                    <AnimatePresence initial={false}>
                                         {blocks.length === 0 ? (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                                    <Layout className="w-8 h-8 text-gray-300" />
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center select-none">
+                                                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-gray-100/50">
+                                                    <Layout className="w-10 h-10 text-gray-200" />
                                                 </div>
-                                                <p className="text-gray-400 font-medium">Seu template está vazio</p>
-                                                <p className="text-gray-300 text-sm">Arraste ou clique em blocos da barra lateral para começar a construir seu e-mail.</p>
+                                                <h3 className="text-gray-900 font-black text-xl mb-2 tracking-tight">Canvas Vazio</h3>
+                                                <p className="text-gray-400 text-sm max-w-[280px] leading-relaxed">
+                                                    O seu design está pronto para nascer. Adicione blocos da sidebar para começar.
+                                                </p>
+                                                <div className="mt-8 flex gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-purple-500/20" />
+                                                    <div className="w-2 h-2 rounded-full bg-purple-500/40" />
+                                                    <div className="w-2 h-2 rounded-full bg-purple-500/60" />
+                                                </div>
                                             </div>
                                         ) : (
                                             blocks.map((block) => (
@@ -141,6 +151,7 @@ export default function EmailBuilder({ onSave, initialData }: { onSave: (data: a
                             </SortableContext>
                         </DndContext>
                     </div>
+
                 </main>
 
                 {/* Properties Panel */}

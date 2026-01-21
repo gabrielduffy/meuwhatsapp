@@ -12,13 +12,25 @@ export interface EmailBlock {
         paddingBottom: number;
         paddingLeft: number;
         paddingRight: number;
+        marginTop: number;
+        marginBottom: number;
         backgroundColor: string;
-        textAlign?: 'left' | 'center' | 'right';
+        textAlign?: 'left' | 'center' | 'right' | 'justify';
         color?: string;
         fontSize?: number;
+        fontWeight?: string;
+        fontFamily?: string;
+        lineHeight?: number;
+        letterSpacing?: number;
         borderRadius?: number;
+        borderWidth?: number;
+        borderColor?: string;
+        borderStyle?: 'none' | 'solid' | 'dashed' | 'dotted';
+        width?: string;
+        maxWidth?: string;
     };
 }
+
 
 interface BuilderState {
     blocks: EmailBlock[];
@@ -77,10 +89,11 @@ export const useEmailBuilder = create<BuilderState>((set) => ({
 function getDefaultContent(type: BlockType) {
     switch (type) {
         case 'text': return { html: '<p>Novo texto aqui...</p>' };
-        case 'image': return { url: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1000', alt: 'Image' };
+        case 'image': return { url: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1000', alt: 'Image', link: '' };
         case 'button': return { text: 'Clique Aqui', url: '#' };
         case 'header': return { logoUrl: '', title: 'Sua Marca' };
-        case 'video': return { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', thumbnail: '' };
+        case 'video': return { url: '', thumbnail: '', platform: 'youtube' };
+        case 'divider': return { color: '#e2e8f0', height: 1 };
         default: return {};
     }
 }
@@ -91,16 +104,34 @@ function getDefaultStyles(type: BlockType) {
         paddingBottom: 20,
         paddingLeft: 20,
         paddingRight: 20,
+        marginTop: 0,
+        marginBottom: 0,
         backgroundColor: 'transparent',
+        borderStyle: 'none' as const,
+        fontFamily: 'Inter, sans-serif',
     };
 
     if (type === 'button') {
-        return { ...base, textAlign: 'center' as const, color: '#ffffff', backgroundColor: '#8B5CF6', borderRadius: 8 };
+        return {
+            ...base,
+            textAlign: 'center' as const,
+            color: '#ffffff',
+            backgroundColor: '#8B5CF6',
+            borderRadius: 8,
+            fontWeight: 'bold',
+            fontSize: 16,
+            width: 'auto'
+        };
     }
 
     if (type === 'text') {
-        return { ...base, color: '#ffffff', fontSize: 16 };
+        return { ...base, color: '#111827', fontSize: 16, lineHeight: 1.5 };
+    }
+
+    if (type === 'header') {
+        return { ...base, backgroundColor: '#ffffff', textAlign: 'left' as const };
     }
 
     return base;
 }
+
