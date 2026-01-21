@@ -32,8 +32,10 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
     console.log(`[GMaps Scraper] Iniciando busca com PROXY RESIDENCIAL: ${niche} em ${city}`);
 
     // Configurações do Proxy DataImpulse (Segmentação: Brasil)
+    // Geramos um ID de sessão aleatório para forçar uma troca de IP real a cada nova busca
+    const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
-    const PROXY_USER = '14e775730d7037f4aad0__cr.br';
+    const PROXY_USER = `14e775730d7037f4aad0__cr.br__sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
 
     const browser = await puppeteer.launch({
