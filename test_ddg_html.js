@@ -1,0 +1,47 @@
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
+
+async function run() {
+    const sessionId = Math.random().toString(36).substring(7);
+    const PROXY_HOST = 'gw.dataimpulse.com:823';
+    const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
+    const PROXY_PASS = '8aebbfaa273d7787';
+
+    const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        args: [`--proxy-server=${PROXY_HOST}`, '--no-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
+
+    const niche = 'Guincho';
+    const city = 'São Paulo';
+    const query = encodeURIComponent(`site:instagram.com "${niche}" "${city}" "9"`);
+
+    console.log(`Searching DDG HTML: ${query}`);
+    try {
+        await page.goto(`https://duckduckgo.com/html/?q=${query}`, { waitUntil: 'networkidle2' });
+        await page.screenshot({ path: 'ddg_html_debug.png' });
+
+        const html = await page.evaluate(() => document.body.innerHTML);
+        const results = await page.evaluate(() => {
+            const list = [];
+            // DDG HTML results are in .web-result
+            document.querySelectorAll('.result').forEach(el => {
+                const text = el.innerText;
+                const phoneMatch = text.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                if (phoneMatch) list.push(phoneMatch[0]);
+            });
+            return list;
+        });
+
+        console.log('Phones found:', results);
+    } catch (e) {
+        console.error('Error:', e.message);
+    }
+    await browser.close();
+}
+
+run();

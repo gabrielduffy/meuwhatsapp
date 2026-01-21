@@ -11,7 +11,7 @@ async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
         if (onProgress) onProgress({ msg: msg });
     };
 
-    log(`Iniciando busca OLX para: ${niche} em ${city}`);
+    log(`Iniciando busca OLX (Humana): ${niche} em ${city}`);
     const dddsValidos = obterDDDsDaCidade(city);
     const sessionId = Math.random().toString(36).substring(7);
     const PROXY_HOST = 'gw.dataimpulse.com:823';
@@ -26,41 +26,63 @@ async function buscarLeadsNoOLX(niche, city, limit = 150, onProgress = null) {
     const browser = await puppeteer.launch({
         headless: true,
         executablePath: chromePath,
-        args: [`--proxy-server=${PROXY_HOST}`, '--no-sandbox']
+        args: [`--proxy-server=${PROXY_HOST}`, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
 
     try {
         const page = await browser.newPage();
         await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
+        await page.setViewport({ width: 1280, height: 800 });
 
-        const query = encodeURIComponent(`site:olx.com.br ${niche} ${city} whatsapp`);
+        const query = encodeURIComponent(`Anúncios OLX de ${niche} em ${city} whatsapp 9`);
         log(`Buscando no Bing: ${query}`);
-        await page.goto(`https://www.bing.com/search?q=${query}`, { waitUntil: 'networkidle2' });
-
-        const results = await page.evaluate(() => {
-            const list = [];
-            document.querySelectorAll('.b_algo').forEach(el => {
-                const title = el.querySelector('h2')?.innerText;
-                const snippet = el.innerText;
-                const phoneMatch = snippet.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
-                if (phoneMatch && title) {
-                    list.push({ nome: title.split('|')[0].trim(), rawPhone: phoneMatch[0] });
-                }
-            });
-            return list;
-        });
+        await page.goto(`https://www.bing.com/search?q=${query}`, { waitUntil: 'networkidle2', timeout: 60000 });
 
         const leads = [];
-        for (const item of results) {
-            const whatsapp = formatarWhatsApp(item.rawPhone);
-            if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
-                leads.push({ nome: item.nome, whatsapp });
+        const processed = new Set();
+
+        for (let p = 0; p < 2 && leads.length < limit; p++) {
+            const results = await page.evaluate(() => {
+                const list = [];
+                document.querySelectorAll('.b_algo').forEach(el => {
+                    const titleEl = el.querySelector('h2 a');
+                    const snippetEl = el.querySelector('.b_caption p') || el.querySelector('.b_snippet') || el;
+                    if (titleEl) {
+                        const title = titleEl.innerText;
+                        const snippet = snippetEl.innerText;
+                        const fullText = title + " " + snippet;
+                        const phoneMatch = fullText.match(/(?:\(?\d{2}\)?\s?)?9\d{4}-?\d{4}/g);
+                        if (phoneMatch) {
+                            phoneMatch.forEach(num => {
+                                list.push({ nome: title.split('|')[0].split('-')[0].trim(), rawPhone: num });
+                            });
+                        }
+                    }
+                });
+                return list;
+            });
+
+            for (const item of results) {
+                if (leads.length >= limit) break;
+                const whatsapp = formatarWhatsApp(item.rawPhone);
+                if (whatsapp && !processed.has(whatsapp) && validarDDD(whatsapp, dddsValidos)) {
+                    processed.add(whatsapp);
+                    leads.push({ nome: item.nome, whatsapp });
+                    log(`[✓] Lead OLX: ${item.nome} (${whatsapp})`);
+                }
             }
+
+            const nextBtn = await page.$('a.sb_pagN');
+            if (nextBtn && leads.length < limit) {
+                await nextBtn.click();
+                await page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => { });
+            } else break;
         }
+
         return leads;
     } catch (e) {
         log(`Erro: ${e.message}`);
-        return [];
+        return leads;
     } finally {
         await browser.close();
     }
