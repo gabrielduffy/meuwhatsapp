@@ -122,6 +122,22 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
 
             for (const item of items) {
                 if (leads.length >= limit) break;
+
+                // Filtro de segurança: Se o nome da empresa contém outra cidade grande, ignoramos
+                // Isso evita que buscas no Rio tragam empresas chamadas "Contabilidade Curitiba"
+                const nomeLower = item.name.toLowerCase();
+                const cidadeBuscaLower = city.toLowerCase();
+
+                // Se o nome contém uma cidade que não é a da busca (ex: nome tem "Curitiba" e busca é "Rio")
+                // mas permitimos se o nome contiver a própria cidade da busca
+                const outrasCidades = ['curitiba', 'são paulo', 'rio de janeiro', 'belo horizonte', 'brasília', 'porto alegre', 'fortaleza', 'salvador', 'manaus', 'recife'];
+                const encontrouOutraCidade = outrasCidades.find(c => c !== cidadeBuscaLower && nomeLower.includes(c));
+
+                if (encontrouOutraCidade && !nomeLower.includes(cidadeBuscaLower)) {
+                    console.log(`[GMaps Scraper] Ignorando lead de outra cidade: ${item.name}`);
+                    continue;
+                }
+
                 const whatsapp = formatarWhatsApp(item.rawPhone);
                 if (whatsapp && !leads.find(l => l.whatsapp === whatsapp)) {
                     leads.push({ nome: item.name, whatsapp: whatsapp });

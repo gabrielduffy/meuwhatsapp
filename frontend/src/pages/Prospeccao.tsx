@@ -16,7 +16,10 @@ import {
   FileDown,
   RefreshCw,
   ExternalLink,
-  UserX
+  UserX,
+  Instagram,
+  Linkedin,
+  ShoppingBag
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -56,6 +59,7 @@ export default function Prospeccao() {
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [leadsDoJob, setLeadsDoJob] = useState<any[]>([]);
+  const [sources, setSources] = useState<string[]>(['gmaps']);
   const [loadingLeads, setLoadingLeads] = useState(false);
 
   useEffect(() => {
@@ -127,7 +131,7 @@ export default function Prospeccao() {
 
     try {
       setLoading(true);
-      await api.post('/api/prospeccao/scraper/mapa', searchData);
+      await api.post('/api/prospeccao/scraper/mapa', { ...searchData, sources });
       toast.success('Busca iniciada em segundo plano!');
       setActiveTab('historico');
     } catch (error: any) {
@@ -169,9 +173,9 @@ export default function Prospeccao() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Prospecção</h1>
           <p className="text-white/60">Encontre novos leads por nicho e localização em tempo real.</p>
         </div>
-        <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-xl">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-sm font-medium text-green-400">Google Maps Scraper Ativo</span>
+        <div className="flex items-center gap-3 bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-xl">
+          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+          <span className="text-sm font-medium text-purple-400">Multi-Source Engine Ativo</span>
         </div>
       </div>
 
@@ -277,10 +281,49 @@ export default function Prospeccao() {
                     className="w-full py-3 h-[46px] shadow-lg shadow-purple-500/20"
                     onClick={handleStartScrape}
                     loading={loading}
+                    disabled={sources.length === 0}
                   >
                     <ArrowRight className="w-4 h-4" />
                     Iniciar Prospecção
                   </Button>
+                </div>
+              </div>
+
+              {/* Seleção de Fontes */}
+              <div className="mt-6 pt-6 border-t border-white/5">
+                <label className="text-xs font-bold text-white/40 uppercase ml-1 mb-3 block">Fontes de Prospecção</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { id: 'gmaps', label: 'Google Maps', icon: MapPin, color: 'text-blue-400' },
+                    { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-pink-400' },
+                    { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-cyan-400' },
+                    { id: 'olx', label: 'OLX / Facebook', icon: ShoppingBag, color: 'text-emerald-400' },
+                  ].map((source) => (
+                    <button
+                      key={source.id}
+                      onClick={() => {
+                        if (sources.includes(source.id)) {
+                          setSources(sources.filter(s => s !== source.id));
+                        } else {
+                          setSources([...sources, source.id]);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${sources.includes(source.id)
+                        ? 'bg-purple-600/20 border-purple-500/50 shadow-lg shadow-purple-500/10'
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                        }`}
+                    >
+                      <div className={`p-2 rounded-lg bg-black/20 ${source.color}`}>
+                        <source.icon className="w-4 h-4" />
+                      </div>
+                      <span className={`text-xs font-semibold ${sources.includes(source.id) ? 'text-white' : 'text-white/40'}`}>
+                        {source.label}
+                      </span>
+                      {sources.includes(source.id) && (
+                        <div className="ml-auto w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
             </Card>
