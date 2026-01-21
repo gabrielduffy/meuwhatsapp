@@ -220,7 +220,7 @@ export default function Prospeccao() {
                   <span className="text-xs font-bold uppercase tracking-wider">Scraping Estimado</span>
                 </div>
                 <p className="text-2xl font-bold text-white">150 leads/busca</p>
-                <p className="text-[10px] text-purple-400 mt-1">Google Maps Engine v2.0</p>
+                <p className="text-[10px] text-purple-400 mt-1">{sources.length > 1 ? 'Multi-Source Engine active' : 'Google Maps Engine v2.0'}</p>
               </Card>
               <Card variant="glass" className="p-4 border-l-4 border-cyan-500">
                 <div className="flex items-center gap-3 mb-2 text-white/60">
@@ -331,7 +331,7 @@ export default function Prospeccao() {
 
             <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
               <Target className="w-16 h-16 text-white/10 mb-4" />
-              <p className="text-white/40 text-center px-6">Insira um nicho e cidade para começar a minerar contatos valiosos diretamente do Google Maps.</p>
+              <p className="text-white/40 text-center px-6">Insira um nicho e cidade para começar a minerar contatos valiosos de diversas fontes em tempo real.</p>
             </div>
           </motion.div>
         )}

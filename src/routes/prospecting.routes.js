@@ -408,7 +408,7 @@ router.get('/importacoes/:id', async (req, res) => {
  */
 router.post('/scraper/mapa', async (req, res) => {
   try {
-    const { niche, city, limit, campanhaId, webhook_url } = req.body;
+    const { niche, city, limit, campanhaId, webhook_url, sources } = req.body;
 
     if (!niche || !city) {
       return res.status(400).json({ erro: 'Nicho e cidade são obrigatórios' });
@@ -423,7 +423,8 @@ router.post('/scraper/mapa', async (req, res) => {
       limit,
       campanhaId,
       empresaId: req.empresaId,
-      webhookUrl: webhook_url
+      webhookUrl: webhook_url,
+      sources: sources && Array.isArray(sources) ? sources : ['gmaps']
     });
 
     // Registrar no Histórico
@@ -472,7 +473,7 @@ router.get('/scraper/leads/all', async (req, res) => {
   try {
     const { query } = require('../config/database');
     const result = await query(
-      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND variaveis->>'origem' = 'gmaps_scraper' ORDER BY criado_em DESC LIMIT 100",
+      "SELECT * FROM leads_prospeccao WHERE empresa_id = $1 AND origem LIKE '%_scraper' ORDER BY criado_em DESC LIMIT 100",
       [req.empresaId]
     );
     res.json(result.rows);
@@ -518,7 +519,7 @@ router.get('/scraper/exportar', async (req, res) => {
     const { jobId } = req.query;
     const { query } = require('../config/database');
 
-    let sql = "SELECT nome, telefone, (metadados->>'niche') as niche, (metadados->>'city') as cidade FROM leads_prospeccao WHERE empresa_id = $1 AND origem = 'gmaps_scraper'";
+    let sql = "SELECT nome, telefone, (metadados->>'niche') as niche, (metadados->>'city') as cidade, origem FROM leads_prospeccao WHERE empresa_id = $1 AND origem LIKE '%_scraper'";
     const params = [req.empresaId];
 
     if (jobId) {
