@@ -52,12 +52,18 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
             '--single-process',
             '--disable-extensions',
             '--disable-software-rasterizer',
-            '--font-render-hinting=none'
+            '--font-render-hinting=none',
+            '--lang=pt-BR,pt'
         ]
     });
     console.log(`[GMaps Scraper] Navegador iniciado com Proxy em ${PROXY_HOST}`);
 
     const page = await browser.newPage();
+
+    // Forçar idioma Português para o Google não se perder
+    await page.setExtraHTTPHeaders({
+        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+    });
 
     // Autenticação do Proxy
     await page.authenticate({
@@ -65,10 +71,10 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
         password: PROXY_PASS
     });
 
-    // Otimização: Bloquear imagens e CSS para economizar os GBs do cliente
+    // Otimização: Bloquear imagens e fontes (mantemos CSS para o layout do Maps não quebrar)
     await page.setRequestInterception(true);
     page.on('request', (req) => {
-        if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+        if (['image', 'font'].includes(req.resourceType())) {
             req.abort();
         } else {
             req.continue();
@@ -84,17 +90,18 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
 
         const leads = [];
         let totalScrolled = 0;
-        const maxScrolls = 30;
+        const maxScrolls = 100; // Aumentado para buscar até 150 contatos
 
         while (leads.length < limit && totalScrolled < maxScrolls) {
             await page.evaluate(() => {
                 const scrollable = document.querySelector('div[role="feed"]');
                 if (scrollable) {
-                    scrollable.scrollBy(0, 1000);
+                    scrollable.scrollBy(0, 1500);
                 }
             });
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Esperar o Google carregar novos contatos
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             const items = await page.evaluate(() => {
                 const results = [];
@@ -121,19 +128,21 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
                 }
             }
 
-            console.log(`[GMaps Scraper] Coletados: ${leads.length} leads...`);
+            console.log(`[GMaps Scraper] Coletados: ${leads.length} leads... (${totalScrolled + 1}/${maxScrolls} scrolls)`);
 
             const isEnd = await page.evaluate(() => {
-                return document.body.innerText.includes('Você chegou ao fim da lista') ||
-                    document.body.innerText.includes('Não encontramos resultados');
+                const text = document.body.innerText;
+                return text.includes('Você chegou ao fim da lista') ||
+                    text.includes('You\'ve reached the end of the list') ||
+                    text.includes('Não encontramos resultados');
             });
 
             if (onProgress) {
-                const progresso = Math.min(Math.round((leads.length / limit) * 100), 95);
+                const progresso = Math.min(Math.round((leads.length / limit) * 100), 99);
                 onProgress(progresso);
             }
 
-            if (isEnd) break;
+            if (isEnd && leads.length > 5) break;
             totalScrolled++;
         }
 
