@@ -19,7 +19,9 @@ import {
   Send,
   FileText,
   Target,
+  Mail,
 } from 'lucide-react';
+
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
@@ -33,7 +35,9 @@ const menuItems = [
   { label: 'Agentes IA', path: '/agentes-ia', icon: Bot },
   { label: 'Documentação API', path: '/documentacao', icon: FileText },
   { label: 'Follow-up', path: '/followup', icon: Clock },
+  { label: 'Email Marketing', path: '/email-marketing', icon: Mail },
   { label: 'Integrações', path: '/integracoes', icon: Workflow },
+
   { label: 'Usuários', path: '/usuarios', icon: Users },
   { label: 'Empresas', path: '/empresas', icon: Building2 },
   { label: 'Configurações', path: '/config', icon: Settings },

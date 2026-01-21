@@ -51,6 +51,8 @@ const whitelabelRoutes = require('./routes/whitelabel.routes');
 const notificacoesRoutes = require('./routes/notifications.routes');
 const relatoriosRoutes = require('./routes/relatorios.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const emailMarketingRoutes = require('./routes/email.routes');
+
 
 // Importar middlewares
 const { authMiddleware, instanceAuthMiddleware } = require('./middlewares/auth');
@@ -373,6 +375,8 @@ app.use('/api/whitelabel', whitelabelRoutes);
 app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/email-marketing', emailMarketingRoutes);
+
 
 // Rotas especiais
 app.use('/status', statusRoutes);
@@ -501,6 +505,14 @@ async function initializeDatabase() {
       const whitelabelSchema = fs.readFileSync(whitelabelSchemaPath, 'utf8');
       await dbQuery(whitelabelSchema);
       logger.info('Tabelas de White Label criadas/verificadas com sucesso');
+    }
+
+    // Executar schema de Email Marketing
+    const emailSchemaPath = path.join(__dirname, 'config/email-marketing-schema.sql');
+    if (fs.existsSync(emailSchemaPath)) {
+      const emailSchema = fs.readFileSync(emailSchemaPath, 'utf8');
+      await dbQuery(emailSchema);
+      logger.info('Tabelas de Email Marketing criadas/verificadas com sucesso');
     }
 
     // Testar Redis

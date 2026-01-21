@@ -26,6 +26,8 @@ import Manager from './pages/Manager';
 import EnviarMensagem from './pages/EnviarMensagem';
 import Documentacao from './pages/Documentacao';
 import Status from './pages/Status';
+import EmailMarketing from './pages/EmailMarketing';
+
 
 function App() {
   return (
@@ -251,7 +253,18 @@ function App() {
             }
           />
           <Route
+            path="/email-marketing"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmailMarketing />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/documentacao"
+
             element={
               <ProtectedRoute>
                 <Layout>
