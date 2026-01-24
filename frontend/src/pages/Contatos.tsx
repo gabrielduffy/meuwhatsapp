@@ -20,7 +20,6 @@ import api from '../services/api';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
