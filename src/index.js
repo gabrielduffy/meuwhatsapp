@@ -300,8 +300,9 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // 3. SaaS API Routes (Internal JWT Auth)
-  if (path.startsWith('/api/')) {
+  // 3. SaaS API Routes (Internal JWT Auth) - Novas rotas que gerenciam sua própria auth
+  // Não deve capturar rotas legadas que precisam do instanceAuthMiddleware
+  if (path.startsWith('/api/') && !legacyApiPrefixes.some(p => path.startsWith(`/api${p}`))) {
     return next();
   }
 
@@ -526,8 +527,9 @@ async function initializeDatabase() {
 }
 
 // Iniciar servidor (usar httpServer para suportar Socket.io)
-httpServer.listen(config.port, '0.0.0.0', async () => {
-  console.log(`
+if (process.env.NODE_ENV !== 'test') {
+  httpServer.listen(config.port, '0.0.0.0', async () => {
+    console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
 ║   ██╗    ██╗██╗  ██╗ █████╗ ████████╗███████╗██████╗ ███████╗   ║
@@ -552,45 +554,46 @@ httpServer.listen(config.port, '0.0.0.0', async () => {
 ║  📖 API Docs: http://localhost:${config.port}/api-docs             ║
 ║  🔐 Environment: ${config.nodeEnv}                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
-  `);
+    `);
 
-  logger.info('Servidor HTTP iniciado', { port: config.port, env: config.nodeEnv });
+    logger.info('Servidor HTTP iniciado', { port: config.port, env: config.nodeEnv });
 
-  // Inicializar banco de dados PostgreSQL e Redis
-  await initializeDatabase();
+    // Inicializar banco de dados PostgreSQL e Redis
+    await initializeDatabase();
 
-  // Inicializar sistema de métricas
-  initMetrics();
+    // Inicializar sistema de métricas
+    initMetrics();
 
-  // Inicializar sistema de agendamento
-  initScheduler();
+    // Inicializar sistema de agendamento
+    initScheduler();
 
-  // Inicializar sistema de broadcast
-  initBroadcast();
+    // Inicializar sistema de broadcast
+    initBroadcast();
 
-  // Inicializar sistema de auto-resposta
-  initAutoResponder();
+    // Inicializar sistema de auto-resposta
+    initAutoResponder();
 
-  // Inicializar sistema de webhook avançado
-  initWebhookAdvanced();
+    // Inicializar sistema de webhook avançado
+    initWebhookAdvanced();
 
-  // Inicializar tarefa de follow-up
-  iniciarTarefaFollowup();
+    // Inicializar tarefa de follow-up
+    iniciarTarefaFollowup();
 
-  // Inicializar tarefa de white label
-  iniciarTarefaWhiteLabel();
+    // Inicializar tarefa de white label
+    iniciarTarefaWhiteLabel();
 
-  // Carregar sessões existentes
-  await loadExistingSessions();
+    // Carregar sessões existentes
+    await loadExistingSessions();
 
-  // Inicializar tabelas de prospecção
-  const prospeccaoRepo = require('./repositorios/prospeccao.repositorio');
-  await prospeccaoRepo.inicializarTabelaHistorico();
+    // Inicializar tabelas de prospecção
+    const prospeccaoRepo = require('./repositorios/prospeccao.repositorio');
+    await prospeccaoRepo.inicializarTabelaHistorico();
 
-  // Log de filas Bull
-  logger.info('Filas Bull (Redis) inicializadas: map-scraper');
+    // Log de filas Bull
+    logger.info('Filas Bull (Redis) inicializadas: map-scraper');
 
-  logger.info('Todos os sistemas inicializados com sucesso!');
-});
+    logger.info('Todos os sistemas inicializados com sucesso!');
+  });
+}
 
 module.exports = app;
