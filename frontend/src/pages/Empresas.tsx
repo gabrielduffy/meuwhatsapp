@@ -1,15 +1,12 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
   Edit,
-  CreditCard,
   Activity,
   Palette,
   TrendingUp,
-  Users as UsersIcon,
-  Zap,
-  Target,
+  Loader2
 } from 'lucide-react';
 import { Card, Button, Input, Modal, Badge, Tabs } from '../components/ui';
 import api from '../services/api';
@@ -34,179 +31,47 @@ interface Empresa {
   cor_secundaria?: string;
 }
 
-interface Plano {
-  nome: string;
-  preco_mensal: number;
-  max_usuarios: number;
-  max_instancias: number;
-  max_contatos: number;
-}
-
-interface Uso {
-  uso: {
-    usuarios: number;
-    instancias: number;
-    contatos: number;
-  };
-  limites: {
-    max_usuarios: number;
-    max_instancias: number;
-    max_contatos: number;
-  };
-  percentual: {
-    usuarios: number;
-    instancias: number;
-    contatos: number;
-  };
-}
-
-interface Creditos {
-  saldo_creditos: number;
-  creditos_usados_mes: number;
-  creditos_resetam_em?: string;
-}
-
-interface Transacao {
-  id: number;
-  tipo: string;
-  valor: number;
-  criado_em: string;
-}
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const item = {
-  hidden: { y: 20, opacity: 0 },
-  show: { y: 0, opacity: 1 },
-};
-
 export default function Empresas() {
   const [loading, setLoading] = useState(true);
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
-  const [plano, setPlano] = useState<Plano | null>(null);
-  const [uso, setUso] = useState<Uso | null>(null);
-  const [creditos, setCreditos] = useState<Creditos | null>(null);
-  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+  const [plano, setPlano] = useState<any>(null);
+  const [uso, setUso] = useState<any>(null);
+  const [creditos, setCreditos] = useState<any>(null);
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showWhitelabelModal, setShowWhitelabelModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    telefone: '',
-    documento: '',
-    endereco: '',
-    cidade: '',
-    estado: '',
-    cep: '',
+    nome: '', email: '', telefone: '', documento: '', endereco: '', cidade: '', estado: '', cep: ''
   });
 
-  const [whitelabelData, setWhitelabelData] = useState({
-    logo_url: '',
-    dominio_customizado: '',
-    cor_primaria: '#8B5CF6',
-    cor_secundaria: '#3B82F6',
-  });
+  const loadAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [empRes, planoRes, usoRes, credRes, transRes] = await Promise.allSettled([
+        api.get('/empresa'),
+        api.get('/empresa/plano'),
+        api.get('/empresa/uso'),
+        api.get('/empresa/creditos'),
+        api.get('/empresa/transacoes', { params: { limite: 5 } })
+      ]);
+
+      if (empRes.status === 'fulfilled') setEmpresa(empRes.value.data.empresa || empRes.value.data);
+      if (planoRes.status === 'fulfilled') setPlano(planoRes.value.data.plano_atual || planoRes.value.data);
+      if (usoRes.status === 'fulfilled') setUso(usoRes.value.data);
+      if (credRes.status === 'fulfilled') setCreditos(credRes.value.data);
+      // Dados carregados com sucesso
+    } catch (e) {
+      toast.error('Erro ao sincronizar dados');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    setLoading(true);
-    await Promise.all([
-      loadEmpresa(),
-      loadPlano(),
-      loadUso(),
-      loadCreditos(),
-      loadTransacoes(),
-    ]);
-    setLoading(false);
-  };
-
-  const loadEmpresa = async () => {
-    try {
-      const { data } = await api.get('/empresa');
-      const empresaData = data.empresa || data;
-      setEmpresa(empresaData);
-    } catch (error: any) {
-      console.error('Erro ao carregar empresa:', error);
-      toast.error(error.response?.data?.message || 'Erro ao carregar empresa');
-    }
-  };
-
-  const loadPlano = async () => {
-    try {
-      const { data } = await api.get('/empresa/plano');
-      setPlano(data.plano_atual || data);
-    } catch (error: any) {
-      console.error('Erro ao carregar plano:', error);
-    }
-  };
-
-  const loadUso = async () => {
-    try {
-      const { data } = await api.get('/empresa/uso');
-      setUso(data);
-    } catch (error: any) {
-      console.error('Erro ao carregar uso:', error);
-    }
-  };
-
-  const loadCreditos = async () => {
-    try {
-      const { data } = await api.get('/empresa/creditos');
-      setCreditos(data);
-    } catch (error: any) {
-      console.error('Erro ao carregar créditos:', error);
-    }
-  };
-
-  const loadTransacoes = async () => {
-    try {
-      const { data } = await api.get('/empresa/transacoes', { params: { limite: 5 } });
-      setTransacoes(data.transacoes || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar transações:', error);
-    }
-  };
-
-  const handleEditEmpresa = async () => {
-    try {
-      setSubmitting(true);
-      await api.put('/empresa', formData);
-      toast.success('Empresa atualizada com sucesso!');
-      setShowEditModal(false);
-      loadEmpresa();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao atualizar empresa');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditWhitelabel = async () => {
-    try {
-      setSubmitting(true);
-      await api.put('/empresa/whitelabel', whitelabelData);
-      toast.success('Configurações atualizadas com sucesso!');
-      setShowWhitelabelModal(false);
-      loadEmpresa();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao atualizar configurações');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  }, [loadAllData]);
 
   const openEditModal = () => {
     if (!empresa) return;
@@ -223,56 +88,15 @@ export default function Empresas() {
     setShowEditModal(true);
   };
 
-  const openWhitelabelModal = () => {
-    if (!empresa) return;
-    setWhitelabelData({
-      logo_url: empresa.logo_url || '',
-      dominio_customizado: empresa.dominio_customizado || '',
-      cor_primaria: empresa.cor_primaria || '#8B5CF6',
-      cor_secundaria: empresa.cor_secundaria || '#3B82F6',
-    });
-    setShowWhitelabelModal(true);
-  };
-
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'info' | 'danger'> = {
-      ativo: 'success',
-      trial: 'warning',
-      inativo: 'info',
-      bloqueado: 'danger',
-    };
+    const variants: any = { ativo: 'success', trial: 'warning', inativo: 'info', bloqueado: 'danger' };
     return variants[status] || 'info';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      ativo: 'Ativo',
-      trial: 'Trial',
-      inativo: 'Inativo',
-      bloqueado: 'Bloqueado',
-    };
-    return labels[status] || status;
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value || 0);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/60">Carregando...</p>
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
       </div>
     );
   }
@@ -288,421 +112,157 @@ export default function Empresas() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 p-8">
+    <div className="p-6">
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between mb-8"
-      >
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             Minha Empresa
           </h1>
-          <p className="text-white/60 mt-2">Gerencie informações, plano e uso</p>
+          <p className="text-white/60 mt-1">Status e recursos do seu plano</p>
         </div>
         <Button variant="neon" icon={<Edit className="w-5 h-5" />} onClick={openEditModal}>
           Editar Empresa
         </Button>
-      </motion.div>
-
-      {/* Tabs */}
-      <div className="mb-6">
-        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      {/* Conteúdo */}
-      <div className="mt-6">
-        {/* Overview */}
-        {activeTab === 'overview' && (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          >
-            {/* Company Info */}
-            <motion.div variants={item} className="lg:col-span-2">
-              <Card variant="gradient">
+      <div className="mb-6">
+        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} className="bg-white/5 p-1" />
+      </div>
+
+      <div className="mt-6 min-h-[400px]">
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            >
+              <Card variant="glass" className="lg:col-span-2 p-6">
                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-purple-400" />
-                  Informações da Empresa
+                  Dados Cadastrais
                 </h3>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Nome</label>
-                    <p className="font-semibold text-white">{empresa?.nome || '-'}</p>
+                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Nome</label>
+                    <p className="text-white font-medium text-lg">{empresa?.nome}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Email</label>
-                    <p className="text-white/80">{empresa?.email || '-'}</p>
+                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">E-mail</label>
+                    <p className="text-white/80">{empresa?.email}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Telefone</label>
-                    <p className="text-white/80">{empresa?.telefone || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Documento</label>
+                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Documento</label>
                     <p className="text-white/80">{empresa?.documento || '-'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Cidade/Estado</label>
-                    <p className="text-white/80">
-                      {empresa?.cidade || '-'} / {empresa?.estado || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">CEP</label>
-                    <p className="text-white/80">{empresa?.cep || '-'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-white/60 mb-1">Endereço</label>
-                    <p className="text-white/80">{empresa?.endereco || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Status</label>
-                    <Badge variant={getStatusBadge(empresa?.status || '')} pulse>
-                      {getStatusLabel(empresa?.status || '')}
-                    </Badge>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Criada em</label>
-                    <p className="text-white/80">{formatDate(empresa?.criado_em || '')}</p>
+                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Status</label>
+                    <div className="mt-1">
+                      <Badge variant={getStatusBadge(empresa?.status || '')} pulse>{empresa?.status}</Badge>
+                    </div>
                   </div>
                 </div>
               </Card>
-            </motion.div>
 
-            {/* Plan Info */}
-            <motion.div variants={item}>
-              <Card variant="gradient">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-cyan-400" />
-                  Plano Atual
-                </h3>
-                <div className="mb-4">
-                  <h4 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                    {plano?.nome || 'Nenhum plano'}
-                  </h4>
-                  <p className="text-3xl font-bold text-green-400 mt-2">
-                    {formatCurrency(plano?.preco_mensal || 0)}
-                    <span className="text-sm text-white/60">/mês</span>
+              <Card variant="glass" className="p-6 border-purple-500/20">
+                <h3 className="text-xl font-bold text-white mb-4">Plano {plano?.nome}</h3>
+                <div className="mb-6">
+                  <p className="text-3xl font-bold text-white">
+                    R$ {plano?.preco_mensal || 0}
+                    <span className="text-sm text-white/40 font-normal ml-2">/mês</span>
                   </p>
                 </div>
-                <div className="border-t border-white/10 pt-4">
-                  <p className="text-sm text-white/60 mb-2">Recursos:</p>
-                  <ul className="text-sm space-y-2 text-white/80">
-                    <li className="flex items-center gap-2">
-                      <UsersIcon className="w-4 h-4 text-purple-400" />
-                      Até {plano?.max_usuarios || 0} usuários
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-cyan-400" />
-                      Até {plano?.max_instancias || 0} instâncias
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-green-400" />
-                      Até {plano?.max_contatos || 0} contatos
-                    </li>
-                  </ul>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Usuários</span>
+                    <span className="text-white font-medium">{plano?.max_usuarios}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Instâncias</span>
+                    <span className="text-white font-medium">{plano?.max_instancias}</span>
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <Button variant="neon" className="w-full">
-                    Ver Todos os Planos
-                  </Button>
+                <Button variant="neon" className="w-full mt-8">Ver Planos</Button>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeTab === 'uso' && (
+            <motion.div
+              key="uso"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <Card variant="glass" className="p-8">
+                <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-purple-400" />
+                  Consumo de Recursos
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Usuários</span>
+                      <span className="text-white">{uso?.uso.usuarios} / {uso?.limites.max_usuarios}</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.usuarios}%` }} className="h-full bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Instâncias</span>
+                      <span className="text-white">{uso?.uso.instancias} / {uso?.limites.max_instancias}</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.instancias}%` }} className="h-full bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Contatos</span>
+                      <span className="text-white">{uso?.uso.contatos} / {uso?.limites.max_contatos}</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.contatos}%` }} className="h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                    </div>
+                  </div>
                 </div>
               </Card>
             </motion.div>
-          </motion.div>
-        )}
+          )}
 
-        {/* Uso */}
-        {activeTab === 'uso' && (
-          <Card variant="gradient">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-purple-400" />
-              Uso e Limites
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Usuários */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-white">Usuários</span>
-                  <span className="text-sm text-white/60">
-                    {uso?.uso.usuarios} / {uso?.limites.max_usuarios}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${uso?.percentual.usuarios || 0}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full shadow-neon-purple"
-                  />
-                </div>
-                <p className="text-xs text-white/60 mt-2">{uso?.percentual.usuarios || 0}% utilizado</p>
-              </div>
-
-              {/* Instâncias */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-white">Instâncias</span>
-                  <span className="text-sm text-white/60">
-                    {uso?.uso.instancias} / {uso?.limites.max_instancias}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${uso?.percentual.instancias || 0}%` }}
-                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
-                    className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-3 rounded-full shadow-neon-cyan"
-                  />
-                </div>
-                <p className="text-xs text-white/60 mt-2">{uso?.percentual.instancias || 0}% utilizado</p>
-              </div>
-
-              {/* Contatos */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-white">Contatos</span>
-                  <span className="text-sm text-white/60">
-                    {uso?.uso.contatos} / {uso?.limites.max_contatos}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${uso?.percentual.contatos || 0}%` }}
-                    transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
-                    className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
-                  />
-                </div>
-                <p className="text-xs text-white/60 mt-2">{uso?.percentual.contatos || 0}% utilizado</p>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Créditos */}
-        {activeTab === 'creditos' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Credits Info */}
-            <Card variant="gradient">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-400" />
-                Créditos
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/60">Saldo de Créditos</span>
-                  <span className="text-3xl font-bold text-green-400">{creditos?.saldo_creditos || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/60">Usados Este Mês</span>
-                  <span className="text-xl font-semibold text-red-400">{creditos?.creditos_usados_mes || 0}</span>
-                </div>
-                {creditos?.creditos_resetam_em && (
-                  <div className="text-xs text-white/60 pt-3 border-t border-white/10">
-                    Próximo reset: {formatDate(creditos.creditos_resetam_em)}
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Recent Transactions */}
-            <Card variant="gradient">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-purple-400" />
-                Transações Recentes
-              </h3>
-              {transacoes.length === 0 ? (
-                <p className="text-center text-white/60 py-8">Nenhuma transação ainda</p>
-              ) : (
-                <div className="space-y-3">
-                  {transacoes.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">{t.tipo}</p>
-                        <p className="text-xs text-white/60">{formatDate(t.criado_em)}</p>
-                      </div>
-                      <span
-                        className={`font-bold ${t.valor > 0 ? 'text-green-400' : 'text-red-400'
-                          }`}
-                      >
-                        {t.valor > 0 ? '+' : ''}
-                        {t.valor}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-
-        {/* Whitelabel */}
-        {activeTab === 'whitelabel' && empresa?.whitelabel_ativo && (
-          <Card variant="gradient">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Palette className="w-5 h-5 text-purple-400" />
-                Configurações White-label
-              </h3>
-              <Button variant="glass" icon={<Edit className="w-4 h-4" />} onClick={openWhitelabelModal}>
-                Editar
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-1">Logo URL</label>
-                <p className="text-sm text-white/80 truncate">{empresa?.logo_url || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-1">Domínio Customizado</label>
-                <p className="text-sm text-white/80">{empresa?.dominio_customizado || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-1">Cor Primária</label>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-10 h-10 rounded-lg border-2 border-white/20"
-                    style={{ backgroundColor: empresa?.cor_primaria || '#8B5CF6' }}
-                  />
-                  <p className="text-sm text-white/80">{empresa?.cor_primaria || '#8B5CF6'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-1">Cor Secundária</label>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-10 h-10 rounded-lg border-2 border-white/20"
-                    style={{ backgroundColor: empresa?.cor_secundaria || '#3B82F6' }}
-                  />
-                  <p className="text-sm text-white/80">{empresa?.cor_secundaria || '#3B82F6'}</p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
+          {activeTab === 'creditos' && (
+            <motion.div
+              key="creditos"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              <Card variant="glass" className="p-8 text-center">
+                <p className="text-white/60 mb-2 uppercase text-xs tracking-widest font-bold">Saldo Disponível</p>
+                <h2 className="text-6xl font-bold text-white mb-6">{creditos?.saldo_creditos || 0}</h2>
+                <Button variant="neon" className="w-full">Recarregar agora</Button>
+              </Card>
+              <Card variant="glass" className="p-8 text-center">
+                <p className="text-white/60 mb-2 uppercase text-xs tracking-widest font-bold">Consumo do Mês</p>
+                <h2 className="text-6xl font-bold text-purple-400 mb-6">{creditos?.creditos_usados_mes || 0}</h2>
+                <p className="text-white/40 text-sm">Reset automático em 30 dias</p>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Edit Company Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Editar Empresa"
-        size="lg"
-        footer={
-          <>
-            <Button variant="glass" onClick={() => setShowEditModal(false)}>
-              Cancelar
-            </Button>
-            <Button variant="neon" onClick={handleEditEmpresa} loading={submitting}>
-              Salvar Alterações
-            </Button>
-          </>
-        }
-      >
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <Input
-              label="Nome da Empresa"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-            />
-          </div>
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <Input
-            label="Telefone"
-            placeholder="5511999999999"
-            value={formData.telefone}
-            onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-          />
-          <Input
-            label="CNPJ/CPF"
-            value={formData.documento}
-            onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-          />
-          <Input
-            label="CEP"
-            placeholder="00000-000"
-            value={formData.cep}
-            onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
-          />
-          <div className="col-span-2">
-            <Input
-              label="Endereço"
-              value={formData.endereco}
-              onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-            />
-          </div>
-          <Input
-            label="Cidade"
-            value={formData.cidade}
-            onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-          />
-          <Input
-            label="Estado"
-            placeholder="SP"
-            value={formData.estado}
-            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-          />
-        </div>
-      </Modal>
-
-      {/* Edit Whitelabel Modal */}
-      <Modal
-        isOpen={showWhitelabelModal}
-        onClose={() => setShowWhitelabelModal(false)}
-        title="Configurações White-label"
-        footer={
-          <>
-            <Button variant="glass" onClick={() => setShowWhitelabelModal(false)}>
-              Cancelar
-            </Button>
-            <Button variant="neon" onClick={handleEditWhitelabel} loading={submitting}>
-              Salvar Alterações
-            </Button>
-          </>
-        }
-      >
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Empresa">
         <div className="space-y-4">
-          <Input
-            label="URL do Logo"
-            placeholder="https://..."
-            value={whitelabelData.logo_url}
-            onChange={(e) => setWhitelabelData({ ...whitelabelData, logo_url: e.target.value })}
-          />
-          <Input
-            label="Domínio Customizado"
-            placeholder="app.suaempresa.com"
-            value={whitelabelData.dominio_customizado}
-            onChange={(e) => setWhitelabelData({ ...whitelabelData, dominio_customizado: e.target.value })}
-          />
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Cor Primária</label>
-            <input
-              type="color"
-              value={whitelabelData.cor_primaria}
-              onChange={(e) => setWhitelabelData({ ...whitelabelData, cor_primaria: e.target.value })}
-              className="w-full h-12 rounded-lg border-2 border-white/10 bg-white/5 cursor-pointer"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Cor Secundária</label>
-            <input
-              type="color"
-              value={whitelabelData.cor_secundaria}
-              onChange={(e) => setWhitelabelData({ ...whitelabelData, cor_secundaria: e.target.value })}
-              className="w-full h-12 rounded-lg border-2 border-white/10 bg-white/5 cursor-pointer"
-            />
-          </div>
+          <Input label="Nome da Empresa" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
+          <Input label="E-mail Corporativo" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+          <Button variant="neon" className="w-full mt-4" onClick={() => setShowEditModal(false)}>Salvar</Button>
         </div>
       </Modal>
     </div>
