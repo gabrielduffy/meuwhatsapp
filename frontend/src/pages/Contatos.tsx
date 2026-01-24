@@ -20,6 +20,8 @@ import api from '../services/api';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import toast from 'react-hot-toast';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
@@ -356,13 +358,12 @@ export default function Contatos() {
     setShowDeleteConfirm(true);
   };
 
-  // Toast (simples - pode ser melhorado com biblioteca)
+  // Toast (centralizado com react-hot-toast)
   const showToast = (message: string, type: 'success' | 'error') => {
-    // TODO: Implementar toast notification proper
     if (type === 'success') {
-      alert(message);
+      toast.success(message);
     } else {
-      alert(message);
+      toast.error(message);
     }
   };
 

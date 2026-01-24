@@ -2,7 +2,6 @@ import React from 'react';
 import {
     Settings2,
     Trash2,
-    Palette,
     Layout,
     Type as TypeIcon,
     AlignLeft,
@@ -16,8 +15,11 @@ import {
     Youtube,
     Box,
     ChevronDown,
-    Layers,
-    ChevronRight
+    ChevronRight,
+    Facebook,
+    Twitter,
+    Instagram,
+    Linkedin
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import { useEmailBuilder } from './useEmailBuilder';
@@ -41,7 +43,7 @@ export default function PropertiesPanel() {
 
     if (!block) {
         return (
-            <aside className="w-80 border-l border-white/10 bg-gray-901 flex flex-col items-center justify-center p-8 text-center bg-gray-900/50">
+            <aside className="w-80 border-l border-white/10 bg-gray-900 flex flex-col items-center justify-center p-8 text-center">
                 <div className="p-4 rounded-full bg-white/5 mb-4 animate-pulse">
                     <Settings2 className="w-8 h-8 text-white/20" />
                 </div>
@@ -133,20 +135,74 @@ export default function PropertiesPanel() {
                             )}
                             {block.type === 'image' && (
                                 <div className="space-y-4">
-                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" placeholder="URL da Imagem" />
-                                    <input value={block.content.link} onChange={(e) => updateContent({ link: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Link (Opcional)" />
+                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="URL da Imagem" />
+                                    <input value={block.content.link} onChange={(e) => updateContent({ link: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Link (Opcional)" />
                                 </div>
                             )}
                             {block.type === 'video' && (
                                 <div className="space-y-4">
-                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Link do Video (YT/Vimeo)" />
-                                    <input value={block.content.thumbnail} onChange={(e) => updateContent({ thumbnail: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Thumbnail URL" />
+                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Link do Video (YT/Vimeo)" />
+                                    <input value={block.content.thumbnail} onChange={(e) => updateContent({ thumbnail: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Thumbnail URL" />
                                 </div>
                             )}
                             {block.type === 'button' && (
                                 <div className="space-y-4">
-                                    <input value={block.content.text} onChange={(e) => updateContent({ text: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" />
-                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border-white/10 rounded-xl p-2 text-xs text-white" />
+                                    <input value={block.content.text} onChange={(e) => updateContent({ text: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Texto do Botão" />
+                                    <input value={block.content.url} onChange={(e) => updateContent({ url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Link do Botão" />
+                                </div>
+                            )}
+                            {block.type === 'social' && (
+                                <div className="space-y-4">
+                                    {['facebook', 'twitter', 'instagram', 'linkedin', 'youtube'].map(network => (
+                                        <div key={network} className="relative">
+                                            <input
+                                                value={block.content[network] || ''}
+                                                onChange={(e) => updateContent({ [network]: e.target.value })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-2 pl-8 text-xs text-white"
+                                                placeholder={`Link do ${network.charAt(0).toUpperCase() + network.slice(1)}`}
+                                            />
+                                            <div className="absolute left-2.5 top-2.5 text-white/20 capitalize">
+                                                {network === 'facebook' && <Facebook className="w-3 h-3" />}
+                                                {network === 'twitter' && <Twitter className="w-3 h-3" />}
+                                                {network === 'instagram' && <Instagram className="w-3 h-3" />}
+                                                {network === 'linkedin' && <Linkedin className="w-3 h-3" />}
+                                                {network === 'youtube' && <Youtube className="w-3 h-3" />}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="pt-2 border-t border-white/5 space-y-4">
+                                        <div>
+                                            <label className="text-[9px] font-bold text-white/20 uppercase block mb-2">Alinhamento</label>
+                                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                                                {['left', 'center', 'right'].map(align => (
+                                                    <button key={align} onClick={() => updateContent({ align })} className={`flex-1 py-1.5 rounded-lg text-[10px] uppercase font-bold transition-all ${block.content.align === align ? 'bg-purple-600' : 'text-white/20 hover:text-white'}`}>
+                                                        {align}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-bold text-white/20 uppercase block mb-1">Espaçamento ({block.content.spacing}px)</label>
+                                            <input type="range" min="0" max="100" value={block.content.spacing || 0} onChange={(e) => updateContent({ spacing: parseInt(e.target.value) })} className="w-full accent-purple-500" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {block.type === 'html' && (
+                                <div className="space-y-4">
+                                    <label className="text-[9px] font-bold text-white/20 uppercase block">Código HTML Customizado</label>
+                                    <textarea
+                                        value={block.content.code}
+                                        onChange={(e) => updateContent({ code: e.target.value })}
+                                        rows={12}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-[12px] text-amber-400 font-mono focus:border-amber-500/50 outline-none transition-all"
+                                        placeholder="<div style='...'>...</div>"
+                                    />
+                                    <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                                        <p className="text-[10px] text-amber-500/60 leading-relaxed italic">
+                                            Atenção: Use CSS inline para melhor compatibilidade com clientes de e-mail.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </CollapsibleSection>

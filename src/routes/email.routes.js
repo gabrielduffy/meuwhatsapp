@@ -33,7 +33,7 @@ router.post('/conexoes', async (req, res) => {
 
 router.post('/conexoes/testar', async (req, res) => {
     try {
-        const { host, porta, usuario, senha, secure } = req.body;
+        const { host, porta, usuario, senha, secure, testEmail, fromEmail, fromName } = req.body;
         const nodemailer = require('nodemailer');
         const transporter = nodemailer.createTransport({
             host,
@@ -41,7 +41,27 @@ router.post('/conexoes/testar', async (req, res) => {
             secure,
             auth: { user: usuario, pass: senha }
         });
+
         await transporter.verify();
+
+        if (testEmail) {
+            await transporter.sendMail({
+                from: `"${fromName || 'Teste SMTP'}" <${fromEmail || usuario}>`,
+                to: testEmail,
+                subject: '🚀 Teste de Conexão SMTP - MeuWhatsapp',
+                text: 'Se você está recebendo este e-mail, sua configuração SMTP está funcionando perfeitamente!',
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #8b5cf6;">🚀 Conexão SMTP Sucesso!</h2>
+                        <p>Sua configuração de e-mail marketing no <b>MeuWhatsapp</b> foi validada com sucesso.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                        <small style="color: #999;">Este é um e-mail automático de teste.</small>
+                    </div>
+                `
+            });
+            return res.json({ mensagem: 'Conexão validada e e-mail de teste enviado!' });
+        }
+
         res.json({ mensagem: 'Conexão SMTP válida!' });
     } catch (error) {
         res.status(400).json({ erro: `Falha na conexão: ${error.message}` });

@@ -1,172 +1,174 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Settings,
-    Layout,
-    BarChart3,
+    Mail,
     Zap,
+    Layout,
+    Settings,
+    Plus,
+    BarChart3,
+    Send,
+    History
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Componentes internos (Vistas de Lista)
-import EmailDashboard from '../components/email/EmailDashboard';
-import TemplateManager from '../components/email/TemplateManager';
+// Componentes do módulo (serão criados ou já existem)
+// import EmailCampaignList from '../components/email/EmailCampaignList';
+import EmailAutomationList from '../components/email/EmailAutomationList';
+import EmailTemplateList from '../components/email/EmailTemplateList';
 import SMTPConfig from '../components/email/SMTPConfig';
-import AutomationManager from '../components/email/automation/AutomationManager';
-
-// Builders (Vistas de Tela Cheia)
-import EmailBuilder from '../components/email/builder/EmailBuilder';
-import AutomationFlow from '../components/email/automation/AutomationFlow';
-
-const TABS = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-400' },
-    { id: 'automacoes', label: 'Automações', icon: Zap, color: 'text-purple-400' },
-    { id: 'templates', label: 'Templates', icon: Layout, color: 'text-cyan-400' },
-    { id: 'smtp', label: 'Conexão SMTP', icon: Settings, color: 'text-gray-400' },
-];
 
 export default function EmailMarketing() {
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const [editingTemplate, setEditingTemplate] = useState<any>(null);
-    const [editingFlow, setEditingFlow] = useState<any>(null);
-    const [isBuildingEmail, setIsBuildingEmail] = useState(false);
-    const [isBuildingFlow, setIsBuildingFlow] = useState(false);
+    const [activeTab, setActiveTab] = useState<'campaigns' | 'automations' | 'templates' | 'smtp'>('campaigns');
 
-    // --- HANDLERS TEMPLATES ---
-    const handleEditTemplate = (template: any) => {
-        setEditingTemplate(template);
-        setIsBuildingEmail(true);
-    };
-
-    const saveTemplate = async (blocks: any) => {
-        try {
-            const payload = {
-                nome: editingTemplate?.nome || 'Novo Template Visual',
-                assunto: editingTemplate?.assunto || 'Sem Assunto',
-                corpoHtml: '<!-- Gerado pelo Builder -->',
-                corpoTexto: 'Texto alternativo...',
-                dadosJson: blocks
-            };
-
-            if (editingTemplate?.id) {
-                await axios.put(`/api/email-marketing/templates/${editingTemplate.id}`, payload);
-            } else {
-                await axios.post('/api/email-marketing/templates', payload);
-            }
-
-            toast.success('Template salvo com sucesso!');
-            setIsBuildingEmail(false);
-            setEditingTemplate(null);
-        } catch (error) {
-            toast.error('Erro ao salvar template');
-        }
-    };
-
-    // --- HANDLERS AUTOMAÇÕES ---
-    const handleEditFlow = (flow: any) => {
-        setEditingFlow(flow);
-        setIsBuildingFlow(true);
-    };
-
-    const saveFlow = async (flowData: any) => {
-        try {
-            const payload = {
-                nome: editingFlow?.nome || 'Nova Automação Inteligente',
-                gatilho: { tipo: 'manual' },
-                acoes: [],
-                fluxoJson: flowData
-            };
-
-            if (editingFlow?.id) {
-                await axios.put(`/api/email-marketing/automacoes/${editingFlow.id}`, payload);
-            } else {
-                await axios.post('/api/email-marketing/automacoes', payload);
-            }
-
-            toast.success('Fluxo de automação salvo!');
-            setIsBuildingFlow(false);
-            setEditingFlow(null);
-        } catch (error) {
-            toast.error('Erro ao salvar fluxo');
-        }
-    };
-
-    // Se estiver no builder, renderiza tela cheia
-    if (isBuildingEmail) {
-        return <EmailBuilder onSave={saveTemplate} initialData={editingTemplate?.dados_json} />;
-    }
-
-    if (isBuildingFlow) {
-        return <AutomationFlow onSave={saveFlow} initialData={editingFlow?.fluxo_json} />;
-    }
+    const TABS = [
+        { id: 'campaigns', label: 'Campanhas', icon: Mail, color: 'text-blue-400' },
+        { id: 'automations', label: 'Automações', icon: Zap, color: 'text-purple-400' },
+        { id: 'templates', label: 'Templates', icon: Layout, color: 'text-green-400' },
+        { id: 'smtp', label: 'SMTP / Envio', icon: Settings, color: 'text-amber-400' },
+    ];
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-8 max-w-7xl mx-auto space-y-8">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black text-white bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent tracking-tight leading-none h-[1.2em] flex items-center">
-                        Email Marketing
-                    </h1>
-                    <p className="text-white/40 mt-1 font-medium">
-                        Plataforma de automação e designer visual de alta conversão.
-                    </p>
+                    <h1 className="text-3xl font-black text-white tracking-tight">Email Marketing</h1>
+                    <p className="text-white/40 mt-1">Gerencie suas campanhas e automações de e-mail com rastreamento em tempo real.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-[10px] text-white/40 uppercase font-bold">Créditos</p>
-                            <p className="text-white font-bold">Ilimitado</p>
-                        </div>
-                        <div className="w-px h-8 bg-white/10" />
-                        <div className="text-right">
-                            <p className="text-[10px] text-white/40 uppercase font-bold">Status</p>
-                            <p className="text-green-400 font-bold flex items-center gap-1 justify-end">
-                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                                Ativo
-                            </p>
-                        </div>
-                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all">
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Métricas</span>
+                    </button>
+                    <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">
+                        <Plus className="w-4 h-4" />
+                        <span>Nova Campanha</span>
+                    </button>
                 </div>
-            </div>
+            </header>
 
-            <div className="flex p-1.5 gap-1.5 bg-gray-900 border border-white/10 rounded-2xl w-fit">
+            {/* Tabs */}
+            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 w-fit">
                 {TABS.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
                     return (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${isActive
-                                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-xl scale-105'
-                                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all relative ${isActive ? 'text-white' : 'text-white/40 hover:text-white/60'
                                 }`}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : tab.color}`} />
+                            {isActive && (
+                                <motion.div
+                                    layoutId="activeTab"
+                                    className="absolute inset-0 bg-white/10 rounded-xl"
+                                />
+                            )}
+                            <Icon className={`w-4 h-4 ${isActive ? tab.color : ''}`} />
                             {tab.label}
                         </button>
                     );
                 })}
             </div>
 
-            <div className="min-h-[600px] relative">
+            {/* Content Area */}
+            <div className="min-h-[600px] rounded-3xl bg-gray-900/50 border border-white/5 p-8 backdrop-blur-xl">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+                        transition={{ duration: 0.2 }}
                     >
-                        {activeTab === 'dashboard' && <EmailDashboard />}
-                        {activeTab === 'automacoes' && <AutomationManager onEdit={handleEditFlow} />}
-                        {activeTab === 'templates' && <TemplateManager onEdit={handleEditTemplate} />}
+                        {activeTab === 'campaigns' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <StatCard label="Emails Enviados" value="12,450" change="+12%" icon={Send} />
+                                    <StatCard label="Taxa de Abertura" value="24.8%" change="+5%" icon={Mail} />
+                                    <StatCard label="Cliques Únicos" value="1.2k" change="+8%" icon={Zap} />
+                                </div>
+
+                                <div className="mt-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xl font-bold text-white">Campanhas Recentes</h3>
+                                        <button className="text-sm text-purple-400 font-bold hover:underline">Ver todas</button>
+                                    </div>
+                                    <div className="bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
+                                        {/* Tabela de Campanhas - Placeholder */}
+                                        <div className="p-12 text-center">
+                                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                                                <History className="w-10 h-10 text-white/20" />
+                                            </div>
+                                            <h4 className="text-white font-bold">Nenhuma campanha enviada hoje</h4>
+                                            <p className="text-white/40 text-sm mt-2">Suas campanhas recentes aparecerão aqui.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'automations' && <EmailAutomationList />}
+
+                        {/* Implementar SMTP e Templates posteriormente */}
+                        {activeTab === 'templates' && <EmailTemplateList />}
                         {activeTab === 'smtp' && <SMTPConfig />}
                     </motion.div>
                 </AnimatePresence>
             </div>
+        </div>
+    );
+}
+
+function StatCard({ label, value, change, icon: Icon }: any) {
+    return (
+        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
+            <div className="flex items-center justify-between mb-4">
+                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+                    <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-black text-green-500 bg-green-500/10 px-2 py-1 rounded-md">{change}</span>
+            </div>
+            <h4 className="text-white/40 text-xs font-black uppercase tracking-widest">{label}</h4>
+            <p className="text-2xl font-black text-white mt-1">{value}</p>
+        </div>
+    );
+}
+
+function AutomationCard({ name, trigger, status, stats }: any) {
+    return (
+        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 hover:border-purple-500/50 transition-all group">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                        <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h4 className="text-white font-bold group-hover:text-purple-400 transition-all">{name}</h4>
+                        <p className="text-[10px] text-white/20 uppercase font-black">{trigger}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase">{status}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
+                <div>
+                    <p className="text-[9px] text-white/20 uppercase font-black">Disparos</p>
+                    <p className="text-lg font-black text-white">{stats.sent}</p>
+                </div>
+                <div>
+                    <p className="text-[9px] text-white/20 uppercase font-black">Abertura</p>
+                    <p className="text-lg font-black text-white">{stats.open}</p>
+                </div>
+            </div>
+
+            <button className="w-full py-2.5 rounded-xl bg-white/5 text-white/40 text-xs font-bold hover:bg-white/10 hover:text-white transition-all">
+                Abrir WorkFlow
+            </button>
         </div>
     );
 }

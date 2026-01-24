@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
-export type BlockType = 'text' | 'image' | 'button' | 'spacer' | 'divider' | 'video' | 'header' | 'footer';
+export type BlockType = 'text' | 'image' | 'button' | 'spacer' | 'divider' | 'video' | 'header' | 'footer' | 'social' | 'html';
 
 export interface EmailBlock {
     id: string;
@@ -94,6 +94,11 @@ function getDefaultContent(type: BlockType) {
         case 'header': return { logoUrl: '', title: 'Sua Marca' };
         case 'video': return { url: '', thumbnail: '', platform: 'youtube' };
         case 'divider': return { color: '#e2e8f0', height: 1 };
+        case 'social': return {
+            facebook: '', twitter: '', instagram: '', linkedin: '', youtube: '',
+            align: 'center', spacing: 15, iconStyle: 'round'
+        };
+        case 'html': return { code: '<div style="padding: 20px; text-align: center;">Custom HTML Content</div>' };
         default: return {};
     }
 }
@@ -130,6 +135,10 @@ function getDefaultStyles(type: BlockType) {
 
     if (type === 'header') {
         return { ...base, backgroundColor: '#ffffff', textAlign: 'left' as const };
+    }
+
+    if (type === 'html') {
+        return { ...base, paddingTop: 10, paddingBottom: 10 };
     }
 
     return base;

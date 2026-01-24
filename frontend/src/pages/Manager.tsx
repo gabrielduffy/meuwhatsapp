@@ -26,7 +26,9 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import Table from '../components/ui/Table';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 
 type TabType = 'visao-geral' | 'usuarios' | 'metricas' | 'configuracoes';
 
@@ -76,6 +78,13 @@ interface Metricas {
     totalInstances?: number;
     activeConnections?: number;
     uptime?: number;
+    system?: {
+      cpu: number;
+      memory: number;
+      memoryUsed: number;
+      memoryTotal: number;
+      load: string;
+    };
   };
   instances?: Record<string, any>;
 }
@@ -190,7 +199,7 @@ export default function Manager() {
       setNovoUsuario({ nome: '', email: '', senha: '', funcao: 'usuario' });
       await carregarUsuarios();
     } catch (erro: any) {
-      alert(erro.response?.data?.erro || 'Erro ao criar usuário');
+      toast.error(erro.response?.data?.erro || 'Erro ao processar requisição');
     }
   };
 
@@ -269,7 +278,7 @@ export default function Manager() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 p-4 sm:p-6">
+    <div className="min-h-screen p-4 sm:p-6">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -290,11 +299,10 @@ export default function Manager() {
             <button
               key={tab.id}
               onClick={() => setAbaAtiva(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap border ${
-                abaAtiva === tab.id
-                  ? 'border-purple-500 text-white bg-purple-500/10'
-                  : 'border-transparent text-white/60 hover:text-white hover:bg-white/5'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap border ${abaAtiva === tab.id
+                ? 'border-purple-500 text-white bg-purple-500/10'
+                : 'border-transparent text-white/60 hover:text-white hover:bg-white/5'
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span className="hidden sm:inline">{tab.label}</span>
@@ -519,116 +527,94 @@ export default function Manager() {
                 </div>
 
                 <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-white/5 border-b border-white/10">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Usuário
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Função
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Criado em
-                          </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">
-                            Ações
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {usuarios.map((usuario) => (
-                          <tr key={usuario.id} className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white font-bold text-sm">
-                                    {usuario.nome.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="text-white font-medium">{usuario.nome}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <p className="text-white/80 text-sm">{usuario.email}</p>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {getFuncaoBadge(usuario.funcao)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                  <Table
+                    data={usuarios}
+                    columns={[
+                      {
+                        key: 'nome',
+                        label: 'Usuário',
+                        render: (usuario) => (
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-bold text-sm">
+                                {usuario.nome.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="text-white font-medium">{usuario.nome}</p>
+                          </div>
+                        )
+                      },
+                      { key: 'email', label: 'Email' },
+                      {
+                        key: 'funcao',
+                        label: 'Função',
+                        render: (usuario) => getFuncaoBadge(usuario.funcao)
+                      },
+                      {
+                        key: 'ativo',
+                        label: 'Status',
+                        render: (usuario) => (
+                          usuario.ativo ? (
+                            <Badge variant="success">Ativo</Badge>
+                          ) : (
+                            <Badge variant="danger">Inativo</Badge>
+                          )
+                        )
+                      },
+                      {
+                        key: 'criado_em',
+                        label: 'Criado em',
+                        render: (usuario) => formatarData(usuario.criado_em)
+                      },
+                      {
+                        key: 'acoes',
+                        label: 'Ações',
+                        className: 'text-right',
+                        render: (usuario) => (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => abrirModalEdicao(usuario)}
+                              className="p-2 text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                confirmarAcao(
+                                  `Deseja ${usuario.ativo ? 'desativar' : 'ativar'} o usuário ${usuario.nome}?`,
+                                  () => handleAlternarStatus(usuario)
+                                )
+                              }
+                              className={`p-2 rounded-lg transition-colors ${usuario.ativo
+                                ? 'text-orange-400 hover:bg-orange-400/10'
+                                : 'text-green-400 hover:bg-green-400/10'
+                                }`}
+                              title={usuario.ativo ? 'Desativar' : 'Ativar'}
+                            >
                               {usuario.ativo ? (
-                                <Badge variant="success">Ativo</Badge>
+                                <XCircle className="w-4 h-4" />
                               ) : (
-                                <Badge variant="danger">Inativo</Badge>
+                                <CheckCircle className="w-4 h-4" />
                               )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">
-                              {formatarData(usuario.criado_em)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => abrirModalEdicao(usuario)}
-                                  className="p-2 text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
-                                  title="Editar"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    confirmarAcao(
-                                      `Deseja ${usuario.ativo ? 'desativar' : 'ativar'} o usuário ${usuario.nome}?`,
-                                      () => handleAlternarStatus(usuario)
-                                    )
-                                  }
-                                  className={`p-2 rounded-lg transition-colors ${
-                                    usuario.ativo
-                                      ? 'text-orange-400 hover:bg-orange-400/10'
-                                      : 'text-green-400 hover:bg-green-400/10'
-                                  }`}
-                                  title={usuario.ativo ? 'Desativar' : 'Ativar'}
-                                >
-                                  {usuario.ativo ? (
-                                    <XCircle className="w-4 h-4" />
-                                  ) : (
-                                    <CheckCircle className="w-4 h-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    confirmarAcao(
-                                      `Deseja realmente deletar o usuário ${usuario.nome}?`,
-                                      () => handleDeletarUsuario(usuario.id)
-                                    )
-                                  }
-                                  className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                                  title="Deletar"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {usuarios.length === 0 && (
-                    <div className="py-12 text-center">
-                      <Users className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                      <p className="text-white/60">Nenhum usuário encontrado</p>
-                    </div>
-                  )}
+                            </button>
+                            <button
+                              onClick={() =>
+                                confirmarAcao(
+                                  `Deseja realmente deletar o usuário ${usuario.nome}?`,
+                                  () => handleDeletarUsuario(usuario.id)
+                                )
+                              }
+                              className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                              title="Deletar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )
+                      }
+                    ]}
+                  />
                 </Card>
               </div>
             )}
@@ -715,29 +701,48 @@ export default function Manager() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-white/60">CPU</span>
-                        <span className="text-sm font-medium text-white">45%</span>
+                        <span className="text-sm font-medium text-white">
+                          {metricas?.global?.system?.cpu || 0}%
+                        </span>
                       </div>
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 w-[45%]" />
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-500"
+                          style={{ width: `${metricas?.global?.system?.cpu || 0}%` }}
+                        />
                       </div>
+                      <p className="text-[10px] text-white/30 mt-1 text-right">Load: {metricas?.global?.system?.load || '0.00'}</p>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-white/60">Memória</span>
-                        <span className="text-sm font-medium text-white">62%</span>
+                        <span className="text-sm font-medium text-white">
+                          {metricas?.global?.system?.memory || 0}%
+                        </span>
                       </div>
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 w-[62%]" />
+                        <div
+                          className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
+                          style={{ width: `${metricas?.global?.system?.memory || 0}%` }}
+                        />
                       </div>
+                      <p className="text-[10px] text-white/30 mt-1 text-right">
+                        {metricas?.global?.system?.memoryUsed || 0}MB / {metricas?.global?.system?.memoryTotal || 0}MB
+                      </p>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-white/60">Disco</span>
-                        <span className="text-sm font-medium text-white">38%</span>
+                        <span className="text-sm text-white/60">Uptime</span>
+                        <span className="text-sm font-medium text-white">
+                          {((metricas?.global?.uptime || 0) / 3600).toFixed(1)}h
+                        </span>
                       </div>
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-green-600 to-green-400 w-[38%]" />
+                        <div
+                          className="h-full bg-gradient-to-r from-green-600 to-green-400 w-full"
+                        />
                       </div>
+                      <p className="text-[10px] text-white/30 mt-1 text-right">Processo ativo</p>
                     </div>
                   </div>
                 </Card>
@@ -928,13 +933,13 @@ export default function Manager() {
               onChange={(e) =>
                 usuarioEditando
                   ? setDadosEdicao({
-                      ...dadosEdicao,
-                      funcao: e.target.value as 'usuario' | 'administrador'
-                    })
+                    ...dadosEdicao,
+                    funcao: e.target.value as 'usuario' | 'administrador'
+                  })
                   : setNovoUsuario({
-                      ...novoUsuario,
-                      funcao: e.target.value as 'usuario' | 'administrador'
-                    })
+                    ...novoUsuario,
+                    funcao: e.target.value as 'usuario' | 'administrador'
+                  })
               }
               className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
             >

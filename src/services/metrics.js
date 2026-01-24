@@ -1,6 +1,6 @@
-const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+const os = require('os');
 
 // Diretório de dados
 const DATA_DIR = process.env.DATA_DIR || './data';
@@ -94,7 +94,7 @@ function incrementMetric(instanceName, metric, value = 1, messageType = null) {
   const instance = metrics.instances[instanceName];
 
   // Atualizar métrica específica
-  switch(metric) {
+  switch (metric) {
     case 'sent':
       instance.messagesSent += value;
       metrics.global.totalMessagesSent += value;
@@ -157,13 +157,30 @@ function getInstanceMetrics(instanceName) {
 
 // Obter métricas globais
 function getGlobalMetrics() {
+  const freeMem = os.freemem();
+  const totalMem = os.totalmem();
+  const usedMem = totalMem - freeMem;
+  const memPercent = Math.round((usedMem / totalMem) * 100);
+
+  // Load average (1 min) como proxy para CPU
+  const load = os.loadavg()[0];
+  const cpus = os.cpus().length;
+  const cpuPercent = Math.min(100, Math.round((load / cpus) * 100));
+
   return {
     ...metrics.global,
     uptime: Math.floor(process.uptime()),
     totalInstances: Object.keys(metrics.instances).length,
     connectedInstances: Object.values(metrics.instances).filter(
       i => i.connectionStatus === 'connected'
-    ).length
+    ).length,
+    system: {
+      cpu: cpuPercent,
+      memory: memPercent,
+      memoryUsed: Math.round(usedMem / 1024 / 1024),
+      memoryTotal: Math.round(totalMem / 1024 / 1024),
+      load: load.toFixed(2)
+    }
   };
 }
 

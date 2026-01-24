@@ -7,7 +7,11 @@ import {
     Youtube,
     Play,
     Mail,
-    ExternalLink
+    ExternalLink,
+    Facebook,
+    Twitter,
+    Instagram,
+    Linkedin
 } from 'lucide-react';
 import type { EmailBlock } from './useEmailBuilder';
 import { useEmailBuilder } from './useEmailBuilder';
@@ -167,6 +171,40 @@ export default function SortableBlock({ block, isSelected, onSelect }: Props) {
                             </div>
                         </div>
                     </div>
+                );
+            case 'social':
+                const socialIcons = [
+                    { id: 'facebook', icon: Facebook, color: '#1877F2' },
+                    { id: 'twitter', icon: Twitter, color: '#1DA1F2' },
+                    { id: 'instagram', icon: Instagram, color: '#E4405F' },
+                    { id: 'linkedin', icon: Linkedin, color: '#0A66C2' },
+                    { id: 'youtube', icon: Youtube, color: '#FF0000' },
+                ];
+                return (
+                    <div style={containerStyle}>
+                        <div style={{ ...blockStyle, display: 'flex', gap: `${content.spacing || 15}px`, justifyContent: content.align || 'center', flexWrap: 'wrap' }}>
+                            {socialIcons.map(item => {
+                                const url = content[item.id];
+                                if (!url && isSelected) { // Mostra opaco no editor se não configurado
+                                    return (
+                                        <div key={item.id} style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                                            <item.icon className="w-6 h-6" />
+                                        </div>
+                                    );
+                                }
+                                if (!url) return null;
+                                return (
+                                    <a key={item.id} href={url} target="_blank" rel="noopener noreferrer" style={{ color: item.color }}>
+                                        <item.icon className="w-6 h-6 hover:scale-110 transition-transform" />
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            case 'html':
+                return (
+                    <div style={blockStyle} dangerouslySetInnerHTML={{ __html: content.code || '<div>Instância de HTML Vazia</div>' }} />
                 );
             case 'footer':
                 return (

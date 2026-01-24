@@ -121,3 +121,22 @@ ALTER TABLE templates_email ADD COLUMN IF NOT EXISTS dados_json JSONB;
 ALTER TABLE automacoes_email ADD COLUMN IF NOT EXISTS fluxo_json JSONB;
 ALTER TABLE automacoes_email ADD COLUMN IF NOT EXISTS estatisticas JSONB DEFAULT '{"iniciados": 0, "concluidos": 0, "erros": 0}';
 
+-- Tabela de Progresso da Automação (Motor de Execução)
+CREATE TABLE IF NOT EXISTS leads_automacao_progresso (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  automacao_id UUID REFERENCES automacoes_email(id) ON DELETE CASCADE,
+  lead_id UUID REFERENCES contatos(id) ON DELETE CASCADE,
+  empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+  
+  no_atual_id VARCHAR(100), -- ID do nó no React Flow
+  status VARCHAR(20) DEFAULT 'ativo', -- ativo, pausado, concluido, erro
+  dados_contexto JSONB DEFAULT '{}', -- Para variáveis e estados
+  
+  proxima_execucao TIMESTAMP,
+  
+  criado_em TIMESTAMP DEFAULT NOW(),
+  atualizado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_auto_progresso ON leads_automacao_progresso(automacao_id, lead_id);
+

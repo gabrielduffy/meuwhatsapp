@@ -243,7 +243,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950">
+    <div className="p-6 min-h-screen">
       {/* ==================== HEADER ==================== */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}

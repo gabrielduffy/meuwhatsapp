@@ -6,7 +6,9 @@ import {
     Youtube,
     Layout,
     Columns,
-    Share2
+    Share2,
+    Code,
+    Share
 } from 'lucide-react';
 import type { BlockType } from './useEmailBuilder';
 
@@ -18,8 +20,10 @@ const BLOCK_TYPES = [
     { type: 'button', label: 'Botão', icon: Square, color: 'text-orange-400' },
     { type: 'video', label: 'Vídeo', icon: Youtube, color: 'text-red-400' },
     { type: 'divider', label: 'Divisor', icon: Minus, color: 'text-gray-400' },
+    { type: 'social', label: 'Redes Sociais', icon: Share2, color: 'text-blue-500' },
+    { type: 'html', label: 'Código HTML', icon: Code, color: 'text-amber-500' },
     { type: 'spacer', label: 'Espaçador', icon: Columns, color: 'text-cyan-400' },
-    { type: 'footer', label: 'Rodapé', icon: Share2, color: 'text-pink-400' },
+    { type: 'footer', label: 'Rodapé', icon: Share, color: 'text-pink-400' },
 ];
 
 export default function Sidebar({ onAdd }: { onAdd: (type: BlockType) => void }) {

@@ -77,9 +77,8 @@ async function enviarEmail(dados) {
  * Aqui entrará a lógica da fila futuramente
  */
 async function dispararCampanha(campanhaId, empresaId) {
-    // Implementação básica para teste, será delegada para a fila Bull
     const { emailQueue } = require('../queues/emailQueue');
-    await emailQueue.add({ campanhaId, empresaId });
+    await emailQueue.add('processar-campanha', { campanhaId, empresaId });
     return { mensagem: 'Campanha enviada para a fila de processamento' };
 }
 

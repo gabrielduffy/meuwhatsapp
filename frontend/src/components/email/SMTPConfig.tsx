@@ -1,253 +1,147 @@
 import { useState, useEffect } from 'react';
 import {
-    Plus,
-    Loader2,
-    Trash2,
-    ShieldCheck,
-    Server,
+    Settings,
+    Shield,
     Mail,
-    AlertCircle
+    Lock,
+    Server,
+    ArrowRight,
+    CheckCircle2,
+    RefreshCw
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
-export default function SMTPConfig() {
-    const [conexoes, setConexoes] = useState([]);
+export default function SmtpConfig() {
+    const [configs, setConfigs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [testando, setTestando] = useState(false);
-    const [modalAberto, setModalAberto] = useState(false);
-
-    const [formData, setFormData] = useState({
-        nome: '',
-        host: '',
-        porta: 465,
-        usuario: '',
-        senha: '',
-        secure: true,
-        remetente_nome: '',
-        remetente_email: ''
-    });
-
-    const carregarConexoes = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get('/api/email-marketing/conexoes');
-            setConexoes(res.data);
-        } catch (error) {
-            toast.error('Erro ao carregar conexões SMTP');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [testing, setTesting] = useState<string | null>(null);
 
     useEffect(() => {
-        carregarConexoes();
+        fetchConfigs();
     }, []);
 
-    const handleTestar = async () => {
+    const fetchConfigs = async () => {
         try {
-            setTestando(true);
-            await axios.post('/api/email-marketing/conexoes/testar', formData);
-            toast.success('Conexão SMTP válida!');
-        } catch (error: any) {
-            toast.error(error.response?.data?.erro || 'Falha na conexão SMTP');
+            setLoading(true);
+            const response = await axios.get('/api/email-marketing/smtp');
+            setConfigs(response.data);
+        } catch (error) {
+            toast.error('Erro ao carregar configurações SMTP');
         } finally {
-            setTestando(false);
+            setLoading(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleTest = async (id: string) => {
         try {
-            setLoading(true);
-            await axios.post('/api/email-marketing/conexoes', formData);
-            toast.success('Configuração SMTP salva!');
-            setModalAberto(false);
-            carregarConexoes();
-        } catch (error: any) {
-            toast.error(error.response?.data?.erro || 'Erro ao salvar configuração');
+            setTesting(id);
+            await axios.post(`/api/email-marketing/smtp/${id}/test`);
+            toast.success('Conexão SMTP funcionando perfeitamente!');
+        } catch (error) {
+            toast.error('Falha na conexão SMTP. Verifique as credenciais.');
         } finally {
-            setLoading(false);
+            setTesting(null);
         }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                    <Server className="w-5 h-5 text-purple-400" />
-                    Configurações de Servidor SMTP
-                </h2>
-
-                <button
-                    onClick={() => setModalAberto(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all border border-white/10"
-                >
-                    <Plus className="w-4 h-4" />
-                    Adicionar Servidor
-                </button>
+        <div className="max-w-4xl mx-auto space-y-8">
+            <div className="bg-purple-500/5 border border-purple-500/10 rounded-3xl p-8 flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <Shield className="w-8 h-8 text-purple-400" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-white">Segurança e Entrega</h3>
+                    <p className="text-white/40 text-sm mt-1">
+                        Configure seus servidores SMTP para garantir que seus e-mails cheguem na caixa de entrada.
+                        Recomendamos o uso de serviços como Amazon SES, SendGrid ou Mailgun.
+                    </p>
+                </div>
             </div>
 
-            {loading && conexoes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-                    <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-4" />
-                    <p className="text-white/60">Carregando configurações...</p>
-                </div>
-            ) : conexoes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-                    <AlertCircle className="w-10 h-10 text-white/20 mb-4" />
-                    <p className="text-white/60">Nenhum servidor SMTP configurado.</p>
-                    <p className="text-white/40 text-sm">Adicione um servidor para começar a enviar emails.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {conexoes.map((conn: any) => (
-                        <div key={conn.id} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-purple-500/30 transition-all group">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-lg">
-                                    <Mail className="w-5 h-5 text-purple-400" />
-                                </div>
-                                <button className="text-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <h3 className="text-white font-medium mb-1">{conn.nome}</h3>
-                            <p className="text-white/40 text-sm mb-4">{conn.host}:{conn.porta}</p>
-                            <div className="flex items-center gap-2 text-xs text-green-400/80 bg-green-500/10 w-fit px-2 py-1 rounded-full border border-green-500/20">
-                                <ShieldCheck className="w-3 h-3" />
-                                Ativo
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Modal */}
-            {modalAberto && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl"
-                    >
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-purple-600/10 to-transparent">
-                            <h3 className="text-lg font-semibold text-white">Configurar Servidor SMTP</h3>
-                            <button onClick={() => setModalAberto(false)} className="text-white/40 hover:text-white">&times;</button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-white/60 mb-1">Nome da Conexão</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                        placeholder="Ex: Gmail Principal, SendGrid, etc"
-                                        value={formData.nome}
-                                        onChange={e => setFormData({ ...formData, nome: e.target.value })}
-                                    />
+            <div className="grid grid-cols-1 gap-6">
+                {configs.length === 0 && !loading ? (
+                    <div className="border-2 border-dashed border-white/5 rounded-3xl p-12 text-center">
+                        <Server className="w-12 h-12 text-white/10 mx-auto mb-4" />
+                        <h4 className="text-white font-bold">Nenhuma conexão configurada</h4>
+                        <p className="text-white/40 text-sm mt-2 mb-6">Adicione seu servidor de envio para disparar campanhas.</p>
+                        <button className="px-8 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all border border-white/10">
+                            Configurar Novo Servidor
+                        </button>
+                    </div>
+                ) : (
+                    configs.map(config => (
+                        <div key={config.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center justify-between hover:border-purple-500/30 transition-all group">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.ativo ? 'bg-green-500/10 text-green-500' : 'bg-white/5 text-white/20'}`}>
+                                    <Mail className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-1">Host SMTP</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                        placeholder="smtp.exemplo.com"
-                                        value={formData.host}
-                                        onChange={e => setFormData({ ...formData, host: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-1">Porta</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                        value={formData.porta}
-                                        onChange={e => setFormData({ ...formData, porta: parseInt(e.target.value) })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-1">Usuário</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                        value={formData.usuario}
-                                        onChange={e => setFormData({ ...formData, usuario: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-1">Senha</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                        value={formData.senha}
-                                        onChange={e => setFormData({ ...formData, senha: e.target.value })}
-                                    />
-                                </div>
-                                <div className="col-span-2 grid grid-cols-2 gap-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-1">Nome do Remetente</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                            placeholder="Sua Empresa"
-                                            value={formData.remetente_nome}
-                                            onChange={e => setFormData({ ...formData, remetente_nome: e.target.value })}
-                                        />
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-white font-bold">{config.nome}</h4>
+                                        {config.ativo && <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase">Ativo</span>}
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-1">Email do Remetente</label>
-                                        <input
-                                            type="email"
-                                            required
-                                            className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                                            placeholder="contato@empresa.com"
-                                            value={formData.remetente_email}
-                                            onChange={e => setFormData({ ...formData, remetente_email: e.target.value })}
-                                        />
-                                    </div>
+                                    <p className="text-xs text-white/30">{config.host}:{config.porta} • {config.usuario}</p>
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3">
                                 <button
-                                    type="button"
-                                    onClick={handleTestar}
-                                    disabled={testando}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:text-white transition-colors"
+                                    onClick={() => handleTest(config.id)}
+                                    disabled={testing === config.id}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/60 text-xs font-bold hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                                 >
-                                    {testando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                    {testing === config.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                                     Testar Conexão
                                 </button>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setModalAberto(false)}
-                                        className="px-6 py-2 rounded-lg text-white/60 hover:text-white transition-colors"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-medium hover:opacity-90 transition-all flex items-center gap-2"
-                                    >
-                                        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                        Salvar Configuração
-                                    </button>
-                                </div>
+                                <button className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">
+                                    <Settings className="w-4 h-4" />
+                                </button>
                             </div>
-                        </form>
-                    </motion.div>
+                        </div>
+                    ))
+                )}
+
+                <div className="bg-gray-900 border border-white/5 rounded-3xl p-8 space-y-6 shadow-inner">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-amber-500" />
+                        Novo Servidor SMTP
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputField label="Nome da Conexão" placeholder="Ex: Amazon SES Principal" />
+                        <InputField label="Host SMTP" placeholder="smtp.provider.com" />
+                        <InputField label="Porta" placeholder="587" />
+                        <InputField label="Usuário" placeholder="Seu usuário/key" />
+                        <div className="md:col-span-2">
+                            <InputField label="Senha / API Key" type="password" placeholder="••••••••••••" />
+                        </div>
+                        <InputField label="Remetente (E-mail)" placeholder="contato@suaempresa.com" />
+                        <InputField label="Nome do Remetente" placeholder="Marketing" />
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                        <button className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-purple-600 text-white font-black hover:bg-purple-700 transition-all shadow-xl shadow-purple-500/20">
+                            Salvar Configurações
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
-            )}
+            </div>
+        </div>
+    );
+}
+
+function InputField({ label, placeholder, type = "text" }: any) {
+    return (
+        <div className="space-y-2">
+            <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">{label}</label>
+            <input
+                type={type}
+                placeholder={placeholder}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-purple-500/50 outline-none transition-all placeholder:text-white/10"
+            />
         </div>
     );
 }
