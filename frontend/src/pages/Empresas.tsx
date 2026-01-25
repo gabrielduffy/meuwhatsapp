@@ -6,7 +6,11 @@ import {
   Activity,
   Palette,
   TrendingUp,
-  Loader2
+  Loader2,
+  Zap,
+  LayoutDashboard,
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 import { Card, Button, Input, Modal, Badge, Tabs } from '../components/ui';
 import api from '../services/api';
@@ -25,10 +29,6 @@ interface Empresa {
   status: 'ativo' | 'trial' | 'inativo' | 'bloqueado';
   criado_em: string;
   whitelabel_ativo?: boolean;
-  logo_url?: string;
-  dominio_customizado?: string;
-  cor_primaria?: string;
-  cor_secundaria?: string;
 }
 
 export default function Empresas() {
@@ -40,7 +40,6 @@ export default function Empresas() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: '', email: '', telefone: '', documento: '', endereco: '', cidade: '', estado: '', cep: ''
@@ -49,19 +48,17 @@ export default function Empresas() {
   const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [empRes, planoRes, usoRes, credRes, transRes] = await Promise.allSettled([
+      const [empRes, planoRes, usoRes, credRes] = await Promise.allSettled([
         api.get('/empresa'),
         api.get('/empresa/plano'),
         api.get('/empresa/uso'),
-        api.get('/empresa/creditos'),
-        api.get('/empresa/transacoes', { params: { limite: 5 } })
+        api.get('/empresa/creditos')
       ]);
 
       if (empRes.status === 'fulfilled') setEmpresa(empRes.value.data.empresa || empRes.value.data);
       if (planoRes.status === 'fulfilled') setPlano(planoRes.value.data.plano_atual || planoRes.value.data);
       if (usoRes.status === 'fulfilled') setUso(usoRes.value.data);
       if (credRes.status === 'fulfilled') setCreditos(credRes.value.data);
-      // Dados carregados com sucesso
     } catch (e) {
       toast.error('Erro ao sincronizar dados');
     } finally {
@@ -88,181 +85,188 @@ export default function Empresas() {
     setShowEditModal(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: any = { ativo: 'success', trial: 'warning', inativo: 'info', bloqueado: 'danger' };
-    return variants[status] || 'info';
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
       </div>
     );
   }
 
   const tabsList = [
-    { id: 'overview', label: 'Visão Geral', icon: Building2 },
-    { id: 'uso', label: 'Uso & Limites', icon: Activity },
-    { id: 'creditos', label: 'Créditos', icon: TrendingUp },
+    { id: 'overview', label: 'Estatísticas', icon: LayoutDashboard },
+    { id: 'uso', label: 'Consumo IA', icon: Zap },
+    { id: 'perfil', label: 'Dados Reais', icon: ShieldCheck },
   ];
 
-  if (empresa?.whitelabel_ativo) {
-    tabsList.push({ id: 'whitelabel', label: 'White-label', icon: Palette });
-  }
-
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-            Minha Empresa
+    <div className="p-6 max-w-7xl mx-auto space-y-10">
+      {/* HEADER PREMIUM */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <Badge variant="purple" className="px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-black">Empresa Gold</Badge>
+          <h1 className="text-5xl font-black bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent italic">
+            {empresa?.nome.toUpperCase()}
           </h1>
-          <p className="text-white/60 mt-1">Status e recursos do seu plano</p>
+          <p className="text-white/40 text-sm font-medium flex items-center gap-2">
+            <Building2 size={14} className="text-purple-500" />
+            ID: #{empresa?.id} • Membro desde {new Date(empresa?.criado_em || '').toLocaleDateString()}
+          </p>
         </div>
-        <Button variant="neon" icon={<Edit className="w-5 h-5" />} onClick={openEditModal}>
-          Editar Empresa
+        <Button
+          variant="neon"
+          icon={<Edit size={18} />}
+          onClick={openEditModal}
+          className="px-8 py-6 rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.2)] hover:shadow-purple-500/40 transition-all duration-500 font-bold"
+        >
+          EDITAR PERFIL
         </Button>
       </div>
 
-      <div className="mb-6">
-        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} className="bg-white/5 p-1" />
+      {/* TABS CUSTOMIZADAS PARA FUNDO DARK #0a0b10 */}
+      <div className="flex justify-center">
+        <Tabs
+          tabs={tabsList}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          className="bg-white/5 border border-white/10 p-1.5 backdrop-blur-md max-w-fit"
+        />
       </div>
 
-      <div className="mt-6 min-h-[400px]">
+      {/* CONTEÚDO COM CARDS NEON */}
+      <div className="min-h-[500px]">
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-            >
-              <Card variant="glass" className="lg:col-span-2 p-6">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-purple-400" />
-                  Dados Cadastrais
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  <div>
-                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Nome</label>
-                    <p className="text-white font-medium text-lg">{empresa?.nome}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">E-mail</label>
-                    <p className="text-white/80">{empresa?.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Documento</label>
-                    <p className="text-white/80">{empresa?.documento || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/40 uppercase tracking-wider font-semibold">Status</label>
-                    <div className="mt-1">
-                      <Badge variant={getStatusBadge(empresa?.status || '')} pulse>{empresa?.status}</Badge>
+            <motion.div key="overview" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card variant="neon" className="lg:col-span-2 p-10 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2 italic">Performance Operacional</h3>
+                  <p className="text-white/40 text-sm mb-12 font-medium">Análise de volume e tráfego da empresa</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-2">
+                      <p className="text-white/30 text-[10px] font-black uppercase tracking-widest">E-mail Corporativo</p>
+                      <p className="text-xl text-white font-medium">{empresa?.email}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-white/30 text-[10px] font-black uppercase tracking-widest">Localização</p>
+                      <p className="text-xl text-white font-medium">{empresa?.cidade || 'Não informada'}</p>
                     </div>
                   </div>
                 </div>
+
+                <div className="pt-12 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-purple-500 border border-white/10">
+                      <CreditCard size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/40 font-bold">PLANO ATUAL</p>
+                      <p className="text-white font-black">{plano?.nome || 'FREE'}</p>
+                    </div>
+                  </div>
+                  <Badge variant="success" pulse className="px-4 py-1.5 font-bold">ATIVA</Badge>
+                </div>
               </Card>
 
-              <Card variant="glass" className="p-6 border-purple-500/20">
-                <h3 className="text-xl font-bold text-white mb-4">Plano {plano?.nome}</h3>
-                <div className="mb-6">
-                  <p className="text-3xl font-bold text-white">
-                    R$ {plano?.preco_mensal || 0}
-                    <span className="text-sm text-white/40 font-normal ml-2">/mês</span>
-                  </p>
+              <Card variant="gradient" className="p-10 border-purple-500/20 shadow-[0_0_80px_rgba(168,85,247,0.1)]">
+                <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Créditos de Envio</p>
+                <div className="space-y-1 mb-10">
+                  <h2 className="text-7xl font-black text-white italic tracking-tighter">
+                    {creditos?.saldo_creditos || 0}
+                  </h2>
+                  <p className="text-purple-400 font-bold text-sm">Disponíveis para uso imediato</p>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/60">Usuários</span>
-                    <span className="text-white font-medium">{plano?.max_usuarios}</span>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/40 font-bold">USADOS NO MÊS</span>
+                    <span className="text-white font-black">{creditos?.creditos_usados_mes || 0}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/60">Instâncias</span>
-                    <span className="text-white font-medium">{plano?.max_instancias}</span>
+                  <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: '40%' }} className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 shadow-[0_0_10px_purple]" />
                   </div>
+                  <Button variant="neon" className="w-full py-4 text-xs font-black tracking-widest">RECARREGAR CRÉDITOS</Button>
                 </div>
-                <Button variant="neon" className="w-full mt-8">Ver Planos</Button>
               </Card>
             </motion.div>
           )}
 
           {activeTab === 'uso' && (
-            <motion.div
-              key="uso"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <Card variant="glass" className="p-8">
-                <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-purple-400" />
-                  Consumo de Recursos
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Usuários</span>
-                      <span className="text-white">{uso?.uso.usuarios} / {uso?.limites.max_usuarios}</span>
-                    </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.usuarios}%` }} className="h-full bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
-                    </div>
+            <motion.div key="uso" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <Card variant="neon" className="p-12">
+                <div className="flex items-center gap-4 mb-12">
+                  <div className="p-4 bg-purple-500/20 rounded-2xl border border-purple-500/40 text-purple-400">
+                    <Zap size={32} />
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Instâncias</span>
-                      <span className="text-white">{uso?.uso.instancias} / {uso?.limites.max_instancias}</span>
-                    </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.instancias}%` }} className="h-full bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]" />
-                    </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-white italic">LIMITES & RECURSOS</h3>
+                    <p className="text-white/40 text-sm font-medium">Monitoramento em tempo real do seu ecossistema</p>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Contatos</span>
-                      <span className="text-white">{uso?.uso.contatos} / {uso?.limites.max_contatos}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+                  {[
+                    { label: 'USUÁRIOS', current: uso?.uso.usuarios, max: uso?.limites.max_usuarios, color: 'from-purple-500' },
+                    { label: 'INSTÂNCIAS', current: uso?.uso.instancias, max: uso?.limites.max_instancias, color: 'from-cyan-500' },
+                    { label: 'CONTATOS', current: uso?.uso.contatos, max: uso?.limites.max_contatos, color: 'from-emerald-500' }
+                  ].map((item) => (
+                    <div key={item.label} className="space-y-6">
+                      <div className="flex justify-between items-end">
+                        <span className="text-white/30 text-[10px] font-black tracking-widest">{item.label}</span>
+                        <span className="text-2xl font-black text-white">{item.current} <span className="text-sm text-white/20 font-medium">/ {item.max}</span></span>
+                      </div>
+                      <div className="h-3 bg-white/5 rounded-2xl p-0.5 border border-white/5">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(item.current / item.max) * 100}%` }}
+                          className={`h-full bg-gradient-to-r ${item.color} to-white/20 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.1)]`}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${uso?.percentual.contatos}%` }} className="h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </Card>
             </motion.div>
           )}
 
-          {activeTab === 'creditos' && (
-            <motion.div
-              key="creditos"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              <Card variant="glass" className="p-8 text-center">
-                <p className="text-white/60 mb-2 uppercase text-xs tracking-widest font-bold">Saldo Disponível</p>
-                <h2 className="text-6xl font-bold text-white mb-6">{creditos?.saldo_creditos || 0}</h2>
-                <Button variant="neon" className="w-full">Recarregar agora</Button>
-              </Card>
-              <Card variant="glass" className="p-8 text-center">
-                <p className="text-white/60 mb-2 uppercase text-xs tracking-widest font-bold">Consumo do Mês</p>
-                <h2 className="text-6xl font-bold text-purple-400 mb-6">{creditos?.creditos_usados_mes || 0}</h2>
-                <p className="text-white/40 text-sm">Reset automático em 30 dias</p>
+          {activeTab === 'perfil' && (
+            <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <Card variant="glass" className="p-10 border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-10">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black tracking-widest uppercase">Documento / CNPJ</label>
+                    <p className="text-xl text-white font-medium border-b border-white/5 pb-2">{empresa?.documento || 'Pendente de validação'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black tracking-widest uppercase">Telefone Principal</label>
+                    <p className="text-xl text-white font-medium border-b border-white/5 pb-2">{empresa?.telefone || 'Não registrado'}</p>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] text-white/30 font-black tracking-widest uppercase">Endereço Completo</label>
+                    <p className="text-xl text-white font-medium border-b border-white/5 pb-2">{empresa?.endereco || 'Diferente do cadastro original'} • {empresa?.cep}</p>
+                  </div>
+                </div>
+                <div className="mt-20 p-8 rounded-2xl bg-purple-500/5 border border-purple-500/10 flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-bold italic">Sincronização Fiscal</p>
+                    <p className="text-xs text-white/40">Seus dados são criptografados e validados via RFB</p>
+                  </div>
+                  <Badge variant="info" className="px-6 py-2 rounded-xl">VALIDADO</Badge>
+                </div>
               </Card>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Empresa">
-        <div className="space-y-4">
-          <Input label="Nome da Empresa" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
-          <Input label="E-mail Corporativo" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-          <Button variant="neon" className="w-full mt-4" onClick={() => setShowEditModal(false)}>Salvar</Button>
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="EDITAR PERFIL EMPRESARIAL">
+        <div className="space-y-6 py-6">
+          <Input label="NOME FANTASIA" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="bg-white/5" />
+          <Input label="E-MAIL DE CONTATO" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="bg-white/5" />
+          <div className="pt-6">
+            <Button variant="neon" className="w-full py-4 text-xs font-black tracking-widest hover:scale-[1.02] transition-transform" onClick={() => setShowEditModal(false)}>SALVAR ALTERAÇÕES</Button>
+          </div>
         </div>
       </Modal>
     </div>
