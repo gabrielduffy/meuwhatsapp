@@ -25,6 +25,7 @@ import Notificacoes from './pages/Notificacoes';
 import Manager from './pages/Manager';
 import EnviarMensagem from './pages/EnviarMensagem';
 import Documentacao from './pages/Documentacao';
+import DocumentacaoPublica from './pages/DocumentacaoPublica';
 import Status from './pages/Status';
 import EmailMarketing from './pages/EmailMarketing';
 
@@ -62,6 +63,7 @@ function App() {
           <Route path="/cadastrar" element={<Cadastrar />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
           <Route path="/esqueci-senha" element={<RecuperarSenha />} />
+          <Route path="/documentacao-api" element={<DocumentacaoPublica />} />
 
           {/* Rotas Protegidas */}
           <Route

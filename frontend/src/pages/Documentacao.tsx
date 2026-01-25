@@ -20,7 +20,8 @@ const CATEGORIES = [
     { id: 'instances', label: 'Gestão de Instâncias', icon: Smartphone },
     { id: 'messages', label: 'Mensagens Avançadas', icon: MessageSquare },
     { id: 'webhooks', label: 'Webhooks & Eventos', icon: Globe },
-    { id: 'scraping', label: 'Scraping Google Maps', icon: Code },
+    { id: 'scraping', label: 'Scraping & Prospecção', icon: Code },
+    { id: 'integration', label: 'Guia de Integração', icon: ChevronRight },
 ];
 
 // Dados da Documentação
@@ -153,17 +154,17 @@ const ENDPOINTS = {
             body: `{
   "instanceName": "Producao",
   "url": "https://api.seu-sistema.com/whats-webhook",
-  "events": ["message", "connection", "message.update"]
+  "events": ["message", "connection", "message.update", "contacts.set"]
 }`,
             response: `{ "success": true, "message": "Webhook configurado" }`
         },
         {
             method: 'PAYLOAD',
-            path: 'Estrutura do Evento: Mensagem',
+            path: 'Evento: Mensagem',
             title: 'Webhook: Nova Mensagem',
-            description: 'Exemplo de payload enviado para sua URL quando uma nova mensagem é recebida.',
+            description: 'Payload enviado para sua URL quando uma nova mensagem é recebida ou enviada.',
             body: `{
-  "event": "message",
+  "event": "messages.upsert",
   "instanceName": "instancia_01",
   "data": {
     "key": { "remoteJid": "5511999999999@s.whatsapp.net", "fromMe": false, "id": "ABC123" },
@@ -179,36 +180,53 @@ const ENDPOINTS = {
     scraping: [
         {
             method: 'POST',
-            path: '/api/prospeccao/scraper/mapa',
-            title: 'Iniciar Busca no Google Maps',
-            description: 'Inicia um robô em cloud para coletar leads de empresas. Extremamente útil para prospecção fria automatizada.',
-            body: `{
-  "niche": "Restaurantes Italianos",
-  "city": "São Paulo - SP",
-  "limit": 150,
-  "campanhaId": "opcional-id-campanha",
-  "webhook_url": "https://seu-web-hook.com/fin"
-}`,
-            response: `{
-  "mensagem": "Processo de scraping iniciado",
-  "jobId": "bull_job_123"
-}`
+            path: '/api/prospeccao/campanhas',
+            title: '1. Criar Campanha',
+            description: 'Agrupe seus leads minerados em campanhas organizadas.',
+            body: '{ "nome": "Vendas Fev", "status": "ativa" }',
+            response: '{ "campanha": { "id": "uuid-v4" } }'
         },
         {
-            method: 'WEBHOOK',
-            path: 'Evento: map_scraper_completed',
-            title: 'Retorno do Scraper',
-            description: 'Payload enviado para seu webhook quando a busca termina.',
+            method: 'POST',
+            path: '/api/prospeccao/scraper/mapa',
+            title: '2. Disparar Robô',
+            description: 'Inicia a mineração cloud do Google Maps. Vincule ao ID da campanha.',
             body: `{
-  "event": "map_scraper_completed",
-  "data": {
-    "niche": "Restaurantes Italianos",
-    "city": "São Paulo - SP",
-    "leads_collected": 142,
-    "status": "success"
-  }
+  "niche": "Academias",
+  "city": "Curitiba - PR",
+  "limit": 100,
+  "campanhaId": "uuid-v4",
+  "webhook_url": "https://seu-sistema.com/webhook"
 }`,
-            response: `Status 200 esperado`
+            response: '{ "jobId": "bul_123", "mensagem": "Iniciado" }'
+        },
+        {
+            method: 'GET',
+            path: '/api/prospeccao/scraper/leads/{jobId}',
+            title: '3. Download de Dados',
+            description: 'Recupera os leads minerados por um Job específico.',
+            params: [{ name: 'jobId', type: 'string', desc: 'ID do Job de mineração' }],
+            response: '[ { "nome": "Acme Fitness", "telefone": "5541..." } ]'
+        }
+    ],
+    integration: [
+        {
+            method: 'STEP 1',
+            path: 'API KEY',
+            title: 'Autenticação Externa',
+            description: 'Utilize o token exibido no rodapé desta página no Header: Authorization: Bearer [TOKEN].',
+            body: '{ "Authorization": "Bearer eyJhb..." }',
+            response: '200 OK'
+        },
+        {
+            method: 'STEP 2',
+            path: 'Passo a Passo',
+            title: 'Fluxo de Integração',
+            description: '1. Crie uma Campanha.\n2. Inicie o Scraper com Webhook ativo.\n3. O Scraper enviará um POST para você ao finalizar.\n4. Use os números para disparar mensagens via API.',
+            body: `// Dica de Implementação
+// Use bibliotecas de filas (como Bull ou RabbitMQ)
+// no seu sistema para processar os volumes de leads recebidos.`,
+            response: 'Escalabilidade Garatida.'
         }
     ]
 };
