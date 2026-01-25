@@ -4,6 +4,8 @@ const gmapsServico = require('../servicos/gmaps.servico');
 const instagramServico = require('../servicos/instagram.servico');
 const olxServico = require('../servicos/olx.servico');
 const linkedinServico = require('../servicos/linkedin.servico');
+const facebookServico = require('../servicos/facebook.servico');
+const threadsServico = require('../servicos/threads.servico');
 const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
 const axios = require('axios');
 
@@ -73,6 +75,10 @@ mapScraperQueue.process(async (job) => {
                     sourceLeads = await olxServico.buscarLeadsNoOLX(niche, city, limitPerSource, progressCallback);
                 } else if (source === 'linkedin') {
                     sourceLeads = await linkedinServico.buscarLeadsNoLinkedIn(niche, city, limitPerSource, progressCallback);
+                } else if (source === 'facebook') {
+                    sourceLeads = await facebookServico.buscarLeadsNoFacebook(niche, city, limitPerSource, progressCallback);
+                } else if (source === 'threads') {
+                    sourceLeads = await threadsServico.buscarLeadsNoThreads(niche, city, limitPerSource, progressCallback);
                 }
             } catch (err) {
                 console.error(`[MapScraperQueue] Erro na fonte ${source}:`, err.message);

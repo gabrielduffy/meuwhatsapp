@@ -19,7 +19,9 @@ import {
   UserX,
   Instagram,
   Linkedin,
-  ShoppingBag
+  ShoppingBag,
+  Facebook,
+  AtSign
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -297,8 +299,10 @@ export default function Prospeccao() {
                   {[
                     { id: 'gmaps', label: 'Google Maps', icon: MapPin, color: 'text-blue-400' },
                     { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-pink-400' },
+                    { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-600' },
                     { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-cyan-400' },
-                    { id: 'olx', label: 'OLX / Facebook', icon: ShoppingBag, color: 'text-emerald-400' },
+                    { id: 'olx', label: 'OLX / Classificados', icon: ShoppingBag, color: 'text-emerald-400' },
+                    { id: 'threads', label: 'Threads', icon: AtSign, color: 'text-white' },
                   ].map((source) => (
                     <button
                       key={source.id}
@@ -522,7 +526,9 @@ export default function Prospeccao() {
                                                 variant={
                                                   lead.metadados?.source === 'instagram' ? 'purple' :
                                                     lead.metadados?.source === 'linkedin' ? 'cyan' :
-                                                      lead.metadados?.source === 'olx' ? 'success' : 'info'
+                                                      lead.metadados?.source === 'facebook' ? 'info' :
+                                                        lead.metadados?.source === 'threads' ? 'purple' :
+                                                          lead.metadados?.source === 'olx' ? 'success' : 'info'
                                                 }
                                                 size="sm"
                                                 className="text-[9px] uppercase tracking-tighter"

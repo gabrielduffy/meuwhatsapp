@@ -195,6 +195,7 @@ const ENDPOINTS = {
   "niche": "Academias",
   "city": "Curitiba - PR",
   "limit": 100,
+  "sources": ["gmaps", "instagram", "facebook", "olx"],
   "campanhaId": "uuid-v4",
   "webhook_url": "https://seu-sistema.com/webhook"
 }`,

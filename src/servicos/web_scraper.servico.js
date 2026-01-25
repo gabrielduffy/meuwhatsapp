@@ -17,6 +17,14 @@ async function buscarLeadsNoLinkedIn(niche, city, limit = 150, onProgress = null
     return await buscarNaWeb('site:linkedin.com/in/', niche, city, limit, onProgress, 'LinkedIn');
 }
 
+async function buscarLeadsNoFacebook(niche, city, limit = 150, onProgress = null) {
+    return await buscarNaWeb('site:facebook.com', niche, city, limit, onProgress, 'Facebook');
+}
+
+async function buscarLeadsNoThreads(niche, city, limit = 150, onProgress = null) {
+    return await buscarNaWeb('site:threads.net', niche, city, limit, onProgress, 'Threads');
+}
+
 async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
     const log = (msg) => {
         console.log(`[${label} Scraper] ${msg}`);
@@ -47,7 +55,8 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
         const queries = [
             `${site} "${niche}" "${city}" whatsapp`,
             `${site} "${niche}" "${city}" "9"`,
-            `${site} "${niche}" ${city} "contato"`
+            `${site} "${niche}" ${city} "contato"`,
+            `${site} "${niche}" "${city}" "55"`
         ];
 
         for (const queryText of queries) {
@@ -70,18 +79,16 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
 
             for (const res of pageResults) {
                 const fullText = res.title + ' ' + res.snippet;
-                // Regex super agressivo que pega quase qualquer formato de número BR
-                const numbers = fullText.match(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?9\s?\d{4}[-\s]?\d{4}/g);
+                // Regex super agressivo que pega quase qualquer formato de número BR (com ou sem DDD, com ou sem +55)
+                const numbers = fullText.match(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?9\s?\d{4}[-\s]?\d{4}/g) || [];
 
-                if (numbers) {
-                    for (const num of numbers) {
-                        const whatsapp = formatarWhatsApp(num);
-                        if (whatsapp && !processed.has(whatsapp) && validarDDD(whatsapp, dddsValidos)) {
-                            processed.add(whatsapp);
-                            leads.push({ nome: res.title.split(/[-|(@]/)[0].trim(), whatsapp });
-                            log(`[✓] Sucesso: ${whatsapp}`);
-                            if (leads.length >= limit) break;
-                        }
+                for (const num of numbers) {
+                    const whatsapp = formatarWhatsApp(num);
+                    if (whatsapp && !processed.has(whatsapp) && validarDDD(whatsapp, dddsValidos)) {
+                        processed.add(whatsapp);
+                        leads.push({ nome: res.title.split(/[-|(@]/)[0].trim(), whatsapp });
+                        log(`[✓] Sucesso: ${whatsapp}`);
+                        if (leads.length >= limit) break;
                     }
                 }
             }
@@ -98,4 +105,10 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
     }
 }
 
-module.exports = { buscarLeadsNoInstagram, buscarLeadsNoOLX, buscarLeadsNoLinkedIn };
+module.exports = {
+    buscarLeadsNoInstagram,
+    buscarLeadsNoOLX,
+    buscarLeadsNoLinkedIn,
+    buscarLeadsNoFacebook,
+    buscarLeadsNoThreads
+};

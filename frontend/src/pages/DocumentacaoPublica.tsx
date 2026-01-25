@@ -38,6 +38,7 @@ curl -X POST https://api.whatsbenemax.com/api/prospeccao/scraper/mapa \\
      -d '{
        "niche": "Dentistas",
        "city": "São Paulo - SP",
+       "sources": ["gmaps", "instagram", "facebook"],
        "webhook_url": "https://seu-sistema.com/callback"
      }'`,
             response: 'Fácil, rápido e 100% cloud.'
@@ -103,6 +104,7 @@ curl -X POST https://api.whatsbenemax.com/api/prospeccao/scraper/mapa \\
             body: `{
   "niche": "Petshops",
   "city": "Rio de Janeiro - RJ",
+  "sources": ["gmaps", "threads", "linkedin"],
   "campanhaId": "uuid-v4",
   "webhook_url": "https://callback.com"
 }`,

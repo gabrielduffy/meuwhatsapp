@@ -393,6 +393,12 @@ router.get('/importacoes/:id', async (req, res) => {
  *                 type: string
  *                 example: "https://meu-sistema.com/webhook"
  *                 description: "URL para notificação de finalização (opcional)"
+ *               sources:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["gmaps", "instagram", "facebook", "olx", "threads", "linkedin"]
+ *                 description: "Fontes de prospecção (opcional, padrão: ['gmaps'])"
  *     responses:
  *       202:
  *         description: Busca iniciada em background
