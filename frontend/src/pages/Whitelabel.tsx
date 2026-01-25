@@ -2,20 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Palette,
-  Save,
   Globe,
   Settings,
-  Share2,
-  Code,
-  Image as ImageIcon,
-  CheckCircle,
-  AlertCircle,
-  Trash2,
-  Plus,
-  Shield,
   Search,
+  Share2,
+  Image as ImageIcon,
   Loader2,
-  ExternalLink
+  Plus,
+  ExternalLink,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { Card, Button, Input, Modal, Badge, Tabs } from '../components/ui';
 import api from '../services/api';
@@ -135,7 +131,7 @@ export default function Whitelabel() {
       </div>
 
       <div className="mb-8">
-        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} className="bg-white/5 p-1" />
+        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
       <div className="min-h-[500px]">
@@ -177,9 +173,9 @@ export default function Whitelabel() {
                   </div>
                   <button
                     onClick={() => setConfig({ ...config, ativo: !config.ativo })}
-                    className={`w-12 h-6 rounded-full transition-colors relative ${config.ativo ? 'bg-purple-600' : 'bg-white/10'}`}
+                    className={`w - 12 h - 6 rounded - full transition - colors relative ${config.ativo ? 'bg-purple-600' : 'bg-white/10'} `}
                   >
-                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${config.ativo ? 'right-1' : 'left-1'}`} />
+                    <div className={`absolute top - 1 w - 4 h - 4 bg - white rounded - full transition - all ${config.ativo ? 'right-1' : 'left-1'} `} />
                   </button>
                 </div>
                 <Button variant="neon" className="mt-8 px-10" loading={submitting} onClick={() => handleSave(config)}>Salvar Alterações</Button>

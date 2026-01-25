@@ -5,16 +5,12 @@ import {
   Lock,
   Database,
   Palette,
-  Globe,
   Shield,
-  Zap,
-  Loader2,
   Copy,
   RefreshCw,
-  Trash2,
   AlertTriangle
 } from 'lucide-react';
-import { Card, Button, Input, Badge, Tabs, Modal } from '../components/ui';
+import { Card, Button, Input, Modal, Tabs } from '../components/ui';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -27,7 +23,6 @@ export default function Configuracoes() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<any>(null);
 
-  const [notificacoes, setNotificacoes] = useState({ email: true, push: false, sms: false });
   const [senhas, setSenhas] = useState({ atual: '', nova: '', confirmacao: '' });
 
   const loadApiToken = useCallback(async () => {
@@ -113,7 +108,7 @@ export default function Configuracoes() {
       </div>
 
       <div className="mb-8">
-        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} className="bg-white/5 p-1" />
+        <Tabs tabs={tabsList} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
       <div className="min-h-[400px]">

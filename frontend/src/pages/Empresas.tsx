@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
   Edit,
-  Activity,
-  Palette,
-  TrendingUp,
   Loader2,
   Zap,
   LayoutDashboard,
@@ -49,10 +46,10 @@ export default function Empresas() {
     setLoading(true);
     try {
       const [empRes, planoRes, usoRes, credRes] = await Promise.allSettled([
-        api.get('/empresa'),
-        api.get('/empresa/plano'),
-        api.get('/empresa/uso'),
-        api.get('/empresa/creditos')
+        api.get('/api/empresa'),
+        api.get('/api/empresa/plano'),
+        api.get('/api/empresa/uso'),
+        api.get('/api/empresa/creditos')
       ]);
 
       if (empRes.status === 'fulfilled') setEmpresa(empRes.value.data.empresa || empRes.value.data);
@@ -123,13 +120,13 @@ export default function Empresas() {
         </Button>
       </div>
 
-      {/* TABS CUSTOMIZADAS PARA FUNDO DARK #0a0b10 */}
+      {/* TABS PREMIUM */}
       <div className="flex justify-center">
         <Tabs
           tabs={tabsList}
           activeTab={activeTab}
           onChange={setActiveTab}
-          className="bg-white/5 border border-white/10 p-1.5 backdrop-blur-md max-w-fit"
+          className="max-w-fit"
         />
       </div>
 
