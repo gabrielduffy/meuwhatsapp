@@ -600,7 +600,7 @@ async function listarHistoricoScraping(empresaId) {
  * Atualizar status e contagem do histórico
  */
 async function atualizarHistoricoScraping(job_id, dados) {
-  const { status, leadsColetados, mensagem_erro, progresso } = dados;
+  const { status, leadsColetados, mensagem_erro, progresso, log } = dados;
   const campos = [];
   const valores = [];
   let idx = 1;
@@ -609,6 +609,12 @@ async function atualizarHistoricoScraping(job_id, dados) {
   if (leadsColetados !== undefined) { campos.push(`leads_coletados = $${idx++}`); valores.push(leadsColetados); }
   if (mensagem_erro !== undefined) { campos.push(`mensagem_erro = $${idx++}`); valores.push(mensagem_erro); }
   if (progresso !== undefined) { campos.push(`progresso = $${idx++}`); valores.push(progresso); }
+
+  // Se houver um novo log, adicionamos ao array existente no Postgres
+  if (log) {
+    campos.push(`logs_processamento = array_append(COALESCE(logs_processamento, '{}'), $${idx++})`);
+    valores.push(log);
+  }
 
   if (campos.length === 0) return null;
 

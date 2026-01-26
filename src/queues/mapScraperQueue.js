@@ -79,7 +79,7 @@ mapScraperQueue.process(async (job) => {
                 progressCallback({ msg: 'Iniciando extração...' });
 
                 if (source === 'gmaps') {
-                    sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'instagram') {
                     sourceLeads = await instagramServico.buscarLeadsNoInstagram(niche, city, limitPerSource, progressCallback);
                 } else if (source === 'olx') {

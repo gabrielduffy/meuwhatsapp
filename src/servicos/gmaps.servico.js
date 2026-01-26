@@ -2,12 +2,13 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
 const logger = require('./logger.servico');
+const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
 
 puppeteer.use(StealthPlugin());
 
 /**
- * SERVIÇO DE ELITE: TITAN-ENGINE GMAPS
- * Extração paralela baseada em Offsets de Rede (Estilo Outscraper/SerpApi)
+ * SERVIÇO DE ELITE: TITAN-ENGINE GMAPS v3
+ * Extração massiva via Protocolo Paralelo + Proxy Rotativo + Logs em Tempo Real
  */
 
 function formatarWhatsApp(telefone) {
@@ -23,87 +24,121 @@ function formatarWhatsApp(telefone) {
     return limpo.length >= 12 ? limpo : null;
 }
 
-async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
-    const log = (msg) => console.log(`[TITAN-ENGINE] ${msg}`);
+async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jobId = null) {
+    const log = async (msg) => {
+        const timestamp = new Date().toLocaleTimeString();
+        const formattedMsg = `[TITAN] ${msg}`;
+        console.log(formattedMsg);
+        if (onProgress) onProgress({ msg: msg });
+
+        // Grava no banco de dados para visualização na aba Histórico
+        if (jobId) {
+            await prospeccaoRepo.atualizarHistoricoScraping(jobId, {
+                log: `[${timestamp}] ${msg}`
+            }).catch(() => { });
+        }
+    };
+
     const dddsValidos = obterDDDsDaCidade(city);
     const searchQuery = encodeURIComponent(`${niche} em ${city}`);
+    const sessionId = Math.random().toString(36).substring(7);
+
+    // Configuração de Proxy (Essencial para não ser bloqueado e ter velocidade)
+    const PROXY_HOST = 'gw.dataimpulse.com:823';
+    const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
+    const PROXY_PASS = '8aebbfaa273d7787';
 
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: [
+            `--proxy-server=${PROXY_HOST}`,
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-software-rasterizer'
+        ]
     });
 
     try {
         const page = await browser.newPage();
-        await page.setViewport({ width: 800, height: 600 });
+        await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
+        await page.setViewport({ width: 1024, height: 768 });
 
-        log(`Iniciando Extração de Elite para ${limit} leads...`);
+        await log(`Engatando Titan-Engine v3...`);
+        await log(`Alvo: ${niche} em ${city} (Meta: ${limit} leads)`);
 
-        // Acessa a página inicial para pegar tokens de sessão do Google
+        // Acessa a página inicial para validar o ambiente e cookies
         await page.goto(`https://www.google.com/maps/search/${searchQuery}`, {
             waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
-        // TÉCNICA DE ELITE: Executar 10 fetches paralelos dentro do contexto do Google
-        const totalLeads = await page.evaluate(async (limit, searchQuery) => {
+        await log(`Protocolos Google interceptados. Iniciando extração paralela...`);
+
+        // TÉCNICA DE ELITE: Extração Multiplexada
+        const totalLeadsRaw = await page.evaluate(async (limit, searchQuery) => {
             const results = [];
             const seen = new Set();
 
-            // Cada página do Google traz 20 resultados. 
-            // Vamos disparar 8 páginas simultâneas (160 candidatos)
-            const numPages = Math.ceil(limit / 20) + 2;
-            const fetchPromises = [];
+            // Disparar requisições para múltiplas janelas de resultados
+            const batchSize = 20;
+            const numBatches = Math.ceil(limit / batchSize) + 2;
+            const promises = [];
 
-            for (let i = 0; i < numPages; i++) {
-                const offset = i * 20;
-                // O segredo do Outscraper: URL de RPC do Google com echo e offset
-                const url = `/maps/search/${searchQuery}/?authuser=0&hl=pt-BR&gl=br&pb=!1m4!1i${i}!2i20!4m2!11m1!2i${offset}!20m1!1e1!2b1`;
+            for (let i = 0; i < numBatches; i++) {
+                const offset = i * batchSize;
+                // Endpoint interno de RPC do Maps - Altíssima velocidade
+                const url = `/maps/search/${searchQuery}/?authuser=0&hl=pt-BR&gl=br&pb=!1m4!1i${i}!2i${batchSize}!4m2!11m1!2i${offset}!20m1!1e1!2b1`;
 
-                fetchPromises.push(
+                promises.push(
                     fetch(url)
                         .then(r => r.text())
                         .then(text => {
-                            // Extração via Regex de Alta Velocidade no Protobuf/GWS
-                            const matches = text.match(/\["0x[a-f0-9]+:0x[a-f0-9]+",\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/g);
-                            if (matches) {
-                                matches.forEach(m => {
-                                    const match = m.match(/\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/);
-                                    if (match && !seen.has(match[1])) {
-                                        seen.add(match[1]);
-                                        results.push({ nome: match[1], telefone: match[2] });
-                                    }
-                                });
+                            // Regex de alta performance para extração binária de nomes e telefones
+                            const pattern = /\["0x[a-f0-9]+:0x[a-f0-9]+",\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/g;
+                            let match;
+                            while ((match = pattern.exec(text)) !== null) {
+                                const nome = match[1];
+                                const telefone = match[2];
+                                if (nome && telefone && !seen.has(nome)) {
+                                    seen.add(nome);
+                                    results.push({ nome, telefone });
+                                }
                             }
                         })
                         .catch(() => { })
                 );
             }
 
-            await Promise.all(fetchPromises);
+            await Promise.all(promises);
             return results;
         }, limit, searchQuery);
 
-        log(`Extração Instantânea: ${totalLeads.length} candidatos encontrados.`);
+        await log(`Extração bruta finalizada: ${totalLeadsRaw.length} candidatos encontrados.`);
 
         const finalLeads = [];
-        for (const item of totalLeads) {
+        for (const item of totalLeadsRaw) {
             if (finalLeads.length >= limit) break;
             const whatsapp = formatarWhatsApp(item.telefone);
             if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
                 if (!finalLeads.find(l => l.whatsapp === whatsapp)) {
                     finalLeads.push({ nome: item.nome, whatsapp });
+                    // A cada 10 leads, reportamos o sucesso no log do banco
+                    if (finalLeads.length % 10 === 0) {
+                        await log(`Capturados ${finalLeads.length} leads qualificados...`);
+                    }
                 }
             }
         }
 
         if (onProgress) onProgress({ p: 100 });
 
-        log(`Operação finalizada em tempo recorde: ${finalLeads.length} leads.`);
+        await log(`Missão cumprida! ${finalLeads.length} leads processados em tempo recorde.`);
         return finalLeads;
 
     } catch (error) {
-        log(`Erro no Titan-Engine: ${error.message}`);
+        await log(`FALHA CRÍTICA: ${error.message}`);
         return [];
     } finally {
         await browser.close();
