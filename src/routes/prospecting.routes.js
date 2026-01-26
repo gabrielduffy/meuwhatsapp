@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prospeccaoServico = require('../servicos/prospeccao.servico');
+const logger = require('../servicos/logger.servico');
 const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { garantirMultiTenant, verificarFuncionalidade } = require('../middlewares/empresa');
@@ -432,6 +433,15 @@ router.post('/scraper/mapa', async (req, res) => {
       webhookUrl: webhook_url,
       sources: sources && Array.isArray(sources) ? sources : ['gmaps']
     });
+
+    // Log da Chamada de Integração
+    await logger.info('prospeccao', `Busca iniciada via API: ${niche} em ${city}`, {
+      jobId: job.id,
+      sources: sources || ['gmaps'],
+      limit,
+      campanhaId,
+      webhook_url
+    }, req.empresaId);
 
     // Registrar no Histórico
     await prospeccaoRepo.criarHistoricoScraping({

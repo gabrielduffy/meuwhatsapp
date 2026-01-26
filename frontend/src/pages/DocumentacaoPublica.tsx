@@ -67,6 +67,14 @@ curl -X POST https://api.whatsbenemax.com/api/prospeccao/scraper/mapa \\
             description: 'Retorna o QR Code em Base64 para exibir no seu frontend.',
             params: [{ name: 'name', type: 'string', desc: 'Nome da instância' }],
             response: '{ "qrcode": "data:image/png;base64,..." }'
+        },
+        {
+            method: 'DELETE',
+            path: '/instance/{name}',
+            title: 'Deletar Instância',
+            description: 'Remove completamente a instância e seus dados de sessão do servidor.',
+            params: [{ name: 'name', type: 'string', desc: 'Nome da instância' }],
+            response: '{ "success": true, "message": "Instância deletada" }'
         }
     ],
     messages: [

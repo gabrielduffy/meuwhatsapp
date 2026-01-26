@@ -7,6 +7,7 @@ const linkedinServico = require('../servicos/linkedin.servico');
 const facebookServico = require('../servicos/facebook.servico');
 const threadsServico = require('../servicos/threads.servico');
 const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
+const logger = require('../servicos/logger.servico');
 const axios = require('axios');
 
 // Criar fila de scraping
@@ -29,6 +30,10 @@ mapScraperQueue.process(async (job) => {
     const jobIdStr = String(job.id);
 
     console.log(`[MapScraperQueue] Iniciando job #${jobIdStr} para: ${niche} em ${city} | Fontes: ${sources.join(', ')}`);
+
+    await logger.info('prospeccao', `Processador: Iniciando extração do Job #${jobIdStr}`, {
+        niche, city, sources, limit, campanhaId
+    }, empresaId);
 
     try {
         await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, { progresso: 5 });
@@ -129,17 +134,32 @@ mapScraperQueue.process(async (job) => {
                 event: 'prospeccao_completed',
                 data: { niche, city, leads_collected: leadsParaInserir.length, sources, status: 'success' }
             }).catch(() => { });
+
+            await logger.info('prospeccao', `Processador: Webhook enviado para o Job #${jobIdStr}`, {
+                webhookUrl, leadsCollected: leadsParaInserir.length
+            }, empresaId);
         }
+
+        await logger.info('prospeccao', `Processador: Job #${jobIdStr} finalizado com sucesso`, {
+            totalLeads: leadsParaInserir.length
+        }, empresaId);
 
         return { success: true, count: leadsParaInserir.length };
 
     } catch (error) {
         console.error(`[MapScraperQueue] Erro fatal:`, error.message);
+
         await prospeccaoRepo.atualizarHistoricoScraping(jobIdStr, {
             status: 'falhado',
             mensagem_erro: error.stack || error.message,
             progresso: 0
         }).catch(() => { });
+
+        await logger.error('prospeccao', `Processador: Erro fatal no Job #${jobIdStr}`, {
+            erro: error.message,
+            stack: error.stack
+        }, empresaId);
+
         throw error;
     }
 });

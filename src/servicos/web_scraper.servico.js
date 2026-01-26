@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
 const { formatarWhatsApp } = require('./gmaps.servico');
+const logger = require('./logger.servico');
 
 puppeteer.use(StealthPlugin());
 
@@ -36,6 +37,8 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
     const PROXY_HOST = 'gw.dataimpulse.com:823';
     const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
+
+    await logger.info('prospeccao', `Iniciando Scraper na fonte: ${label}`, { site, niche, city, limit });
 
     const browser = await puppeteer.launch({
         headless: true,
@@ -88,6 +91,13 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label) {
                         processed.add(whatsapp);
                         leads.push({ nome: res.title.split(/[-|(@]/)[0].trim(), whatsapp });
                         log(`[✓] Sucesso: ${whatsapp}`);
+
+                        await logger.info('prospeccao', `Lead encontrado via ${label}`, {
+                            whatsapp,
+                            nome: res.title.split(/[-|(@]/)[0].trim(),
+                            query: queryText
+                        });
+
                         if (leads.length >= limit) break;
                     }
                 }
