@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
+const logger = require('./logger.servico');
 
 puppeteer.use(StealthPlugin());
 
@@ -92,12 +93,19 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
             });
             await new Promise(r => setTimeout(r, 2000));
 
-            const cards = await page.$$('div[role="article"]');
+            // Seletores de cards mais robustos
+            const cards = await page.$$('div[role="article"], a[aria-label], .hfpxzc');
+            log(`Cards brutos encontrados: ${cards.length}`);
 
             for (let i = 0; i < cards.length && leads.length < limit; i++) {
                 try {
                     const card = cards[i];
-                    const name = await card.$eval('.qBF1Pd', el => el.innerText).catch(() => null);
+                    // Tentar pegar o nome de várias formas
+                    let name = await card.evaluate(el => {
+                        const titleEl = el.querySelector('.qBF1Pd') || el.querySelector('.fontHeadlineSmall');
+                        if (titleEl) return titleEl.innerText;
+                        return el.getAttribute('aria-label') || el.innerText.split('\n')[0];
+                    }).catch(() => null);
 
                     if (!name || processedNames.has(name)) continue;
                     processedNames.add(name);
@@ -130,6 +138,13 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
                             if (validarDDD(whatsapp, dddsValidos)) {
                                 leads.push({ nome: name, whatsapp });
                                 log(`[✓] Sucesso: ${name} (${whatsapp})`);
+
+                                await logger.info('prospeccao', 'Lead encontrado via Google Maps', {
+                                    nome: name,
+                                    whatsapp,
+                                    niche,
+                                    city
+                                });
                             } else {
                                 // log(`[-] DDD Inválido: ${whatsapp}`);
                             }
