@@ -13,14 +13,20 @@ const axios = require('axios');
 // Criar fila de scraping
 const redisConfig = process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379';
 const mapScraperQueue = new Queue('map-scraper', redisConfig, {
+    settings: {
+        lockDuration: 600000, // 10 minutos de lock por segmento
+        stalledInterval: 600000,
+        maxStalledCount: 3
+    },
     defaultJobOptions: {
-        attempts: 2,
+        attempts: 3,
         backoff: {
             type: 'exponential',
-            delay: 10000
+            delay: 20000
         },
-        removeOnComplete: true,
-        removeOnFail: false
+        removeOnComplete: false, // Mantemos para histórico
+        removeOnFail: false,
+        timeout: 3600000 // 1 hora de limite para buscas gigantes
     }
 });
 
@@ -132,7 +138,14 @@ mapScraperQueue.process(async (job) => {
         if (webhookUrl) {
             await axios.post(webhookUrl, {
                 event: 'prospeccao_completed',
-                data: { niche, city, leads_collected: leadsParaInserir.length, sources, status: 'success' }
+                data: {
+                    job_id: jobIdStr,
+                    niche,
+                    city,
+                    leads_collected: leadsParaInserir.length,
+                    sources,
+                    status: 'success'
+                }
             }).catch(() => { });
 
             await logger.info('prospeccao', `Processador: Webhook enviado para o Job #${jobIdStr}`, {
