@@ -86,20 +86,42 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
         while (leads.length < limit && totalScrolled < maxScrolls) {
             log(`Processando página (${leads.length}/${limit})...`);
 
-            // Scroll para carregar mais
+            // Scroll mais agressivo e persistente
             await page.evaluate(() => {
                 const scrollable = document.querySelector('div[role="feed"]');
-                if (scrollable) scrollable.scrollBy(0, 1000);
+                if (scrollable) {
+                    scrollable.scrollBy(0, 2000); // Dobrado para carregar mais rápido
+                } else {
+                    window.scrollBy(0, 1000); // Fallback caso o feed mude de seletor
+                }
             });
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 3000)); // Mais tempo para o DOM atualizar
 
-            // Seletores de cards mais robustos
-            const cards = await page.$$('div[role="article"], a[aria-label], .hfpxzc');
+            // Seletores de cards ainda mais abrangentes
+            const cards = await page.$$('div[role="article"], a[aria-label], .hfpxzc, [data-result-index]');
             log(`Cards brutos encontrados: ${cards.length}`);
+
+            // Se não encontrou novos cards em 3 tentativas de scroll, tentamos um scroll pro topo e volta
+            if (cards.length <= leads.length && totalScrolled > 5) {
+                log("Tentando scroll de resgate...");
+                await page.evaluate(() => {
+                    const feed = document.querySelector('div[role="feed"]');
+                    if (feed) feed.scrollBy(0, -500);
+                });
+                await new Promise(r => setTimeout(r, 1000));
+            }
 
             for (let i = 0; i < cards.length && leads.length < limit; i++) {
                 try {
                     const card = cards[i];
+
+                    // Verificação de visibilidade para evitar cliques em elementos ocultos
+                    const isVisible = await card.isIntersectingViewport();
+                    if (!isVisible) {
+                        await card.evaluate(el => el.scrollIntoView());
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+
                     // Tentar pegar o nome de várias formas
                     let name = await card.evaluate(el => {
                         const titleEl = el.querySelector('.qBF1Pd') || el.querySelector('.fontHeadlineSmall');
@@ -107,27 +129,44 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null) {
                         return el.getAttribute('aria-label') || el.innerText.split('\n')[0];
                     }).catch(() => null);
 
-                    if (!name || processedNames.has(name)) continue;
+                    if (!name || processedNames.has(name) || name.length < 3) continue;
                     processedNames.add(name);
 
-                    log(`Analisando: ${name}...`);
+                    log(`Analisando (${leads.length + 1}/${limit}): ${name}...`);
 
-                    // Clicar no card para abrir o painel lateral
-                    await card.click();
-
-                    // Aguardar o botão de telefone aparecer no painel lateral
-                    // Usamos um timeout menor para não travar se não tiver telefone
-                    let phoneFound = null;
+                    // Clicar com retry simples
                     try {
-                        const btnSelector = 'button[data-item-id^="phone:tel:"]';
-                        await page.waitForSelector(btnSelector, { timeout: 3000 });
-                        phoneFound = await page.$eval(btnSelector, el => el.getAttribute('data-item-id').replace('phone:tel:', ''));
+                        await card.click();
                     } catch (e) {
-                        // Se não achou o botão, tenta Regex no texto do painel
+                        await page.evaluate(el => el.click(), card);
+                    }
+
+                    // Aguardar o painel lateral com timeout dinâmico
+                    let phoneFound = null;
+                    const phoneSelectors = [
+                        'button[data-item-id^="phone:tel:"]',
+                        '[data-tooltip="Copiar número de telefone"]',
+                        '.Usdlv'
+                    ];
+
+                    // Tentar por 4 segundos achar o telefone
+                    const startSearch = Date.now();
+                    while (Date.now() - startSearch < 4000 && !phoneFound) {
+                        for (const sel of phoneSelectors) {
+                            phoneFound = await page.$eval(sel, el => {
+                                if (el.tagName === 'BUTTON') return el.getAttribute('data-item-id')?.replace('phone:tel:', '');
+                                return el.innerText;
+                            }).catch(() => null);
+                            if (phoneFound) break;
+                        }
+                        if (!phoneFound) await new Promise(r => setTimeout(r, 500));
+                    }
+
+                    if (!phoneFound) {
+                        // Última tentativa via Regex no texto bruto do painel lateral
                         phoneFound = await page.evaluate(() => {
-                            const panel = document.querySelector('[role="main"]');
-                            if (!panel) return null;
-                            const match = panel.innerText.match(/\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                            const panel = document.querySelector('[role="main"]') || document.body;
+                            const match = panel.innerText.match(/\(?\d{2}\)?\s?9\d{4}-?\d{4}/);
                             return match ? match[0] : null;
                         });
                     }
