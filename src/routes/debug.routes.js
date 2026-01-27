@@ -95,4 +95,14 @@ router.get('/logs', async (req, res) => {
     }
 });
 
+router.get('/prospeccao', async (req, res) => {
+    try {
+        const { query } = require('../config/database');
+        const logs = await query('SELECT * FROM historico_prospeccao ORDER BY criado_em DESC LIMIT 20');
+        res.json(logs.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

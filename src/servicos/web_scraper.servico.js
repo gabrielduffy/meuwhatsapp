@@ -49,8 +49,9 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label, jobId = 
     // DORKING AVANÇADO: foca em links diretos do WhatsApp indexados
     const searchQueries = [
         `${site} "${niche}" "${city}" "wa.me/55"`,
-        `${site} "${niche}" "${city}" "9" "whatsapp"`,
-        `${site} "${niche}" "${city}" "11" "9"`
+        `${site} "${niche}" "${city}" "whatsapp"`,
+        `${site} "${niche}" "${city}" "contato" "9"`,
+        `"${site}" "${niche}" "${city}"`
     ];
 
     for (const query of searchQueries) {
@@ -70,35 +71,49 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label, jobId = 
             await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
             await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-            // Usar normal DuckDuckGo com kl=br-pt
-            const url = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&kl=br-pt`;
-            await log(`Buscando (v6): ${query}`);
+            // Usar DuckDuckGo Lite (mais rápido e sem JS pesado)
+            const url = `https://duckduckgo.com/lite/?q=${encodeURIComponent(query)}&kl=br-pt`;
+            await log(`Buscando (v6-Lite): ${query}`);
 
             await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
             await new Promise(r => setTimeout(r, 2000));
 
             const texts = await page.evaluate(() => {
-                return Array.from(document.querySelectorAll('article, .result, span, div, p'))
+                // No Lite os resultados ficam em tabelas ou divs simples
+                return Array.from(document.querySelectorAll('td, .result-link, .snippet'))
                     .map(el => el.innerText)
-                    .filter(t => t && t.length > 20);
+                    .filter(t => t && t.length > 10);
             });
 
+            if (texts.length === 0) {
+                // Fallback para varredura global se os seletores falharem
+                const bodyText = await page.evaluate(() => document.body.innerText);
+                texts.push(bodyText);
+            }
+
             for (const text of texts) {
-                // Regex para wa.me/ e números puros
+                // Regex v4: Pega wa.me, números com DDD entre parênteses, espaços, hífens ou sem nada
                 const waLinks = text.match(/wa\.me\/55(\d{10,11})/g) || [];
-                const nums = text.match(/(?:\d{2}\s?)?9\d{4}[-\s]?\d{4}/g) || [];
+                // Padrões comuns: (11) 99999-9999, 11 999999999, 11999999999
+                const nums = text.match(/(?:\(?\d{2}\)?\s?)?9\d{4}[-\s]?\d{4}/g) || [];
 
-                const allRaw = [...waLinks.map(l => l.replace('wa.me/', '')), ...nums];
+                const allRaw = [
+                    ...waLinks.map(l => l.replace('wa.me/', '')),
+                    ...nums
+                ];
 
-                for (const n of allRaw) {
-                    const whatsapp = formatarWhatsApp(n);
+                for (const raw of allRaw) {
+                    const whatsapp = formatarWhatsApp(raw);
                     if (whatsapp && !processed.has(whatsapp) && validarDDD(whatsapp, dddsValidos)) {
                         processed.add(whatsapp);
                         leads.push({ nome: `${niche} - ${label}`, whatsapp });
                         await log(`[LEAD] Encontrado em ${label}: ${whatsapp}`);
 
                         if (onProgress) {
-                            onProgress({ p: Math.min(Math.round((leads.length / limit) * 100), 99) });
+                            onProgress({
+                                msg: `Lead encontrado: ${whatsapp}`,
+                                p: Math.min(Math.round((leads.length / limit) * 100), 99)
+                            });
                         }
 
                         if (leads.length >= limit) break;
@@ -108,7 +123,7 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label, jobId = 
             }
 
         } catch (e) {
-            await log(`Aviso: Erro na query.`);
+            await log(`Erro na consulta: ${e.message}`);
         } finally {
             await browser.close();
         }

@@ -108,7 +108,8 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                 cards.forEach(c => {
                     const name = c.querySelector('.qBF1Pd')?.innerText;
                     const text = c.innerText || "";
-                    const phoneMatch = text.match(/(\+?55)?\s?\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                    // Regex v4: Pega celular (com 9) e fixo opcionalmente
+                    const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?9\d{4}[-\s]?\d{4}/);
                     if (name && phoneMatch) items.push({ nome: name, telefone: phoneMatch[0] });
                 });
                 return items;

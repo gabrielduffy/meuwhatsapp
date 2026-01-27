@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TITAN-ENGINE Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Fira Code', monospace; background-color: #0f172a; color: #e2e8f0; }
+        .log-container { background-color: #1e293b; border-radius: 8px; padding: 1.5rem; border: 1px solid #334155; }
+        .log-line { margin-bottom: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+        .tag-gmaps { color: #f87171; font-weight: bold; }
+        .tag-instagram { color: #f472b6; font-weight: bold; }
+        .tag-lead { color: #4ade80; font-weight: bold; }
+        .tag-info { color: #60a5fa; }
+        .tag-error { color: #ef4444; font-weight: bold; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-white">🚀 TITAN-v6 Debug Logs</h1>
+            <button onclick="fetchLogs()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition font-bold">
+                🔄 Atualizar
+            </button>
+        </div>
+
+        <div id="jobs-container" class="space-y-6">
+            <div class="text-center py-10">Carregando históricos...</div>
+        </div>
+    </div>
+
+    <script>
+        function formatLog(line) {
+            if (!line) return '';
+            let html = line;
+            
+            // Highlight tags
+            if (line.includes('[GMAPS]')) html = html.replace('[GMAPS]', '<span class="tag-gmaps">[GMAPS]</span>');
+            if (line.includes('[INSTAGRAM]')) html = html.replace('[INSTAGRAM]', '<span class="tag-instagram">[INSTAGRAM]</span>');
+            if (line.includes('[LEAD]')) html = html.replace('[LEAD]', '<span class="tag-lead">[LEAD]</span>');
+            if (line.includes('[ERROR]')) html = html.replace('[ERROR]', '<span class="tag-error">[ERROR]</span>');
+            
+            return html;
+        }
+
+        async function fetchLogs() {
+            try {
+                const response = await fetch('/api/debug/prospeccao');
+                const jobs = await response.json();
+                
+                const container = document.getElementById('jobs-container');
+                container.innerHTML = '';
+
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400">Nenhum histórico encontrado.</div>';
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const logs = job.logs_processamento || [];
+                    const statusClass = job.status === 'concluido' ? 'text-green-400' : job.status === 'erro' ? 'text-red-400' : 'text-blue-400';
+                    
+                    const jobCard = document.createElement('div');
+                    jobCard.className = 'log-container mb-8';
+                    jobCard.innerHTML = `
+                        <div class="flex justify-between items-start border-b border-gray-700 pb-4 mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-blue-300">#${job.job_id} - ${job.nicho} em ${job.cidade}</h2>
+                                <p class="text-sm text-gray-400">${new Date(job.criado_em).toLocaleString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-900 ${statusClass}">${job.status.toUpperCase()}</span>
+                                <p class="text-sm mt-1 font-bold">Leads: <span class="text-green-400">${job.leads_coletados || 0}</span></p>
+                            </div>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto space-y-1 text-sm font-mono leading-relaxed">
+                            ${logs.length > 0 ? logs.map(l => `<div class="log-line">${formatLog(l)}</div>`).join('') : '<div class="text-gray-500 italic">Sem logs registrados para este job.</div>'}
+                        </div>
+                    `;
+                    container.appendChild(jobCard);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar logs:', error);
+                document.getElementById('jobs-container').innerHTML = '<div class="text-red-500 font-bold">Erro ao carregar logs. Verifique a API.</div>';
+            }
+        }
+
+        fetchLogs();
+        // Polling a cada 10 segundos
+        setInterval(fetchLogs, 10000);
+    </script>
+</body>
+</html>
