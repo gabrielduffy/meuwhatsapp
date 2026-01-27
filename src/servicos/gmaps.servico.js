@@ -1,14 +1,13 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { obterDDDsDaCidade, validarDDD } = require('../utilitarios/ddd.util');
-const logger = require('./logger.servico');
-const prospeccaoRepo = require('../repositorios/prospeccao.repositorio');
+// const logger = require('./logger.servico');
 
 puppeteer.use(StealthPlugin());
 
 /**
- * SERVIÇO DE ELITE: TITAN-ENGINE GMAPS v3
- * Extração massiva via Protocolo Paralelo + Proxy Rotativo + Logs em Tempo Real
+ * TITAN-ENGINE v4: O FINAL BOSS DO SCRAPING
+ * Híbrido: Rede (XHR) + DOM (Fast Scan) + Intercepção de Protocolo
  */
 
 function formatarWhatsApp(telefone) {
@@ -27,15 +26,18 @@ function formatarWhatsApp(telefone) {
 async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jobId = null) {
     const log = async (msg) => {
         const timestamp = new Date().toLocaleTimeString();
-        const formattedMsg = `[TITAN] ${msg}`;
-        console.log(formattedMsg);
-        if (onProgress) onProgress({ msg: msg });
-
-        // Grava no banco de dados para visualização na aba Histórico
+        console.log(`[TITAN-v4] ${msg}`);
+        if (onProgress) onProgress({ msg });
         if (jobId) {
-            await prospeccaoRepo.atualizarHistoricoScraping(jobId, {
-                log: `[${timestamp}] ${msg}`
-            }).catch(() => { });
+            try {
+                // Import dinâmico para evitar quebras se o DB estiver offline
+                const repo = require('../repositorios/prospeccao.repositorio');
+                if (repo && repo.atualizarHistoricoScraping) {
+                    await repo.atualizarHistoricoScraping(jobId, {
+                        log: `[${timestamp}] ${msg}`
+                    });
+                }
+            } catch (e) { }
         }
     };
 
@@ -43,7 +45,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
     const searchQuery = encodeURIComponent(`${niche} em ${city}`);
     const sessionId = Math.random().toString(36).substring(7);
 
-    // Configuração de Proxy (Essencial para não ser bloqueado e ter velocidade)
+    // Proxies Residenciais
     const PROXY_HOST = 'gw.dataimpulse.com:823';
     const PROXY_USER = `14e775730d7037f4aad0__cr.br;sessid.${sessionId}`;
     const PROXY_PASS = '8aebbfaa273d7787';
@@ -52,93 +54,97 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
         headless: true,
         args: [
             `--proxy-server=${PROXY_HOST}`,
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-software-rasterizer'
+            '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
+            '--disable-gpu', '--blink-settings=imagesEnabled=false'
         ]
     });
 
     try {
         const page = await browser.newPage();
         await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
-        await page.setViewport({ width: 1024, height: 768 });
-
-        await log(`Engatando Titan-Engine v3...`);
-        await log(`Alvo: ${niche} em ${city} (Meta: ${limit} leads)`);
-
-        // Acessa a página inicial para validar o ambiente e cookies
-        await page.goto(`https://www.google.com/maps/search/${searchQuery}`, {
-            waitUntil: 'domcontentloaded',
-            timeout: 60000
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) req.abort();
+            else req.continue();
         });
 
-        await log(`Protocolos Google interceptados. Iniciando extração paralela...`);
+        const leads = [];
+        const seen = new Set();
 
-        // TÉCNICA DE ELITE: Extração Multiplexada
-        const totalLeadsRaw = await page.evaluate(async (limit, searchQuery) => {
-            const results = [];
-            const seen = new Set();
-
-            // Disparar requisições para múltiplas janelas de resultados
-            const batchSize = 20;
-            const numBatches = Math.ceil(limit / batchSize) + 2;
-            const promises = [];
-
-            for (let i = 0; i < numBatches; i++) {
-                const offset = i * batchSize;
-                // Endpoint interno de RPC do Maps - Altíssima velocidade
-                const url = `/maps/search/${searchQuery}/?authuser=0&hl=pt-BR&gl=br&pb=!1m4!1i${i}!2i${batchSize}!4m2!11m1!2i${offset}!20m1!1e1!2b1`;
-
-                promises.push(
-                    fetch(url)
-                        .then(r => r.text())
-                        .then(text => {
-                            // Regex de alta performance para extração binária de nomes e telefones
-                            const pattern = /\["0x[a-f0-9]+:0x[a-f0-9]+",\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/g;
-                            let match;
-                            while ((match = pattern.exec(text)) !== null) {
-                                const nome = match[1];
-                                const telefone = match[2];
-                                if (nome && telefone && !seen.has(nome)) {
-                                    seen.add(nome);
-                                    results.push({ nome, telefone });
+        page.on('response', async (response) => {
+            const url = response.url();
+            if (url.includes('search') || url.includes('rpc')) {
+                try {
+                    const text = await response.text();
+                    const matches = text.match(/\["0x[a-f0-9]+:0x[a-f0-9]+",\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/g);
+                    if (matches) {
+                        for (const m of matches) {
+                            const detail = m.match(/\[null,"([^"]+)"\].*?,"(\+?\d[^"]+)"/);
+                            if (detail && detail[1] && detail[2]) {
+                                const nome = detail[1];
+                                const whatsapp = formatarWhatsApp(detail[2]);
+                                if (whatsapp && validarDDD(whatsapp, dddsValidos) && !seen.has(whatsapp)) {
+                                    seen.add(whatsapp);
+                                    leads.push({ nome, whatsapp });
                                 }
                             }
-                        })
-                        .catch(() => { })
-                );
-            }
-
-            await Promise.all(promises);
-            return results;
-        }, limit, searchQuery);
-
-        await log(`Extração bruta finalizada: ${totalLeadsRaw.length} candidatos encontrados.`);
-
-        const finalLeads = [];
-        for (const item of totalLeadsRaw) {
-            if (finalLeads.length >= limit) break;
-            const whatsapp = formatarWhatsApp(item.telefone);
-            if (whatsapp && validarDDD(whatsapp, dddsValidos)) {
-                if (!finalLeads.find(l => l.whatsapp === whatsapp)) {
-                    finalLeads.push({ nome: item.nome, whatsapp });
-                    // A cada 10 leads, reportamos o sucesso no log do banco
-                    if (finalLeads.length % 10 === 0) {
-                        await log(`Capturados ${finalLeads.length} leads qualificados...`);
+                        }
                     }
+                } catch (e) { }
+            }
+        });
+
+        await log(`Buscando: ${niche} em ${city}...`);
+        await page.goto(`https://www.google.com/maps/search/${searchQuery}`, { waitUntil: 'domcontentloaded' });
+
+        let scrolls = 0;
+        const maxScrolls = 60;
+
+        while (leads.length < limit && scrolls < maxScrolls) {
+            const domLeads = await page.evaluate(() => {
+                const items = [];
+                const cards = document.querySelectorAll('div[role="article"]');
+                cards.forEach(c => {
+                    const name = c.querySelector('.qBF1Pd')?.innerText;
+                    const text = c.innerText || "";
+                    const phoneMatch = text.match(/(\+?55)?\s?\(?\d{2}\)?\s?9?\d{4}-?\d{4}/);
+                    if (name && phoneMatch) items.push({ nome: name, telefone: phoneMatch[0] });
+                });
+                return items;
+            });
+
+            for (const item of domLeads) {
+                const whatsapp = formatarWhatsApp(item.telefone);
+                if (whatsapp && validarDDD(whatsapp, dddsValidos) && !seen.has(whatsapp)) {
+                    seen.add(whatsapp);
+                    leads.push({ nome: item.nome, whatsapp });
                 }
             }
+
+            if (onProgress && leads.length > 0) {
+                onProgress({ p: Math.min(Math.round((leads.length / limit) * 100), 99) });
+            }
+
+            if (leads.length >= limit) break;
+
+            await page.evaluate(() => {
+                const feed = document.querySelector('div[role="feed"]');
+                if (feed) feed.scrollBy(0, 8000);
+                else window.scrollBy(0, 8000);
+            });
+
+            await new Promise(r => setTimeout(r, 1200));
+            scrolls++;
+
+            const isEnd = await page.evaluate(() => document.body.innerText.includes('fim da lista'));
+            if (isEnd) break;
         }
 
-        if (onProgress) onProgress({ p: 100 });
-
-        await log(`Missão cumprida! ${finalLeads.length} leads processados em tempo recorde.`);
-        return finalLeads;
+        await log(`Busca finalizada! ${leads.length} leads encontrados.`);
+        return leads.slice(0, limit);
 
     } catch (error) {
-        await log(`FALHA CRÍTICA: ${error.message}`);
+        await log(`ERRO: ${error.message}`);
         return [];
     } finally {
         await browser.close();

@@ -81,15 +81,15 @@ mapScraperQueue.process(async (job) => {
                 if (source === 'gmaps') {
                     sourceLeads = await gmapsServico.buscarLeadsNoMaps(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'instagram') {
-                    sourceLeads = await instagramServico.buscarLeadsNoInstagram(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await instagramServico.buscarLeadsNoInstagram(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'olx') {
-                    sourceLeads = await olxServico.buscarLeadsNoOLX(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await olxServico.buscarLeadsNoOLX(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'linkedin') {
-                    sourceLeads = await linkedinServico.buscarLeadsNoLinkedIn(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await linkedinServico.buscarLeadsNoLinkedIn(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'facebook') {
-                    sourceLeads = await facebookServico.buscarLeadsNoFacebook(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await facebookServico.buscarLeadsNoFacebook(niche, city, limitPerSource, progressCallback, jobIdStr);
                 } else if (source === 'threads') {
-                    sourceLeads = await threadsServico.buscarLeadsNoThreads(niche, city, limitPerSource, progressCallback);
+                    sourceLeads = await threadsServico.buscarLeadsNoThreads(niche, city, limitPerSource, progressCallback, jobIdStr);
                 }
             } catch (err) {
                 console.error(`[MapScraperQueue] Erro na fonte ${source}:`, err.message);
