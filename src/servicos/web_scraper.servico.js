@@ -95,7 +95,12 @@ async function buscarNaWeb(site, niche, city, limit, onProgress, label, jobId = 
                     if (whatsapp && !processed.has(whatsapp) && validarDDD(whatsapp, dddsValidos)) {
                         processed.add(whatsapp);
                         leads.push({ nome: `${niche} - ${label}`, whatsapp });
-                        console.log(`[✓] Lead Dork: ${whatsapp}`);
+                        await log(`[LEAD] Encontrado em ${label}: ${whatsapp}`);
+
+                        if (onProgress) {
+                            onProgress({ p: Math.min(Math.round((leads.length / limit) * 100), 99) });
+                        }
+
                         if (leads.length >= limit) break;
                     }
                 }

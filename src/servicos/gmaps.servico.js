@@ -86,6 +86,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                                 if (whatsapp && validarDDD(whatsapp, dddsValidos) && !seen.has(whatsapp)) {
                                     seen.add(whatsapp);
                                     leads.push({ nome, whatsapp });
+                                    await log(`[LEAD] Novo lead encontrado: ${nome} (${whatsapp})`);
                                 }
                             }
                         }
@@ -118,6 +119,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                 if (whatsapp && validarDDD(whatsapp, dddsValidos) && !seen.has(whatsapp)) {
                     seen.add(whatsapp);
                     leads.push({ nome: item.nome, whatsapp });
+                    await log(`[LEAD] Novo lead encontrado: ${item.nome} (${whatsapp})`);
                 }
             }
 
