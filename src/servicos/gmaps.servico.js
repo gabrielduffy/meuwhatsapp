@@ -17,11 +17,16 @@ function formatarWhatsApp(telefone) {
     // Se for um número brasileiro sem 55 mas com DDD
     if (limpo.length === 10 || limpo.length === 11) limpo = '55' + limpo;
 
-    // Normalização de celular (adicionando o 9 se faltar)
+    // Normalização inteligente de 9º dígito (apenas para celulares)
     if (limpo.length === 12 && limpo.startsWith('55')) {
         const ddd = limpo.substring(2, 4);
         const resto = limpo.substring(4);
-        return `55${ddd}9${resto}`;
+        const primeiroDigito = resto.charAt(0);
+
+        // Celulares no Brasil começam com 6, 7, 8 ou 9
+        if (['6', '7', '8', '9'].includes(primeiroDigito)) {
+            return `55${ddd}9${resto}`;
+        }
     }
 
     return (limpo.length >= 12) ? limpo : null;
@@ -99,19 +104,19 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                                 seenPhones.add(whatsapp);
                                 seenNames.add(nome);
                                 leads.push({ nome, whatsapp, origem: 'network-struct' });
-                                await log(`[LEAD] Encontrado via Rede (Estruturado): ${nome} (${whatsapp})`);
+                                await log(`[LEAD] Novo: ${nome} (${whatsapp})`);
                             }
                         }
                     }
 
                     // 2. Coletor Universal (Regex de Telefone em qualquer lugar do JSON)
-                    const anyPhones = text.match(/(?:\+?55\s?)?\(?\d{2}\)?\s?9\d{4}[-\s]?\d{4}/g) || [];
+                    const anyPhones = text.match(/(?:\+?55\s?)?\(?\d{2}\)?\s?[9]?\d{4}[-\s]?\d{4}/g) || [];
                     for (const p of anyPhones) {
                         const whatsapp = formatarWhatsApp(p);
                         if (whatsapp && validarDDD(whatsapp, dddsValidos) && !seenPhones.has(whatsapp)) {
                             seenPhones.add(whatsapp);
                             leads.push({ nome: `${niche} (Maps)`, whatsapp, origem: 'network-any' });
-                            await log(`[LEAD] Encontrado via Rede (Varredura): ${whatsapp}`);
+                            await log(`[LEAD] Capturado via rede: ${whatsapp}`);
                         }
                     }
                 } catch (e) { }
@@ -125,7 +130,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
         });
 
         let scrollsSemNovos = 0;
-        const maxScrollsSemNovos = 15;
+        const maxScrollsSemNovos = 25; // Aumentado para ser mais paciente
         let lastLeadsCount = 0;
 
         // 🌀 SMART SCROLL V7: Scroll infinito real até bater o limite
@@ -139,7 +144,7 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                     const nameEl = card.querySelector('.qBF1Pd');
                     const text = card.innerText || "";
                     // Regex v7: Captura padrão de telefone brasileiro no texto do card (celulares e fixos)
-                    const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?9\d{4}[-\s]?\d{4}/) || text.match(/(?:\(?\d{2}\)?\s?)?\d{4}[-\s]?\d{4}/);
+                    const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?[9]\d{4}[-\s]?\d{4}/) || text.match(/(?:\(?\d{2}\)?\s?)?\d{4}[-\s]?\d{4}/);
                     if (nameEl && phoneMatch) {
                         results.push({ nome: nameEl.innerText, telefone: phoneMatch[0] });
                     }
@@ -166,34 +171,40 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
 
             if (leads.length >= limit) break;
 
-            // 🖱️ SMART SCROLL ACTION (Agressivo)
+            // SCROLL INTELIGENTE E INCREMENTAL
             await page.evaluate(async () => {
                 const scrollContainer = document.querySelector('div[role="feed"]') ||
                     document.querySelector('.m67q60eb6Zt__column') ||
                     window;
 
-                if (scrollContainer === window) {
-                    window.scrollBy(0, 10000);
-                } else {
-                    scrollContainer.scrollBy(0, 10000);
+                // Rola aos poucos para disparar o lazy load do Google
+                for (let i = 0; i < 3; i++) {
+                    if (scrollContainer === window) {
+                        window.scrollBy(0, 2000);
+                    } else {
+                        scrollContainer.scrollTop += 2000;
+                    }
+                    await new Promise(r => setTimeout(r, 500));
                 }
             });
 
             // Aguarda o Google carregar mais dados (XHR)
-            await new Promise(r => setTimeout(r, 2500));
+            await new Promise(r => setTimeout(r, 3000));
 
             // Detector de Estagnação
             if (leads.length === lastLeadsCount) {
                 scrollsSemNovos++;
-                await log(`Aguardando mais resultados... (${scrollsSemNovos}/${maxScrollsSemNovos})`);
+                await log(`Progresso: ${leads.length} leads. Aguardando novos... (${scrollsSemNovos}/${maxScrollsSemNovos})`);
             } else {
                 scrollsSemNovos = 0;
+                await log(`Progresso: ${leads.length} leads coletados.`);
             }
             lastLeadsCount = leads.length;
 
             // Verifica se chegamos ao fim da lista real
             const isEnd = await page.evaluate(() => {
-                const bodyText = document.body.innerText.toLowerCase();
+                const feed = document.querySelector('div[role="feed"]');
+                const bodyText = (feed ? feed.innerText : document.body.innerText).toLowerCase();
                 const endSelectors = ['.HlvSq', '.m67q60eb6Zt__res-end', '.PbZDve'];
                 const hasEndClass = endSelectors.some(s => document.querySelector(s) !== null);
 
@@ -202,16 +213,13 @@ async function buscarLeadsNoMaps(niche, city, limit = 150, onProgress = null, jo
                     hasEndClass;
             });
 
-            if (isEnd) {
-                await log("Fim da lista alcançado pelo Google.");
-                // Tenta um último scroll forçado
-                await page.evaluate(() => window.scrollBy(0, 5000));
-                await new Promise(r => setTimeout(r, 1500));
-                if (leads.length === lastLeadsCount) break;
+            if (isEnd && scrollsSemNovos > 5) { // Confirma o fim da lista após algumas tentativas sem novos leads
+                await log("Fim da lista confirmado.");
+                break;
             }
         }
 
-        await log(`Extração concluída! Leads Totais: ${leads.length}`);
+        await log(`Extração concluída! Total final: ${leads.length} leads.`);
         return leads.slice(0, limit);
 
     } catch (error) {
