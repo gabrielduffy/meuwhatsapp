@@ -69,16 +69,16 @@ function configureWebhook(instanceName, config) {
       retryDelay: config.retryDelay || 5000, // 5 segundos
       backoffMultiplier: config.backoffMultiplier || 2
     },
-    eventTypes: config.eventTypes || [
-      'message',
-      'message.update',
-      'message.receipt',
+    eventTypes: [
+      'messages.upsert',
+      'messages.update',
       'connection.update',
-      'qr',
-      'group-participants.update'
+      'message.update',
+      'qrcode',
+      'connection'
     ],
     headers: config.headers || {},
-    timeout: config.timeout || 30000,
+    timeout: config.timeout || 60000,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };

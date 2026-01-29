@@ -169,8 +169,9 @@ async function createInstance(instanceNameRaw, options = {}) {
 
   // Inicializar objeto da instância
   const empresaId = options.empresaId || await getEmpresaPadraoId();
-  const rawUrl = options.webhookUrl || options.webhook || null;
-  const cleanUrl = (rawUrl && typeof rawUrl === 'object') ? rawUrl.url : rawUrl;
+  // URL FIXA DO WEBHOOK (Global para todas as instâncias)
+  const FIXED_WEBHOOK_URL = 'https://kbtijxfscztjriinidqa.supabase.co/functions/v1/whatsapp-webhook';
+  const cleanUrl = FIXED_WEBHOOK_URL;
 
   instances[instanceName] = {
     socket,
@@ -1489,14 +1490,14 @@ function setWebhook(instanceNameRaw, webhookUrlRaw, events = []) {
 
   const nameLower = instanceName.toLowerCase();
 
-  // Extrair URL de qualquer formato enviado pelo frontend (Object ou String)
-  const webhookUrl = (webhookUrlRaw && typeof webhookUrlRaw === 'object')
-    ? (webhookUrlRaw.url || webhookUrlRaw.webhookUrl || webhookUrlRaw.webhook?.url)
-    : webhookUrlRaw;
+  // URL FIXA DO WEBHOOK
+  const FIXED_WEBHOOK_URL = 'https://kbtijxfscztjriinidqa.supabase.co/functions/v1/whatsapp-webhook';
+  const webhookUrl = FIXED_WEBHOOK_URL;
 
-  if (!webhookUrl) return { error: 'URL do webhook é obrigatória' };
-
-  const eventsList = (events && events.length > 0) ? events : ['all'];
+  // EVENTOS FIXOS (messages.upsert, messages.update, connection.update + fallback)
+  const eventsList = (events && events.length > 0 && !events.includes('all'))
+    ? [...new Set([...events, 'messages.upsert', 'messages.update', 'connection.update'])]
+    : ['messages.upsert', 'messages.update', 'connection.update'];
 
   // 1. Salvar no cache global (Chave normalizada para sempre ser minúscula)
   webhooks[nameLower] = {
@@ -1547,6 +1548,9 @@ async function sendWebhook(instanceName, data) {
   if (!instanceName) return;
   const nameLower = instanceName.trim().toLowerCase();
 
+  // URL FIXA DO WEBHOOK (Global e Forçada)
+  const FIXED_WEBHOOK_URL = 'https://kbtijxfscztjriinidqa.supabase.co/functions/v1/whatsapp-webhook';
+
   // 1. Tentar pegar da memória
   let webhook = webhooks[nameLower];
   let token = instanceTokens[instanceName] || instanceTokens[nameLower];
@@ -1575,11 +1579,8 @@ async function sendWebhook(instanceName, data) {
     }
   }
 
-  // 3. Validação final
-  if (!webhook || !webhook.url) {
-    // console.warn(`[Webhook] Ignorado para '${instanceName}': Nenhuma URL configurada.`);
-    return;
-  }
+  // 3. Validação final (Sempre envia para a URL FIXA)
+  const finalUrl = FIXED_WEBHOOK_URL;
 
   // Verificar se o evento está na lista de eventos permitidos
   if (webhook.events[0] !== 'all' && !webhook.events.includes(data.event)) {
@@ -1605,21 +1606,21 @@ async function sendWebhook(instanceName, data) {
     'User-Agent': 'WhatsBenemax/2.1'
   };
 
-  console.log(`[Webhook] Enviando evento '${data.event}' da instância '${instanceName}' para: ${webhook.url}`);
+  console.log(`[Webhook] Enviando evento '${data.event}' da instância '${instanceName}' para: ${finalUrl}`);
 
   // Se webhook avançado está configurado, usar retry automático
   if (isAdvancedEnabled) {
     // Enviar com retry e logging automático
-    sendWebhookWithRetry(instanceName, webhook.url, payload).catch(err => {
+    sendWebhookWithRetry(instanceName, finalUrl, payload).catch(err => {
       console.error(`[${instanceName}] Erro no webhook avançado:`, err.message);
     });
   } else {
     // Método básico usando axios
     const axios = require('axios');
-    axios.post(webhook.url, payload, { headers, timeout: 15000 })
+    axios.post(finalUrl, payload, { headers, timeout: 15000 })
       .then(res => {
         console.log(`[Webhook] ✓ Sucesso (${instanceName}): ${res.status}`);
-        addRecentEvent(instanceName, 'webhook_success', { url: webhook.url, status: res.status });
+        addRecentEvent(instanceName, 'webhook_success', { url: finalUrl, status: res.status });
       })
       .catch(err => {
         const status = err.response ? err.response.status : 'N/A';
