@@ -19,8 +19,14 @@ function setTokensReference(tokens) {
 }
 
 // Garantir que o diretório existe
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    console.log(`[Webhook] Criando diretório de dados: ${DATA_DIR}`);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.error(`[CRITICAL] Falha ao criar diretório ${DATA_DIR}:`, err.message);
+  // Não parar o processo se for apenas log, mas avisar
 }
 
 // Carregar configurações e logs salvos
