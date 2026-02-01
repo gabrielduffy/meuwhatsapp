@@ -1636,7 +1636,7 @@ async function sendWebhook(instanceName, data) {
   // Se webhook avançado está configurado, usar retry automático
   if (isAdvancedEnabled) {
     // Enviar com retry e logging automático
-    sendWebhookWithRetry(instanceName, finalUrl, payload).catch(err => {
+    sendWebhookWithRetry(instanceName, finalUrl, payload, {}, token).catch(err => {
       console.error(`[${instanceName}] Erro no webhook avançado:`, err.message);
     });
   } else {

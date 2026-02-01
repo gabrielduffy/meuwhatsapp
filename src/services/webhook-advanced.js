@@ -8,26 +8,14 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 const WEBHOOK_LOGS_FILE = path.join(DATA_DIR, 'webhook-logs.json');
 const WEBHOOK_CONFIG_FILE = path.join(DATA_DIR, 'webhook-configs.json');
 
-// Objeto de tokens (será preenchido pela inicialização ou via injeção)
-let instanceTokens = {};
-
-const circuitBreaker = require('./circuitBreaker');
-
-// Função para injetar dependência de tokens e evitar require circular
-function setTokensReference(tokens) {
-  instanceTokens = tokens;
-}
-
 // Garantir que o diretório existe
 try {
   if (!fs.existsSync(DATA_DIR)) {
-    console.log(`[Webhook] Criando diretório de dados: ${DATA_DIR}`);
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-} catch (err) {
-  console.error(`[CRITICAL] Falha ao criar diretório ${DATA_DIR}:`, err.message);
-  // Não parar o processo se for apenas log, mas avisar
-}
+} catch (err) { }
+
+const circuitBreaker = require('./circuitBreaker');
 
 // Carregar configurações e logs salvos
 function loadWebhookData() {
@@ -173,7 +161,7 @@ function clearWebhookLogs(instanceName) {
 }
 
 // Função para enviar webhook com retry automático
-async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = {}) {
+async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = {}, token = null) {
   const webhookConfig = getWebhookConfig(instanceName);
   const retryConfig = webhookConfig?.retryConfig || {
     maxRetries: 3,
@@ -214,9 +202,9 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'WhatsBenemax/2.1',
-          'apikey': instanceTokens[instanceName] || '',
-          'X-API-Key': instanceTokens[instanceName] || '',
-          'Authorization': instanceTokens[instanceName] ? `Bearer ${instanceTokens[instanceName]}` : '',
+          'apikey': token || '',
+          'X-API-Key': token || '',
+          'Authorization': token ? `Bearer ${token}` : '',
           ...headers
         },
         body: JSON.stringify(payload),
@@ -324,7 +312,7 @@ function isEventTypeEnabled(instanceName, eventType) {
 }
 
 // Testar webhook (enviar payload de teste)
-async function testWebhook(instanceName, webhookUrl) {
+async function testWebhook(instanceName, webhookUrl, token = null) {
   const testPayload = {
     event: 'webhook.test',
     instanceName,
@@ -337,7 +325,7 @@ async function testWebhook(instanceName, webhookUrl) {
 
   console.log(`[Webhook] Testando webhook para ${instanceName}: ${webhookUrl}`);
 
-  return await sendWebhookWithRetry(instanceName, webhookUrl, testPayload);
+  return await sendWebhookWithRetry(instanceName, webhookUrl, testPayload, {}, token);
 }
 
 // Obter estatísticas de webhook

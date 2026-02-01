@@ -108,7 +108,8 @@ router.post('/test/:instanceName', async (req, res) => {
       return res.status(400).json({ error: 'URL é obrigatória para teste' });
     }
 
-    const result = await webhookAdvanced.testWebhook(instanceName, url);
+    const token = whatsapp.instanceTokens[instanceName] || '';
+    const result = await webhookAdvanced.testWebhook(instanceName, url, token);
 
     res.json({
       success: result.success,
