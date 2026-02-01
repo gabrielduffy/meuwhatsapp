@@ -18,7 +18,8 @@ const { query: dbQuery } = require('./config/database');
 const { redis, cache } = require('./config/redis');
 
 // Importar jobs de status (inicializa cron jobs)
-require('./jobs/statusChecker');
+// TEMPORARIAMENTE DESABILITADO PARA DEBUG
+// require('./jobs/statusChecker');
 const { iniciarTarefaFollowup } = require('./tarefas/followup.tarefa');
 const { iniciarTarefaWhiteLabel } = require('./tarefas/whitelabel.tarefa');
 
