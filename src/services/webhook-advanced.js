@@ -11,6 +11,15 @@ const WEBHOOK_CONFIG_FILE = path.join(DATA_DIR, 'webhook-configs.json');
 // Circuit Breaker para evitar chamadas a destinos offline
 const circuitBreaker = require('./circuitBreaker');
 
+// Importar tokens das instâncias para os headers (carregamento tardio para evitar circular dependecy)
+let instanceTokens = {};
+try {
+  const whatsapp = require('./whatsapp');
+  instanceTokens = whatsapp.instanceTokens;
+} catch (e) {
+  // Fallback se não conseguir carregar agora
+}
+
 // Garantir que o diretório existe
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
