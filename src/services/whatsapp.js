@@ -269,6 +269,13 @@ async function createInstance(instanceNameRaw, options = {}) {
       instances[instanceName].user = socket.user;
       instances[instanceName].lastActivity = new Date().toISOString();
 
+      // Resetar contador de reconexões com sucesso
+      instances[instanceName].reconnectAttempts = 0;
+      if (instances[instanceName].reconnectTimeout) {
+        clearTimeout(instances[instanceName].reconnectTimeout);
+        delete instances[instanceName].reconnectTimeout;
+      }
+
       addRecentEvent(instanceName, 'connection_open', { user: socket.user });
 
       // Forçar atualização do estado no banco imediatamente
@@ -305,9 +312,27 @@ async function createInstance(instanceNameRaw, options = {}) {
       }
 
       if (shouldReconnect) {
-        const delayMs = 5000;
-        console.log(`[${instanceName}] 🔄 Tentando reconectar em ${delayMs}ms...`);
-        setTimeout(() => createInstance(instanceName, options), delayMs);
+        // Cálculo de backoff exponencial: 5s, 10s, 20s, 40s... até limitar em 5 minutos
+        const backoffTimes = instances[instanceName].reconnectAttempts || 0;
+        instances[instanceName].reconnectAttempts = backoffTimes + 1;
+
+        const delayMs = Math.min(5000 * Math.pow(2, backoffTimes), 300000);
+        const jitter = Math.random() * 2000;
+        const finalDelay = delayMs + jitter;
+
+        console.log(`[${instanceName}] 🔄 Tentativa de reconexão #${backoffTimes + 1} em ${Math.round(finalDelay / 1000)}s...`);
+
+        // Limpar timeout anterior se existir para evitar duplicação
+        if (instances[instanceName].reconnectTimeout) {
+          clearTimeout(instances[instanceName].reconnectTimeout);
+        }
+
+        instances[instanceName].reconnectTimeout = setTimeout(() => {
+          createInstance(instanceName, options);
+        }, finalDelay);
+      } else {
+        console.log(`[${instanceName}] ❌ Logout detectado ou erro fatal. Não reconectando automática.`);
+        instances[instanceName].reconnectAttempts = 0;
       }
     }
   });

@@ -582,12 +582,14 @@ if (process.env.NODE_ENV !== 'test') {
     // Inicializar tarefa de white label
     iniciarTarefaWhiteLabel();
 
-    // Carregar sessões existentes
-    await loadExistingSessions();
-
     // Inicializar tabelas de prospecção
     const prospeccaoRepo = require('./repositorios/prospeccao.repositorio');
     await prospeccaoRepo.inicializarTabelaHistorico();
+
+    // Carregar sessões existentes (Após inicializar tudo)
+    const { loadExistingSessions } = require('./services/whatsapp');
+    logger.info('Iniciando carregamento de sessões existentes...');
+    await loadExistingSessions();
 
     // Log de filas Bull
     logger.info('Filas Bull (Redis) inicializadas: map-scraper');

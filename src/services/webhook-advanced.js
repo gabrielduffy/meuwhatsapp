@@ -250,11 +250,15 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
 
     attempt++;
 
-    // Se não for a última tentativa, aguardar antes de retry
+    // Se não for a última tentativa, aguardar antes de retry com backoff exponencial
     if (attempt <= retryConfig.maxRetries) {
+      // 5s, 10s, 20s... até o multiplicador
       const delay = retryConfig.retryDelay * Math.pow(retryConfig.backoffMultiplier, attempt - 1);
-      console.log(`[Webhook] ${instanceName} - Aguardando ${delay}ms antes de retry ${attempt}/${retryConfig.maxRetries}`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const jitter = Math.random() * 1000; // Adicionar jitter de 1s para evitar thundering herd
+      const finalDelay = Math.min(delay + jitter, 60000); // No máximo 1 minuto entre tentativas de webhook
+
+      console.log(`[Webhook] ${instanceName} - Aguardando ${Math.round(finalDelay)}ms antes de retry ${attempt}/${retryConfig.maxRetries}`);
+      await new Promise(resolve => setTimeout(resolve, finalDelay));
     }
   }
 

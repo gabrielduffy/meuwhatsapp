@@ -2,11 +2,11 @@ const { Pool } = require('pg');
 
 // Conexão PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://whatsbenemax:%40412Trocar@postgres:5432/whatsbenemax',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20, // Máximo de conexões no pool
+  connectionString: config.databaseUrl,
+  max: 50, // Aumentado para suportar mais instâncias simultâneas
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 30000, // Aumentado para evitar timeouts em ambientes lentos
+  connectionTimeoutMillis: 5000,
+  ssl: config.databaseUrl && config.databaseUrl.includes('supabase.co') ? { rejectUnauthorized: false } : false
 });
 
 // Testar conexão ao iniciar

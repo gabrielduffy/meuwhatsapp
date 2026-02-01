@@ -2,11 +2,18 @@ const Redis = require('ioredis');
 
 // Configuração Redis
 const redis = new Redis(process.env.REDIS_URL || 'redis://:@412Trocar@redis:6379', {
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: 20,
   enableReadyCheck: true,
   retryStrategy(times) {
     const delay = Math.min(times * 50, 2000);
     return delay;
+  },
+  reconnectOnError(err) {
+    const targetError = 'READONLY';
+    if (err.message.includes(targetError)) {
+      return true;
+    }
+    return false; // Only reconnect on specific error
   }
 });
 
