@@ -1868,5 +1868,6 @@ module.exports = {
   sendWebhook,
   setRejectCalls,
   loadExistingSessions,
-  configurarSocketIO
+  configurarSocketIO,
+  instanceTokens
 };

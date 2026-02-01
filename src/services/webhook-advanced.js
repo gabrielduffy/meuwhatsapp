@@ -8,16 +8,14 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 const WEBHOOK_LOGS_FILE = path.join(DATA_DIR, 'webhook-logs.json');
 const WEBHOOK_CONFIG_FILE = path.join(DATA_DIR, 'webhook-configs.json');
 
-// Circuit Breaker para evitar chamadas a destinos offline
+// Objeto de tokens (será preenchido pela inicialização ou via injeção)
+let instanceTokens = {};
+
 const circuitBreaker = require('./circuitBreaker');
 
-// Importar tokens das instâncias para os headers (carregamento tardio para evitar circular dependecy)
-let instanceTokens = {};
-try {
-  const whatsapp = require('./whatsapp');
-  instanceTokens = whatsapp.instanceTokens;
-} catch (e) {
-  // Fallback se não conseguir carregar agora
+// Função para injetar dependência de tokens e evitar require circular
+function setTokensReference(tokens) {
+  instanceTokens = tokens;
 }
 
 // Garantir que o diretório existe
@@ -416,6 +414,7 @@ function initWebhookAdvanced() {
 
 module.exports = {
   initWebhookAdvanced,
+  setTokensReference,
   configureWebhook,
   getWebhookConfig,
   deleteWebhookConfig,

@@ -66,10 +66,14 @@ const { initMetrics } = require('./services/metrics');
 const { initScheduler } = require('./services/scheduler');
 const { initBroadcast } = require('./services/broadcast');
 const { initAutoResponder } = require('./services/autoresponder');
-const { initWebhookAdvanced } = require('./services/webhook-advanced');
+const { initWebhookAdvanced, setTokensReference } = require('./services/webhook-advanced');
 const chatServico = require('./servicos/chat.servico');
 const { mapScraperQueue } = require('./queues/mapScraperQueue');
 const telemetry = require('./services/telemetry');
+const { instanceTokens } = require('./services/whatsapp');
+
+// Injetar referência de tokens antes de qualquer coisa para evitar circular dependency
+setTokensReference(instanceTokens);
 
 
 const app = express();
