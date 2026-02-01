@@ -408,7 +408,6 @@ function initWebhookAdvanced() {
 
 module.exports = {
   initWebhookAdvanced,
-  setTokensReference,
   configureWebhook,
   getWebhookConfig,
   deleteWebhookConfig,
