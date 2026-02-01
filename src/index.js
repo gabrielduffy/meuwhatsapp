@@ -61,7 +61,7 @@ const { whitelabelMiddleware } = require('./middlewares/whitelabel.middleware');
 const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler');
 
 // Importar serviços
-const { loadExistingSessions } = require('./services/whatsapp');
+const { loadExistingSessions, instanceTokens } = require('./services/whatsapp');
 const { initMetrics } = require('./services/metrics');
 const { initScheduler } = require('./services/scheduler');
 const { initBroadcast } = require('./services/broadcast');
@@ -70,7 +70,6 @@ const { initWebhookAdvanced } = require('./services/webhook-advanced');
 const chatServico = require('./servicos/chat.servico');
 const { mapScraperQueue } = require('./queues/mapScraperQueue');
 const telemetry = require('./services/telemetry');
-const { instanceTokens } = require('./services/whatsapp');
 
 
 const app = express();
