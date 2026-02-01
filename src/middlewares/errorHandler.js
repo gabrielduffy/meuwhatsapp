@@ -1,4 +1,4 @@
-const logger = require('../services/logger');
+const logger = require('../config/logger');
 
 /**
  * Middleware global para tratamento de erros
