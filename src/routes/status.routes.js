@@ -243,11 +243,15 @@ router.get('/api/current', async (req, res) => {
     const activeMaintenance = maintenances.find(m => m.status === 'in_progress');
     if (activeMaintenance) overall = 'maintenance';
 
+    const checks = await statusMonitor.runAllChecks();
+
     res.json({
       overall,
       services,
       incidents,
       maintenances,
+      telemetry: checks.telemetry,
+      disconnectedInstances: checks.disconnectedInstances,
       lastUpdated: new Date().toISOString()
     });
   } catch (error) {

@@ -1,7 +1,25 @@
 const { query } = require('../config/database');
 const { redis } = require('../config/redis');
+const telemetry = require('./telemetry');
 
 const statusMonitor = {
+  // Obter logs de instâncias desconectadas recentemente
+  async checkDisconnectedInstances() {
+    try {
+      const result = await query(`
+        SELECT instance_name, last_connected_at, updated_at
+        FROM instances
+        WHERE status IN ('disconnected', 'reconnecting', 'outage')
+        AND updated_at > NOW() - INTERVAL '24 hours'
+        ORDER BY updated_at DESC
+        LIMIT 10
+      `);
+      return result.rows;
+    } catch (error) {
+      return [];
+    }
+  },
+
   async checkApi() {
     const start = Date.now();
     try {
@@ -128,7 +146,9 @@ const statusMonitor = {
       whatsapp: await this.checkWhatsApp(),
       webhooks: await this.checkWebhooks(),
       scheduler: await this.checkScheduler(),
-      broadcast: await this.checkBroadcast()
+      broadcast: await this.checkBroadcast(),
+      telemetry: telemetry.getMemoryUsage(),
+      disconnectedInstances: await this.checkDisconnectedInstances()
     };
   },
 

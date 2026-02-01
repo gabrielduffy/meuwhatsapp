@@ -69,6 +69,7 @@ const { initAutoResponder } = require('./services/autoresponder');
 const { initWebhookAdvanced } = require('./services/webhook-advanced');
 const chatServico = require('./servicos/chat.servico');
 const { mapScraperQueue } = require('./queues/mapScraperQueue');
+const telemetry = require('./services/telemetry');
 
 
 const app = express();
@@ -575,6 +576,9 @@ if (process.env.NODE_ENV !== 'test') {
 
     // Inicializar sistema de webhook avançado
     initWebhookAdvanced();
+
+    // Iniciar monitoramento de telemetria
+    telemetry.start();
 
     // Inicializar tarefa de follow-up
     iniciarTarefaFollowup();

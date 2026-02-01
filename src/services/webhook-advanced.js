@@ -8,6 +8,9 @@ const DATA_DIR = process.env.DATA_DIR || './data';
 const WEBHOOK_LOGS_FILE = path.join(DATA_DIR, 'webhook-logs.json');
 const WEBHOOK_CONFIG_FILE = path.join(DATA_DIR, 'webhook-configs.json');
 
+// Circuit Breaker para evitar chamadas a destinos offline
+const circuitBreaker = require('./circuitBreaker');
+
 // Garantir que o diretório existe
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -171,6 +174,21 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
   let attempt = 0;
   let lastError = null;
 
+  // Verificar se o destino está disponível (Circuit Breaker)
+  if (!circuitBreaker.isAvailable(webhookUrl)) {
+    const cbError = 'Circuito Aberto: Destino persistentemente offline (Circuit Breaker)';
+    addWebhookLog(instanceName, {
+      eventType: payload.event,
+      status: 'failed',
+      statusCode: 0,
+      url: webhookUrl,
+      attempt: 0,
+      duration: 0,
+      error: cbError
+    });
+    return { success: false, error: cbError };
+  }
+
   while (attempt <= retryConfig.maxRetries) {
     try {
       const controller = new AbortController();
@@ -199,6 +217,7 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
 
       // Log de sucesso
       if (response.ok) {
+        circuitBreaker.recordSuccess(webhookUrl); // Avisar que o destino está saudável
         addWebhookLog(instanceName, {
           eventType: payload.event,
           status: 'success',
@@ -246,6 +265,9 @@ async function sendWebhookWithRetry(instanceName, webhookUrl, payload, config = 
       });
 
       console.error(`[Webhook] ${instanceName} - ${errorType} na tentativa ${attempt + 1}: ${error.message}`);
+
+      // Registrar falha para o Circuit Breaker
+      circuitBreaker.recordFailure(webhookUrl);
     }
 
     attempt++;

@@ -494,6 +494,31 @@
 
     <div id="activeIncidents"></div>
 
+    <!-- Diagnóstico em Tempo Real -->
+    <div id="diagnosticsSection" style="display: none; margin-bottom: 2rem;">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Saúde do Servidor
+      </h2>
+      <div class="service-card" style="padding: 1rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+        <div class="stat-item">
+          <small style="color: var(--text-muted); display: block;">Memória RSS</small>
+          <strong id="statMemory" style="font-size: 1.25rem;">-- MB</strong>
+        </div>
+        <div class="stat-item">
+          <small style="color: var(--text-muted); display: block;">Heap Usado</small>
+          <strong id="statHeap" style="font-size: 1.25rem;">-- MB</strong>
+        </div>
+        <div class="stat-item">
+          <small style="color: var(--text-muted); display: block;">Livre no Sistema</small>
+          <strong id="statFree" style="font-size: 1.25rem;">-- MB</strong>
+        </div>
+      </div>
+    </div>
+
     <h2 class="section-title">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round">
@@ -519,6 +544,18 @@
       Incidentes Recentes
     </h2>
     <div id="incidentHistory"></div>
+
+    <div id="disconnectedSection" style="display: none; margin-top: 3rem;">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+        Instâncias Offline (Últimas 24h)
+      </h2>
+      <div id="disconnectedGrid" class="services-grid"></div>
+    </div>
   </main>
 
   <footer class="footer">
@@ -547,6 +584,7 @@
         updateOverall(current.overall);
         renderServices(current.services);
         renderIncidents(incidents.incidents);
+        renderDiagnostics(current.telemetry, current.disconnectedInstances);
 
       } catch (err) {
         console.error('Fetch error:', err);
@@ -650,6 +688,30 @@
           <p class="incident-body">${i.description}</p>
         </div>
       `).join('');
+    }
+
+    function renderDiagnostics(telemetry, disconnected) {
+      if (telemetry) {
+        document.getElementById('diagnosticsSection').style.display = 'block';
+        document.getElementById('statMemory').textContent = telemetry.rss + ' MB';
+        document.getElementById('statHeap').textContent = telemetry.heapUsed + ' MB';
+        document.getElementById('statFree').textContent = telemetry.freeSystem + ' MB';
+      }
+
+      if (disconnected && disconnected.length > 0) {
+        document.getElementById('disconnectedSection').style.display = 'block';
+        const grid = document.getElementById('disconnectedGrid');
+        grid.innerHTML = disconnected.map(inst => `
+          <div class="service-card" style="padding: 1rem; border-left: 4px solid var(--danger);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong>${inst.instance_name}</strong>
+              <small style="color: var(--text-muted);">Visto em: ${new Date(inst.updated_at).toLocaleString('pt-BR')}</small>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        document.getElementById('disconnectedSection').style.display = 'none';
+      }
     }
 
     // Auto theme detection
