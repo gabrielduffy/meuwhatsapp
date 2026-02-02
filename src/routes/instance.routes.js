@@ -24,8 +24,12 @@ const { verificarLimite } = require('../middlewares/empresa');
  *             required: [instanceName]
  *             properties:
  *               instanceName: { type: string, example: "instancia_teste" }
+ *               provider: { type: string, enum: ["baileys", "official"], default: "baileys" }
+ *               accessToken: { type: string, description: "Token da Cloud API (Apenas Oficial)" }
+ *               phoneNumberId: { type: string, description: "ID do número (Apenas Oficial)" }
+ *               wabaId: { type: string, description: "ID da conta Business (Apenas Oficial)" }
+ *               verifyToken: { type: string, description: "Token de verificação do Webhook (Apenas Oficial)" }
  *               token: { type: string, example: "token_opcional" }
- *               browser: { type: string, example: "Chrome" }
  *     responses:
  *       200:
  *         description: Instância criada ou inicializada

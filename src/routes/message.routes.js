@@ -609,4 +609,39 @@ router.post('/presence', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /message/send-template:
+ *   post:
+ *     summary: Enviar Mensagem via Template (API Oficial)
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [instanceName, to, templateName]
+ *             properties:
+ *               instanceName: { type: string }
+ *               to: { type: string }
+ *               templateName: { type: string, example: "hello_world" }
+ *               languageCode: { type: string, example: "pt_BR" }
+ *               components: { type: array, items: { type: object }, description: "Componentes dinâmicos do template" }
+ *     responses:
+ *       200:
+ *         description: Template enviado
+ */
+router.post('/send-template', messageLimiter, async (req, res) => {
+  try {
+    if (!validateMessageRequest(req, res, ['instanceName', 'to', 'templateName'])) return;
+
+    const { instanceName, to, templateName, languageCode, components } = req.body;
+    const result = await whatsapp.sendTemplate(instanceName, to, templateName, languageCode || 'pt_BR', components || []);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

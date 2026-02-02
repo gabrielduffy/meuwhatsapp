@@ -26,10 +26,11 @@ const swaggerOptions = {
            - Header: \`X-Instance-Token\`
 
         ## 📱 Recursos Principais
-        - **Multi-instâncias**: Gerencie centenas de conexões simultâneas.
-        - **IA Integrada**: Agentes inteligentes que respondem por você.
-        - **Webhooks Avançados**: Receba eventos em tempo real com retry automático.
-        - **Media Management**: Envio de áudios (como gravação), imagens, vídeos e documentos.
+        - **API Híbrida**: Escolha entre **Meta Cloud API (Oficial)** ou **Baileys (Não-Oficial)**.
+        - **Multi-instâncias**: Gerencie centenas de conexões simultâneas de ambos os tipos.
+        - **Templates**: Suporte completo a templates oficiais da Meta.
+        - **Normalização**: Uma única interface de Webhook e API para diferentes provedores.
+        - **IA Integrada**: Agentes inteligentes que respondem por você em qualquer canal.
 
         ---
         *Para suporte técnico, acesse nosso portal do cliente.*

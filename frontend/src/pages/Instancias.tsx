@@ -51,7 +51,14 @@ export default function Instancias() {
   const [qrCodeData, setQrCodeData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('geral');
 
-  const [createForm, setCreateForm] = useState({ instanceName: '' });
+  const [createForm, setCreateForm] = useState({
+    instanceName: '',
+    provider: 'baileys',
+    accessToken: '',
+    phoneNumberId: '',
+    wabaId: '',
+    verifyToken: ''
+  });
   const [configForm, setConfigForm] = useState({
     rejectCalls: false,
     profileName: '',
@@ -92,11 +99,32 @@ export default function Instancias() {
   const handleCreateInstance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.instanceName.trim()) return toast.error('Nome obrigatório');
+
+    if (createForm.provider === 'official') {
+      if (!createForm.accessToken || !createForm.phoneNumberId) {
+        return toast.error('Token e ID do Telefone são obrigatórios para Oficial');
+      }
+    }
+
     try {
-      await api.post('/instance/create', { instanceName: createForm.instanceName.trim() });
+      await api.post('/instance/create', {
+        instanceName: createForm.instanceName.trim(),
+        provider: createForm.provider,
+        accessToken: createForm.accessToken,
+        phoneNumberId: createForm.phoneNumberId,
+        wabaId: createForm.wabaId,
+        verifyToken: createForm.verifyToken
+      });
       toast.success('Instância criada!');
       setShowCreateModal(false);
-      setCreateForm({ instanceName: '' });
+      setCreateForm({
+        instanceName: '',
+        provider: 'baileys',
+        accessToken: '',
+        phoneNumberId: '',
+        wabaId: '',
+        verifyToken: ''
+      });
       loadInstances();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Erro ao criar');
@@ -231,13 +259,81 @@ export default function Instancias() {
       {/* MODAL CRIAR */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Nova Instância">
         <form onSubmit={handleCreateInstance} className="space-y-4">
-          <input
-            className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-            placeholder="Nome da instância"
-            value={createForm.instanceName}
-            onChange={e => setCreateForm({ instanceName: e.target.value })}
-          />
-          <Button variant="neon" className="w-full text-center flex justify-center py-3" type="submit">Criar</Button>
+          <div className="space-y-2">
+            <label className="text-sm text-white/60">Nome da Instância</label>
+            <input
+              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+              placeholder="Ex: comercial-01"
+              value={createForm.instanceName}
+              onChange={e => setCreateForm({ ...createForm, instanceName: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-white/60">Tipo de Provedor</label>
+            <select
+              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white appearance-none"
+              value={createForm.provider}
+              onChange={e => setCreateForm({ ...createForm, provider: e.target.value })}
+            >
+              <option value="baileys" className="bg-slate-900">Não-Oficial (Baileys)</option>
+              <option value="official" className="bg-slate-900">Oficial (Meta Cloud API)</option>
+            </select>
+          </div>
+
+          <AnimatePresence>
+            {createForm.provider === 'official' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-4 border-l-2 border-purple-500/30 pl-4 py-2 mt-4"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm text-white/60">Access Token (Meta Cloud)</label>
+                  <input
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                    placeholder="EAAG..."
+                    value={createForm.accessToken}
+                    onChange={e => setCreateForm({ ...createForm, accessToken: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <label className="text-sm text-white/60">Phone Number ID</label>
+                    <input
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                      placeholder="1234567890"
+                      value={createForm.phoneNumberId}
+                      onChange={e => setCreateForm({ ...createForm, phoneNumberId: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label className="text-sm text-white/60">WABA ID</label>
+                    <input
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                      placeholder="0987654321"
+                      value={createForm.wabaId}
+                      onChange={e => setCreateForm({ ...createForm, wabaId: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-white/60">Verify Token (Para Webhook)</label>
+                  <input
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                    placeholder="Token escolhido no painel da Meta"
+                    value={createForm.verifyToken}
+                    onChange={e => setCreateForm({ ...createForm, verifyToken: e.target.value })}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Button variant="neon" className="w-full text-center flex justify-center py-3 mt-6" type="submit">
+            Criar Instância
+          </Button>
         </form>
       </Modal>
 

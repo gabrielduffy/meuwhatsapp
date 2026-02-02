@@ -3,6 +3,7 @@ const router = express.Router();
 const integracaoServico = require('../servicos/integracao.servico');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { garantirMultiTenant, verificarFuncionalidade } = require('../middlewares/empresa');
+const config = require('../config/config');
 
 // Todas as rotas requerem autenticação e multi-tenant
 router.use(autenticarMiddleware);
@@ -396,8 +397,26 @@ routerPublico.post('/official/webhook', async (req, res) => {
     const normalized = WebhookAdapter.fromOfficial(payload, instanceName);
 
     if (normalized) {
+      // Se houver mídia (Meta envia ID), baixar agora
+      if (normalized.midiaUrl && normalized.midiaUrl.startsWith('official_media_id:')) {
+        try {
+          const mediaId = normalized.midiaUrl.split(':')[1];
+          const instance = whatsappService.getInstance(instanceName);
+          if (instance && instance.type === 'official') {
+            const downloaded = await instance.provider.downloadMedia(mediaId);
+            normalized.midiaUrl = `${config.serverUrl}${downloaded.url}`;
+            // Atualizar conteúdo se estiver vazio para mostrar o link
+            if (!normalized.conteudo) normalized.conteudo = normalized.midiaUrl;
+
+            // Atualizar no data também para o webhook interno
+            normalized.data.mediaUrl = normalized.midiaUrl;
+          }
+        } catch (mediaErr) {
+          console.error(`[Webhook-Oficial] Erro ao baixar mídia (ID: ${normalized.midiaUrl}):`, mediaErr.message);
+        }
+      }
+
       // Processar via whatsappService (isso disparará webhooks internos e salvará no chat)
-      // Nota: o whatsappService.sendWebhook dispara o redirecionamento para o Lovable
       whatsappService.sendWebhook(instanceName, normalized);
 
       // Persistir no chat se houver empresaId

@@ -102,23 +102,6 @@ async function createInstance(instanceNameRaw, options = {}) {
     await delay(3000);
   }
 
-  const sessionPath = path.join(SESSIONS_DIR, instanceName);
-
-  if (!fs.existsSync(sessionPath)) {
-    fs.mkdirSync(sessionPath, { recursive: true });
-  }
-
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-
-  let version = [2, 3000, 1017531287]; // Fallback para uma versão estável e recente (2.3xxx)
-  try {
-    const fetched = await fetchLatestBaileysVersion();
-    version = fetched.version;
-    console.log(`[${instanceName}] Baileys v${version.join('.')} detectada.`);
-  } catch (err) {
-    console.warn(`[${instanceName}] Falha ao buscar versão do Baileys, usando fallback:`, err.message);
-  }
-
   // Configurar proxy se fornecido
   let agent = undefined;
   if (options.proxy) {
@@ -138,18 +121,73 @@ async function createInstance(instanceNameRaw, options = {}) {
   // Logger personalizado para debug
   const socketLogger = logger.child({ instance: instanceName });
 
+  // Gerar token único para a instância se não existir
+  const instanceToken = options.token || uuidv4();
+
+  // Determinar Provedor (default: baileys)
+  const providerType = options.provider || 'baileys';
+
+  if (providerType === 'official') {
+    const official = new OfficialProvider(instanceName, {
+      accessToken: options.accessToken || options.official_config?.accessToken,
+      phoneNumberId: options.phoneNumberId || options.official_config?.phoneNumberId,
+      wabaId: options.wabaId || options.official_config?.wabaId,
+      verifyToken: options.verifyToken || options.official_config?.verifyToken
+    });
+
+    await official.initialize();
+
+    instances[instanceName] = {
+      provider: official,
+      type: 'official',
+      isConnected: true,
+      token: instanceToken,
+      empresaId: options.empresaId || await getEmpresaPadraoId(),
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    };
+
+    // Salvar no banco com provider 'official'
+    try {
+      await query(`
+        INSERT INTO instances (instance_name, token, empresa_id, status, provider, official_config)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (instance_name) DO UPDATE 
+        SET status = EXCLUDED.status, 
+            provider = EXCLUDED.provider,
+            official_config = EXCLUDED.official_config,
+            updated_at = NOW()
+      `, [instanceName, instances[instanceName].token, instances[instanceName].empresaId, 'connected', 'official', JSON.stringify(options.official_config || options)]);
+    } catch (e) {
+      console.warn(`[${instanceName}] Erro ao salvar instância oficial:`, e.message);
+    }
+
+    return instances[instanceName];
+  }
+
+  // Lógica original do Baileys
+  const SESSIONS_DIR = path.join(process.cwd(), 'sessions');
+  const sessionDir = path.join(SESSIONS_DIR, instanceName);
+
+  if (!fs.existsSync(sessionDir)) {
+    fs.mkdirSync(sessionDir, { recursive: true });
+  }
+
+  const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+  const { version } = await fetchLatestBaileysVersion();
+
   const socketConfig = {
     version,
     logger: socketLogger,
     auth: {
       creds: state.creds,
-      keys: state.keys // Usar state.keys diretamente para evitar problemas de cache no pareamento inicial
+      keys: state.keys
     },
     printQRInTerminal: true,
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: options.markOnline !== false,
-    browser: ['Windows', 'Chrome', '125.0.0.0'], // Identificação extremamente comum e segura
+    browser: ['Windows', 'Chrome', '125.0.0.0'],
     connectTimeoutMs: 120000,
     defaultQueryTimeoutMs: 120000,
     keepAliveIntervalMs: 10000,
@@ -183,50 +221,6 @@ async function createInstance(instanceNameRaw, options = {}) {
 
   console.log(`[${instanceName}] Inicializando socket do Baileys...`);
   const socket = makeWASocket(socketConfig);
-
-  // Gerar token único para a instância se não existir
-  const instanceToken = options.token || uuidv4();
-
-  // Determinar Provedor (default: baileys)
-  const providerType = options.provider || 'baileys';
-
-  if (providerType === 'official') {
-    const official = new OfficialProvider(instanceName, {
-      accessToken: options.accessToken,
-      phoneNumberId: options.phoneNumberId,
-      wabaId: options.wabaId,
-      verifyToken: options.verifyToken
-    });
-
-    await official.initialize();
-
-    instances[instanceName] = {
-      provider: official,
-      type: 'official',
-      isConnected: true,
-      token: options.token || uuidv4(),
-      empresaId: options.empresaId || await getEmpresaPadraoId(),
-      createdAt: new Date().toISOString(),
-      lastActivity: new Date().toISOString()
-    };
-
-    // Salvar no banco com provider 'official'
-    try {
-      await query(`
-        INSERT INTO instances (instance_name, token, empresa_id, status, provider, official_config)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (instance_name) DO UPDATE 
-        SET status = EXCLUDED.status, 
-            provider = EXCLUDED.provider,
-            official_config = EXCLUDED.official_config,
-            updated_at = NOW()
-      `, [instanceName, instances[instanceName].token, instances[instanceName].empresaId, 'connected', 'official', JSON.stringify(options)]);
-    } catch (e) {
-      console.warn(`[${instanceName}] Erro ao salvar instância oficial:`, e.message);
-    }
-
-    return instances[instanceName];
-  }
 
   // --- FLUXO BAILEYS (NÃO OFICIAL) - MANTIDO ORIGINAL ---
   const empresaId = options.empresaId || await getEmpresaPadraoId();
@@ -1141,6 +1135,19 @@ async function sendContact(instanceName, to, contactName, contactNumber, options
   return { success: true, messageId: result.key.id };
 }
 
+async function sendTemplate(instanceName, to, templateName, languageCode, components = []) {
+  const instance = getInstance(instanceName);
+  if (!instance || !instance.isConnected) {
+    throw new Error('Instância não encontrada ou não conectada');
+  }
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendTemplate(to, templateName, languageCode, components);
+  } else {
+    throw new Error('Templates são suportados apenas em instâncias oficiais da Cloud API');
+  }
+}
+
 async function sendButtons(instanceName, to, text, buttons, footer = '', options = {}) {
   const instance = getInstance(instanceName);
   if (!instance || !instance.isConnected) {
@@ -1853,28 +1860,47 @@ async function loadExistingSessions() {
   loadWebhooks();
   loadInstanceTokens();
 
-  if (!fs.existsSync(SESSIONS_DIR)) return;
+  try {
+    const res = await query('SELECT * FROM instances');
+    const dbInstances = res.rows;
 
-  const sessions = fs.readdirSync(SESSIONS_DIR);
+    for (const dbConfig of dbInstances) {
+      const sessionName = dbConfig.instance_name;
+      console.log(`[Startup] Carregando instância: ${sessionName} (${dbConfig.provider || 'baileys'})`);
 
-  for (const sessionName of sessions) {
-    const sessionPath = path.join(SESSIONS_DIR, sessionName);
-    if (fs.statSync(sessionPath).isDirectory()) {
-      console.log(`[Startup] Carregando sessão existente: ${sessionName}`);
       try {
-        // Tentar carregar configurações do banco para esta instância
-        const res = await query('SELECT * FROM instances WHERE instance_name = $1', [sessionName]);
-        const dbConfig = res.rows[0];
-
         const options = {
-          token: dbConfig?.token || instanceTokens[sessionName],
-          webhookUrl: dbConfig?.webhook_url,
-          empresaId: dbConfig?.empresa_id
+          token: dbConfig.token || instanceTokens[sessionName],
+          webhookUrl: dbConfig.webhook_url,
+          empresaId: dbConfig.empresa_id,
+          provider: dbConfig.provider || 'baileys',
+          official_config: dbConfig.official_config
         };
+
+        // Se for baileys, verificar se a pasta existe antes de tentar carregar (opcional, mas evita logs de erro)
+        if (options.provider === 'baileys') {
+          const sessionPath = path.join(SESSIONS_DIR, sessionName);
+          if (!fs.existsSync(sessionPath)) {
+            console.warn(`[Startup] Pasta de sessão não encontrada para ${sessionName}, ignorando.`);
+            continue;
+          }
+        }
 
         await createInstance(sessionName, options);
       } catch (error) {
-        console.error(`[Startup] Erro ao carregar sessão ${sessionName}:`, error.message);
+        console.error(`[Startup] Erro ao carregar instância ${sessionName}:`, error.message);
+      }
+    }
+  } catch (err) {
+    console.error('[Startup] Erro ao carregar instâncias do banco:', err.message);
+
+    // Fallback: carregar apenas sessões locais do sistema de arquivos
+    if (fs.existsSync(SESSIONS_DIR)) {
+      const sessions = fs.readdirSync(SESSIONS_DIR);
+      for (const sessionName of sessions) {
+        if (fs.statSync(path.join(SESSIONS_DIR, sessionName)).isDirectory()) {
+          createInstance(sessionName, { token: instanceTokens[sessionName] }).catch(console.error);
+        }
       }
     }
   }
@@ -1910,6 +1936,7 @@ module.exports = {
   sendSticker,
   sendLocation,
   sendContact,
+  sendTemplate,
   sendPoll,
   sendButtons,
   sendList,

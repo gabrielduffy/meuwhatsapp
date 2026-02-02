@@ -1,11 +1,15 @@
 /**
  * Provedor Oficial do WhatsApp (Meta Cloud API)
  */
+const fs = require('fs');
+const path = require('path');
+
 class OfficialProvider {
     constructor(instanceName, config) {
         this.instanceName = instanceName;
         this.config = config; // { accessToken, phoneNumberId, wabaId, verifyToken }
         this.isConnected = false;
+        this.uploadsDir = '/app/uploads'; // Alinhado com o sistema
     }
 
     async initialize() {
@@ -90,6 +94,66 @@ class OfficialProvider {
         };
 
         return this._request(url, body);
+    }
+
+    /**
+     * Enviar Mensagem via Template (Obrigatório para iniciar conversas fora da janela 24h)
+     */
+    async sendTemplate(to, templateName, languageCode = 'pt_BR', components = []) {
+        const cleanTo = to.replace(/\D/g, '');
+        const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
+
+        const body = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanTo,
+            type: "template",
+            template: {
+                name: templateName,
+                language: { code: languageCode },
+                components: components
+            }
+        };
+
+        return this._request(url, body);
+    }
+
+    /**
+     * Download de mídia da Meta (Convertendo ID em arquivo local)
+     */
+    async downloadMedia(mediaId) {
+        try {
+            // 1. Obter URL temporária da mídia
+            const getUrl = `https://graph.facebook.com/v18.0/${mediaId}`;
+            const responseUrl = await fetch(getUrl, {
+                headers: { 'Authorization': `Bearer ${this.config.accessToken}` }
+            });
+            const mediaData = await responseUrl.json();
+
+            if (!mediaData.url) throw new Error('Não foi possível obter a URL da mídia');
+
+            // 2. Baixar o arquivo real
+            const fileResponse = await fetch(mediaData.url, {
+                headers: { 'Authorization': `Bearer ${this.config.accessToken}` }
+            });
+            const buffer = Buffer.from(await fileResponse.arrayBuffer());
+
+            // 3. Salvar no disco (uploads)
+            const extension = mediaData.mime_type?.split('/')[1] || 'bin';
+            const fileName = `official_${mediaId}_${Date.now()}.${extension}`;
+            const fullPath = path.join(this.uploadsDir, fileName);
+
+            fs.writeFileSync(fullPath, buffer);
+
+            return {
+                fileName,
+                url: `/uploads/${fileName}`,
+                mimeType: mediaData.mime_type
+            };
+        } catch (error) {
+            console.error(`[${this.instanceName}] Falha no download de mídia:`, error.message);
+            throw error;
+        }
     }
 
     async _request(url, body) {
