@@ -4,15 +4,15 @@ const config = require('./env');
 // Conexão PostgreSQL
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  max: 50, // Aumentado para suportar mais instâncias simultâneas
-  idleTimeoutMillis: 30000,
+  max: 20, // Reduzido de 50 para 20 para evitar sufocamento do Postgres com múltiplas réplicas
+  idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 5000,
   ssl: config.databaseUrl && config.databaseUrl.includes('supabase.co') ? { rejectUnauthorized: false } : false
 });
 
 // Testar conexão ao iniciar
 pool.on('connect', () => {
-  console.log('✅ PostgreSQL - Nova conexão estabelecida');
+  // console.log('✅ PostgreSQL - Nova conexão estabelecida'); // Comentado para poluir menos logs
 });
 
 pool.on('error', (err) => {
