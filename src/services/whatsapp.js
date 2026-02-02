@@ -82,6 +82,23 @@ async function createInstance(instanceNameRaw, options = {}) {
 
   console.log(`[${instanceName}] Criando instância...`);
 
+  // LIMPEZA PREVENTIVA DE DUPLICIDADE
+  if (instances[instanceName]) {
+    console.warn(`[${instanceName}] ⚠️ Instância já existe em memória. Forçando encerramento da anterior...`);
+    try {
+      if (instances[instanceName].socket) {
+        instances[instanceName].socket.end(new Error('Conflito: Reiniciando instância duplicada'));
+        // Forçar destruição
+        instances[instanceName].socket = null;
+      }
+    } catch (e) {
+      console.error(`[${instanceName}] Erro ao limpar instância antiga:`, e.message);
+    }
+    delete instances[instanceName];
+    // Aguardar um pouco para o Baileys/Socket liberar a porta e recursos
+    await delay(3000);
+  }
+
   const sessionPath = path.join(SESSIONS_DIR, instanceName);
 
   if (!fs.existsSync(sessionPath)) {
@@ -313,11 +330,19 @@ async function createInstance(instanceNameRaw, options = {}) {
 
       if (shouldReconnect) {
         // Cálculo de backoff exponencial: 5s, 10s, 20s, 40s... até limitar em 5 minutos
-        const backoffTimes = instances[instanceName].reconnectAttempts || 0;
+        let backoffTimes = instances[instanceName].reconnectAttempts || 0;
+
+        // Se for erro de conflito (440) ou stream (515), aumentar drasticamente o delay inicial
+        if (statusCode === 440 || statusCode === 515 || errorMsg.includes('conflict')) {
+          console.warn(`[${instanceName}] ⚠️ Conflito de sessão detectado (Código ${statusCode}). Forçando espera maior...`);
+          backoffTimes = Math.max(backoffTimes, 2); // Pula para patamar de 20s+
+        }
+
         instances[instanceName].reconnectAttempts = backoffTimes + 1;
 
-        const delayMs = Math.min(5000 * Math.pow(2, backoffTimes), 300000);
-        const jitter = Math.random() * 2000;
+        const baseDelay = 5000 * Math.pow(2, backoffTimes);
+        const delayMs = Math.min(baseDelay, 300000); // Teto de 5 min
+        const jitter = Math.random() * 5000; // Jitter aumentado para 5s para espalhar tentativas
         const finalDelay = delayMs + jitter;
 
         console.log(`[${instanceName}] 🔄 Tentativa de reconexão #${backoffTimes + 1} em ${Math.round(finalDelay / 1000)}s...`);
