@@ -26,4 +26,18 @@ function errorHandler(err, req, res, next) {
   });
 }
 
-module.exports = errorHandler;
+
+/**
+ * Middleware para rotas não encontradas (404)
+ */
+function notFoundHandler(req, res, next) {
+  const error = new Error(`Rota não encontrada: ${req.method} ${req.originalUrl}`);
+  error.status = 404;
+  error.code = 'ROUTE_NOT_FOUND';
+  next(error);
+}
+
+module.exports = {
+  errorHandler,
+  notFoundHandler
+};
