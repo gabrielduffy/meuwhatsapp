@@ -1,3 +1,12 @@
+// CRITICAL DEBUG HANDLER
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err);
+  // Não sair imediatamente para dar tempo do log ser escrito
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -8,22 +17,30 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 
 // Importar configurações (DEVE SER PRIMEIRO para validar env vars)
+console.log('[Boot] Loading env...');
 const config = require('./config/env');
+console.log('[Boot] Loading logger...');
 const logger = require('./config/logger');
+console.log('[Boot] Loading cors...');
 const { corsOptions } = require('./config/cors');
+console.log('[Boot] Loading swagger...');
 const { swaggerUi, swaggerDocs, swaggerUiOptions } = require('./config/swagger');
 
 // Importar configurações de banco de dados
+console.log('[Boot] Loading database...');
 const { query: dbQuery } = require('./config/database');
+console.log('[Boot] Loading redis...');
 const { redis, cache } = require('./config/redis');
 
 // Importar jobs de status (inicializa cron jobs)
 // TEMPORARIAMENTE DESABILITADO PARA DEBUG
 // require('./jobs/statusChecker');
+console.log('[Boot] Loading tasks...');
 const { iniciarTarefaFollowup } = require('./tarefas/followup.tarefa');
 const { iniciarTarefaWhiteLabel } = require('./tarefas/whitelabel.tarefa');
 
 // Importar rotas consolidadas
+console.log('[Boot] Loading routes...');
 const autenticacaoRoutes = require('./routes/auth.routes');
 const instanceRoutes = require('./routes/instance.routes');
 const messageRoutes = require('./routes/message.routes');
