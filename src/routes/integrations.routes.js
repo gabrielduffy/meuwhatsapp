@@ -3,7 +3,7 @@ const router = express.Router();
 const integracaoServico = require('../servicos/integracao.servico');
 const { autenticarMiddleware } = require('../middlewares/autenticacao');
 const { garantirMultiTenant, verificarFuncionalidade } = require('../middlewares/empresa');
-const config = require('../config/config');
+const config = require('../config/env');
 
 // Todas as rotas requerem autenticação e multi-tenant
 router.use(autenticarMiddleware);
