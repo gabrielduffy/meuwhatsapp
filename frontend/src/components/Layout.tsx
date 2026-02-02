@@ -28,6 +28,7 @@ const menuItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Prospecção', path: '/prospeccao', icon: Target },
   { label: 'Instâncias', path: '/instancias', icon: Smartphone },
+  { label: 'Templates Meta', path: '/templates', icon: FileText },
   { label: 'Conversas', path: '/conversas', icon: MessageCircle },
   { label: 'Enviar Mensagem', path: '/enviar-mensagem', icon: Send },
   { label: 'Contatos', path: '/contatos', icon: Contact },
