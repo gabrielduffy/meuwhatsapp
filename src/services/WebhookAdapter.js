@@ -86,6 +86,20 @@ class WebhookAdapter {
             };
         }
 
+        // 3. Processar TEMPLATES (Status de Aprovação/Reprovação)
+        if (change.event === 'message_template_status_update') {
+            return {
+                instanceName: instanceName,
+                event: 'template.update',
+                data: {
+                    templateName: change.message_template_name,
+                    templateId: change.message_template_id,
+                    status: change.event, // 'APPROVED', 'REJECTED', etc.
+                    reason: change.reason || null
+                }
+            };
+        }
+
         return null;
     }
 

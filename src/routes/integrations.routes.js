@@ -378,19 +378,23 @@ routerPublico.post('/official/webhook', async (req, res) => {
     const payload = req.body;
 
     // Identificar a instância baseada no payload (WABA ID ou Phone Number ID)
-    const phoneNumberId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
+    const entry = payload.entry?.[0];
+    const change = entry?.changes?.[0]?.value;
+    const phoneNumberId = change?.metadata?.phone_number_id;
+    const wabaId = entry?.id; // O ID do entry costuma ser o WABA ID
 
-    if (!phoneNumberId) {
-      return res.status(200).send('OK'); // Ignorar payloads sem ID de telefone
+    let instanceName;
+
+    if (phoneNumberId) {
+      const instanceRes = await query('SELECT instance_name FROM instances WHERE official_config->>\'phoneNumberId\' = $1', [phoneNumberId]);
+      instanceName = instanceRes.rows[0]?.instance_name;
+    } else if (wabaId) {
+      const instanceRes = await query('SELECT instance_name FROM instances WHERE official_config->>\'wabaId\' = $1', [wabaId]);
+      instanceName = instanceRes.rows[0]?.instance_name;
     }
 
-    // Buscar a instância no banco pelo config da API Oficial
-    const instanceRes = await query('SELECT instance_name FROM instances WHERE official_config->>\'phoneNumberId\' = $1', [phoneNumberId]);
-    const instanceName = instanceRes.rows[0]?.instance_name;
-
     if (!instanceName) {
-      console.warn(`[Webhook-Oficial] Instância não encontrada para PhoneID: ${phoneNumberId}`);
-      return res.status(200).send('OK');
+      return res.status(200).send('OK'); // Ignorar se não achar a instância
     }
 
     // Adaptar payload
