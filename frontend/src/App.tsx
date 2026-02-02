@@ -28,6 +28,7 @@ import Documentacao from './pages/Documentacao';
 import DocumentacaoPublica from './pages/DocumentacaoPublica';
 import Status from './pages/Status';
 import EmailMarketing from './pages/EmailMarketing';
+import Templates from './pages/Templates';
 
 
 function App() {
@@ -271,6 +272,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Documentacao />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/templates"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Templates />
                 </Layout>
               </ProtectedRoute>
             }
