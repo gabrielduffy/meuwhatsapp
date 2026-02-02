@@ -350,6 +350,73 @@ routerPublico.post('/webhook/:integracaoId/:empresaId', async (req, res) => {
   }
 });
 
+/**
+ * Webhook Oficial (Meta Cloud API)
+ */
+const WebhookAdapter = require('../services/WebhookAdapter');
+const whatsappService = require('../services/whatsapp');
+const { query } = require('../config/database');
+
+// GET: Verificação do Webhook (Meta Hub Challenge)
+routerPublico.get('/official/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  // Idealmente, validar o token contra o banco, mas para simplificação inicial:
+  if (mode === 'subscribe') {
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
+});
+
+// POST: Recebimento de Mensagens
+routerPublico.post('/official/webhook', async (req, res) => {
+  try {
+    const payload = req.body;
+
+    // Identificar a instância baseada no payload (WABA ID ou Phone Number ID)
+    const phoneNumberId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
+
+    if (!phoneNumberId) {
+      return res.status(200).send('OK'); // Ignorar payloads sem ID de telefone
+    }
+
+    // Buscar a instância no banco pelo config da API Oficial
+    const instanceRes = await query('SELECT instance_name FROM instances WHERE official_config->>\'phoneNumberId\' = $1', [phoneNumberId]);
+    const instanceName = instanceRes.rows[0]?.instance_name;
+
+    if (!instanceName) {
+      console.warn(`[Webhook-Oficial] Instância não encontrada para PhoneID: ${phoneNumberId}`);
+      return res.status(200).send('OK');
+    }
+
+    // Adaptar payload
+    const normalized = WebhookAdapter.fromOfficial(payload, instanceName);
+
+    if (normalized) {
+      // Processar via whatsappService (isso disparará webhooks internos e salvará no chat)
+      // Nota: o whatsappService.sendWebhook dispara o redirecionamento para o Lovable
+      whatsappService.sendWebhook(instanceName, normalized);
+
+      // Persistir no chat se houver empresaId
+      const fullInstanceRes = await query('SELECT empresa_id FROM instances WHERE instance_name = $1', [instanceName]);
+      const empresaId = fullInstanceRes.rows[0]?.empresa_id;
+
+      if (empresaId) {
+        const chatServico = require('../servicos/chat.servico');
+        await chatServico.receberMensagem(empresaId, instanceName, normalized);
+      }
+    }
+
+    res.status(200).send('EVENT_RECEIVED');
+  } catch (error) {
+    console.error('[Webhook-Oficial] Erro Crítico:', error.message);
+    res.status(200).send('OK'); // Sempre retornar 200 para Meta não bloquear o webhook
+  }
+});
+
 // Exportar ambas as rotas
 module.exports = {
   rotasProtegidas: router,

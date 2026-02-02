@@ -10,6 +10,9 @@ const { incrementMetric, updateConnectionStatus, createInstanceMetrics, removeIn
 const { handleIncomingMessage } = require('./autoresponder');
 const { sendWebhookWithRetry, isEventTypeEnabled } = require('./webhook-advanced');
 const config = require('../config/env');
+const OfficialProvider = require('./providers/OfficialProvider');
+// Nota: Baileys continuará sendo o padrão interno para evitar quebras
+
 
 // Armazenamento das instâncias
 const instances = {};
@@ -184,7 +187,48 @@ async function createInstance(instanceNameRaw, options = {}) {
   // Gerar token único para a instância se não existir
   const instanceToken = options.token || uuidv4();
 
-  // Inicializar objeto da instância
+  // Determinar Provedor (default: baileys)
+  const providerType = options.provider || 'baileys';
+
+  if (providerType === 'official') {
+    const official = new OfficialProvider(instanceName, {
+      accessToken: options.accessToken,
+      phoneNumberId: options.phoneNumberId,
+      wabaId: options.wabaId,
+      verifyToken: options.verifyToken
+    });
+
+    await official.initialize();
+
+    instances[instanceName] = {
+      provider: official,
+      type: 'official',
+      isConnected: true,
+      token: options.token || uuidv4(),
+      empresaId: options.empresaId || await getEmpresaPadraoId(),
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    };
+
+    // Salvar no banco com provider 'official'
+    try {
+      await query(`
+        INSERT INTO instances (instance_name, token, empresa_id, status, provider, official_config)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (instance_name) DO UPDATE 
+        SET status = EXCLUDED.status, 
+            provider = EXCLUDED.provider,
+            official_config = EXCLUDED.official_config,
+            updated_at = NOW()
+      `, [instanceName, instances[instanceName].token, instances[instanceName].empresaId, 'connected', 'official', JSON.stringify(options)]);
+    } catch (e) {
+      console.warn(`[${instanceName}] Erro ao salvar instância oficial:`, e.message);
+    }
+
+    return instances[instanceName];
+  }
+
+  // --- FLUXO BAILEYS (NÃO OFICIAL) - MANTIDO ORIGINAL ---
   const empresaId = options.empresaId || await getEmpresaPadraoId();
   // URL FIXA DO WEBHOOK (Global para todas as instâncias)
   const FIXED_WEBHOOK_URL = 'https://kbtijxfscztjriinidqa.supabase.co/functions/v1/whatsapp-webhook';
@@ -874,6 +918,10 @@ async function sendText(instanceName, to, text, options = {}) {
 
   const jid = formatJid(to);
 
+  if (instance.type === 'official') {
+    return await instance.provider.sendText(to, text, options);
+  }
+
   // Simular digitação se configurado
   if (options.simulateTyping) {
     await instance.socket.sendPresenceUpdate('composing', jid);
@@ -920,6 +968,10 @@ async function sendImage(instanceName, to, imageUrl, caption = '', options = {})
 
   const jid = formatJid(to);
 
+  if (instance.type === 'official') {
+    return await instance.provider.sendImage(to, imageUrl, caption, options);
+  }
+
   if (options.delay) await delay(options.delay);
 
   const messageOptions = {
@@ -951,6 +1003,11 @@ async function sendDocument(instanceName, to, documentUrl, fileName, mimetype, c
   }
 
   const jid = formatJid(to);
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendDocument(to, documentUrl, fileName, mimetype, caption, options);
+  }
+
   if (options.delay) await delay(options.delay);
 
   const result = await instance.socket.sendMessage(jid, {
@@ -973,6 +1030,10 @@ async function sendAudio(instanceName, to, audioUrl, ptt = true, options = {}) {
 
   const jid = formatJid(to);
   if (options.delay) await delay(options.delay);
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendAudio(to, audioUrl, ptt, options);
+  }
 
   // Simular gravando áudio
   if (options.simulateRecording) {
@@ -1037,6 +1098,10 @@ async function sendLocation(instanceName, to, latitude, longitude, name = '', ad
   }
 
   const jid = formatJid(to);
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendLocation(to, latitude, longitude, name, address, options);
+  }
   if (options.delay) await delay(options.delay);
 
   const result = await instance.socket.sendMessage(jid, {
