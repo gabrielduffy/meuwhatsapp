@@ -96,9 +96,6 @@ class OfficialProvider {
         return this._request(url, body);
     }
 
-    /**
-     * Enviar Mensagem via Template (Obrigatório para iniciar conversas fora da janela 24h)
-     */
     async sendTemplate(to, templateName, languageCode = 'pt_BR', components = []) {
         const cleanTo = to.replace(/\D/g, '');
         const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
@@ -116,6 +113,140 @@ class OfficialProvider {
         };
 
         return this._request(url, body);
+    }
+
+    /**
+     * Enviar Mensagem Interativa com Botões (Meta Cloud API)
+     */
+    async sendButtons(to, text, buttons, footer = '') {
+        const cleanTo = to.replace(/\D/g, '');
+        const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
+
+        const interactiveButtons = buttons.map((btn, index) => ({
+            type: "reply",
+            reply: {
+                id: btn.buttonId || `btn_${index}`,
+                title: btn.buttonText?.displayText || btn.buttonText || btn.text || "Botão"
+            }
+        }));
+
+        const body = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanTo,
+            type: "interactive",
+            interactive: {
+                type: "button",
+                body: { text: text },
+                footer: { text: footer },
+                action: { buttons: interactiveButtons }
+            }
+        };
+
+        return this._request(url, body);
+    }
+
+    /**
+     * Enviar Mensagem Interativa com Lista (Meta Cloud API)
+     */
+    async sendList(to, title, text, footer, buttonText, sections) {
+        const cleanTo = to.replace(/\D/g, '');
+        const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
+
+        const formattedSections = sections.map(section => ({
+            title: section.title,
+            rows: section.rows.map(row => ({
+                id: row.rowId || row.id,
+                title: row.title,
+                description: row.description || ''
+            }))
+        }));
+
+        const body = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanTo,
+            type: "interactive",
+            interactive: {
+                type: "list",
+                header: title ? { type: "text", text: title } : undefined,
+                body: { text: text },
+                footer: { text: footer || '' },
+                action: {
+                    button: buttonText || "Ver Opções",
+                    sections: formattedSections
+                }
+            }
+        };
+
+        return this._request(url, body);
+    }
+
+    /**
+     * Listar Templates da Conta Business (WABA)
+     */
+    async getTemplates() {
+        if (!this.config.wabaId) throw new Error('WABA ID não configurado');
+        const url = `https://graph.facebook.com/v18.0/${this.config.wabaId}/message_templates`;
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${this.config.accessToken}` }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error?.message || 'Erro ao buscar templates');
+            return data.data; // Retorna array de templates
+        } catch (error) {
+            console.error(`[${this.instanceName}] Erro getTemplates:`, error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Criar novo Template na Meta
+     * @param {Object} templateData - Dados seguindo padrão Meta (name, category, language, components)
+     */
+    async createTemplate(templateData) {
+        if (!this.config.wabaId) throw new Error('WABA ID não configurado');
+        const url = `https://graph.facebook.com/v18.0/${this.config.wabaId}/message_templates`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.config.accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(templateData)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error?.message || 'Erro ao criar template');
+            return data;
+        } catch (error) {
+            console.error(`[${this.instanceName}] Erro createTemplate:`, error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Deletar Template
+     */
+    async deleteTemplate(templateName) {
+        if (!this.config.wabaId) throw new Error('WABA ID não configurado');
+        const url = `https://graph.facebook.com/v18.0/${this.config.wabaId}/message_templates?name=${templateName}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${this.config.accessToken}` }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error?.message || 'Erro ao deletar template');
+            return data;
+        } catch (error) {
+            console.error(`[${this.instanceName}] Erro deleteTemplate:`, error.message);
+            throw error;
+        }
     }
 
     /**

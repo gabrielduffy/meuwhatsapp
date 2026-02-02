@@ -65,6 +65,7 @@ const notificacoesRoutes = require('./routes/notifications.routes');
 const relatoriosRoutes = require('./routes/relatorios.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const emailMarketingRoutes = require('./routes/email.routes');
+const templateRoutes = require('./routes/template.routes');
 
 
 // Importar middlewares
@@ -391,6 +392,7 @@ app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/email-marketing', emailMarketingRoutes);
+app.use('/api/template', templateRoutes);
 
 
 // Rotas especiais
@@ -410,6 +412,7 @@ app.get('*', (req, res, next) => {
     pathPart.startsWith('/status/') ||
     pathPart.startsWith('/instance/') ||
     pathPart.startsWith('/message/') ||
+    pathPart.startsWith('/template/') ||
     pathPart.startsWith('/group/') ||
     pathPart.startsWith('/chat/') ||
     pathPart.startsWith('/webhook/') ||

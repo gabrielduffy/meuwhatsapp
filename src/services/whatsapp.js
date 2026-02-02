@@ -1148,10 +1148,50 @@ async function sendTemplate(instanceName, to, templateName, languageCode, compon
   }
 }
 
+async function getTemplates(instanceName) {
+  const instance = getInstance(instanceName);
+  if (!instance || !instance.isConnected) {
+    throw new Error('Instância não encontrada ou não conectada');
+  }
+  if (instance.type === 'official') {
+    return await instance.provider.getTemplates();
+  } else {
+    throw new Error('Gerenciamento de templates suportado apenas em instâncias oficiais');
+  }
+}
+
+async function createTemplate(instanceName, templateData) {
+  const instance = getInstance(instanceName);
+  if (!instance || !instance.isConnected) {
+    throw new Error('Instância não encontrada ou não conectada');
+  }
+  if (instance.type === 'official') {
+    return await instance.provider.createTemplate(templateData);
+  } else {
+    throw new Error('Gerenciamento de templates suportado apenas em instâncias oficiais');
+  }
+}
+
+async function deleteTemplate(instanceName, templateName) {
+  const instance = getInstance(instanceName);
+  if (!instance || !instance.isConnected) {
+    throw new Error('Instância não encontrada ou não conectada');
+  }
+  if (instance.type === 'official') {
+    return await instance.provider.deleteTemplate(templateName);
+  } else {
+    throw new Error('Gerenciamento de templates suportado apenas em instâncias oficiais');
+  }
+}
+
 async function sendButtons(instanceName, to, text, buttons, footer = '', options = {}) {
   const instance = getInstance(instanceName);
   if (!instance || !instance.isConnected) {
     throw new Error('Instância não encontrada ou não conectada');
+  }
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendButtons(to, text, buttons, footer);
   }
 
   const jid = formatJid(to);
@@ -1177,6 +1217,10 @@ async function sendList(instanceName, to, title, description, buttonText, sectio
   const instance = getInstance(instanceName);
   if (!instance || !instance.isConnected) {
     throw new Error('Instância não encontrada ou não conectada');
+  }
+
+  if (instance.type === 'official') {
+    return await instance.provider.sendList(to, title, description, footer, buttonText, sections);
   }
 
   const jid = formatJid(to);
@@ -1983,6 +2027,9 @@ module.exports = {
   getWebhook,
   deleteWebhook,
   sendWebhook,
+  getTemplates,
+  createTemplate,
+  deleteTemplate,
   setRejectCalls,
   loadExistingSessions,
   configurarSocketIO,
