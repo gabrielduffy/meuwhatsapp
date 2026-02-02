@@ -6,14 +6,18 @@ const statusMonitor = {
   // Obter logs de instâncias desconectadas recentemente
   async checkDisconnectedInstances() {
     try {
-      const result = await query(`
-        SELECT instance_name, last_connected_at, updated_at
-        FROM instances
-        WHERE status IN ('disconnected', 'reconnecting', 'outage')
-        AND updated_at > NOW() - INTERVAL '24 hours'
-        ORDER BY updated_at DESC
-        LIMIT 10
-      `);
+      // Adicionando timeout na query via Promise.race
+      const result = await Promise.race([
+        query(`
+          SELECT instance_name, last_connected_at, updated_at
+          FROM instances
+          WHERE status IN ('disconnected', 'reconnecting', 'outage')
+          AND updated_at > NOW() - INTERVAL '24 hours'
+          ORDER BY updated_at DESC
+          LIMIT 10
+        `),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB Timeout')), 3000))
+      ]);
       return result.rows;
     } catch (error) {
       return [];
@@ -23,8 +27,9 @@ const statusMonitor = {
   async checkApi() {
     const start = Date.now();
     try {
+      // Ajustando timeout do fetch interno
       const response = await fetch(`http://localhost:${process.env.PORT || 3000}/health`, {
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(5000)
       });
       return {
         status: response.ok ? 'operational' : 'degraded',
@@ -43,7 +48,10 @@ const statusMonitor = {
   async checkDatabase() {
     const start = Date.now();
     try {
-      await query('SELECT 1');
+      await Promise.race([
+        query('SELECT 1'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB Timeout')), 2000))
+      ]);
       return { status: 'operational', responseTime: Date.now() - start };
     } catch (error) {
       return { status: 'outage', responseTime: Date.now() - start, error: error.message };

@@ -4,11 +4,22 @@ const config = require('./env');
 // Conexão PostgreSQL
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  max: 20, // Reduzido de 50 para 20 para evitar sufocamento do Postgres com múltiplas réplicas
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 5000,
+  max: 15, // Reduzido para 15 (15 * 5 réplicas = 75 conexões, seguro para o Postgres padrão)
+  idleTimeoutMillis: 5000, // Fecha conexões inativas em 5s
+  connectionTimeoutMillis: 2000, // Aborta se não conseguir conexão em 2s
+  maxUses: 7500, // Rotaciona a conexão após X usos para evitar memory leaks do driver
   ssl: config.databaseUrl && config.databaseUrl.includes('supabase.co') ? { rejectUnauthorized: false } : false
 });
+
+// Monitorar saúde do pool
+setInterval(() => {
+  const total = pool.totalCount;
+  const idle = pool.idleCount;
+  const active = total - idle;
+  if (active > 10) {
+    console.warn(`[DB-Health] Alerta: ${active}/${pool.options.max} conexões ativas na réplica.`);
+  }
+}, 60000);
 
 // Testar conexão ao iniciar
 pool.on('connect', () => {

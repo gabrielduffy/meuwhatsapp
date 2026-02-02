@@ -3,11 +3,23 @@ const statusMonitor = require('../services/statusMonitor');
 const statusRepository = require('../repositories/statusRepository');
 
 let lastResults = null;
+let isJobRunning = false;
 
 // Executar checks a cada 1 minuto
 cron.schedule('* * * * *', async () => {
+  if (isJobRunning) {
+    console.warn('[Status] Check ignorado: Tarefa anterior ainda em execução.');
+    return;
+  }
+
+  isJobRunning = true;
+  const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Job Timeout')), 50000));
+
   try {
-    const results = await statusMonitor.runAllChecks();
+    const results = await Promise.race([
+      statusMonitor.runAllChecks(),
+      timeoutPromise
+    ]);
 
     // Salvar checks
     for (const [slug, result] of Object.entries(results)) {
@@ -24,6 +36,8 @@ cron.schedule('* * * * *', async () => {
     console.log('[Status] Checks executados:', new Date().toISOString());
   } catch (error) {
     console.error('[Status] Erro ao executar checks:', error.message);
+  } finally {
+    isJobRunning = false;
   }
 });
 
